@@ -547,8 +547,7 @@ Singleton {
                 property string style: "classic" // Options: classic, scrolling
 
                 property JsonObject hyprscrollingImplementation: JsonObject {
-                    property bool enable: false
-                    property int maxWorkspaceWidth: 1200
+                    property int maxWorkspaceWidth: 1200 //TODO: remove this too
                 }
                 property JsonObject scrollingStyle: JsonObject {
                     

@@ -69,23 +69,38 @@ Item {
                         root.displayedArtFilePath = "" // Force
                         root.updateArt()
                     }
-                    onEntered: musicControls.opacity = 1
-                    onExited: musicControls.opacity = 0
+                    opacity: containsMouse ? 1 : 0
+                    Behavior on opacity {
+                        animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                    }
 
                     MaterialMusicControls {
                         id: musicControls
-
-                        opacity: 0
-                        Behavior on opacity {
-                            animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-                        }
+                        anchors.centerIn: parent
                         
                         baseButtonHeight: 60
                         baseButtonWidth: 60
                         player: root.player
-                        anchors.centerIn: parent
+                        
                         Layout.preferredWidth: parent.width
                         Layout.preferredHeight: parent.height / 3
+                    }
+
+                    StyledSlider { 
+                        implicitWidth: parent.width / 2
+
+                        anchors.top: musicControls.bottom
+                        anchors.topMargin: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        configuration: StyledSlider.Configuration.Wavy
+                        highlightColor: Appearance.colors.colPrimary
+                        trackColor: Appearance.colors.colSecondaryContainer
+                        handleColor: Appearance.colors.colPrimary
+                        value: root.player?.position / root.player?.length
+                        onMoved: {
+                            root.player.position = value * root.player.length;
+                        }
                     }
                 }
             }
