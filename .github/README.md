@@ -39,7 +39,7 @@ Before saying “these dots are bloated,” keep in mind that there’s a toggle
 1. Clone this repository like this:
 
 ```
-git clone https://github.com/vaguesyntax/ii-vynx.git --recurse-submodules
+git clone https://github.com/djOB2EOTWQW1/ii-vynx.git --recurse-submodules
 ```
 
 2. Run the setup script and follow the instructions:
