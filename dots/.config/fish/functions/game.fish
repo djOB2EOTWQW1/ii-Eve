@@ -31,6 +31,7 @@ set -g GAME_DIRS \
     "$HOME/.NSFW/Games Linux/RenPy/PhotoHunt" \
     "$HOME/.NSFW/Games Linux/RenPy/ProjektPassion" \
     "$HOME/.NSFW/Games Linux/RenPy/RSSU" \
+    "$HOME/.NSFW/Games Linux/RenPy/SexvillePortal" \
     "$HOME/.NSFW/Games Linux/RenPy/RickAndMorty" \
     "$HOME/.NSFW/Games Linux/RenPy/TabooStories" \
     "$HOME/.NSFW/Games Linux/RenPy/TakeOver" \
@@ -47,11 +48,13 @@ set -g GAME_DIRS \
     "$HOME/.NSFW/Games Linux/Unity/PonyWaifuSim" \
     "$HOME/.NSFW/Games Linux/Other/LonaRPG/usr/bin/LonaRPG_RUS_Launcher" \
     #PortProton (NOT NATIVE)
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Adulttale/" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/DailyLivesofMyCountryside" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV1" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV2" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/LovelyCraftPistonTrap"
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Adulttale(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/DailyLivesofMyCountryside(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/ElenastoryFull(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV1(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV2(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/LovelyCraftPistonTrap(PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/PriceForFreedom(PP)"
 
 #-------------------------------------------------------------------------------------------------------------#
 # Если у вас нет интегрированной графики, то удалите переменные оставив set -g GAME_NV_ENV                    #
