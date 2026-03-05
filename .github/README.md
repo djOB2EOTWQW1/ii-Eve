@@ -25,6 +25,7 @@
 </div>
 
 These dots are not mine! You can access original dots from: https://github.com/end-4/dots-hyprland. 
+
 The original fork can be taken here: https://github.com/vaguesyntax/ii-vynx
 
 Before you say anything — better don't. This setup is just for me. I don’t care about complaints :d
@@ -73,7 +74,7 @@ Run the setup script:
 
 **[Hyprland](https://hypr.land/):** Loves-to-crash wayland compositor
 
-**[vaguesyntax](https://hypr.land/):** Thx you for the fork you made
+**[vaguesyntax](https://github.com/vaguesyntax):** Thx you for the fork you made
 
 
 
