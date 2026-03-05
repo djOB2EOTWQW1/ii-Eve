@@ -2,6 +2,9 @@
      <h1>  [ ii-Eve hyprland dots ] </h1>
 </div>
 
+<div align="center"> 
+
+![](https://img.shields.io/github/last-commit/djOB2EOTWQW1/ii-Eve?&style=for-the-badge&color=8ad7eb&logo=git&logoColor=D9E0EE&labelColor=1E202B)
 
 
 <div align="center"> 
