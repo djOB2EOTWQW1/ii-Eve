@@ -24,6 +24,14 @@
 </div>
 
 <div align="center">
+    <h2>• Custom functions •</h2>
+</div>
+
+You can download functions for fish (with descriptions in English) from here → **[Functions](https://github.com/djOB2EOTWQW1/fish-functions)**
+
+How to use them — see the comments at the beginning of each .fish file.
+
+<div align="center">
     <h2>• warning •</h2>
 </div>
 
