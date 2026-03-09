@@ -69,7 +69,7 @@ MouseArea {
     property bool alwaysShowAllResources: true
     readonly property bool isMediaPlaying: (MprisController.activePlayer?.trackTitle?.length ?? 0) > 0
 
-    property int cpuCatThresholdPercent: 10
+    property int cpuCatThresholdPercent: 30
     readonly property bool cpuCatRunRaw: (ResourceUsage.cpuUsage * 100.0) >= cpuCatThresholdPercent
     readonly property bool cpuCatRun: (root.enableEffects && root.enableCatEffects) ? root.cpuCatRunRaw : false
 
@@ -387,8 +387,8 @@ MouseArea {
                     onLoaded: {
                         if (!item) return
                         item.running = Qt.binding(function() { return root.cpuCatRun })
-                        item.runSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-run.gif"
-                        item.sleepSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
+                        item.runSource = "/home/msi/.config/quickshell/ii/assets/gifs/cat-run.gif"
+                        item.sleepSource = "/home/msi/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
                     }
                 }
             }
@@ -485,8 +485,8 @@ MouseArea {
                                 onLoaded: {
                                     if (!item) return
                                     item.running = Qt.binding(function() { return root.cpuCatRun })
-                                    item.runSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-run.gif"
-                                    item.sleepSource = "file:///home/jcgomez91/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
+                                    item.runSource = "file:///home/msi/.config/quickshell/ii/assets/gifs/cat-run.gif"
+                                    item.sleepSource = "file:///home/msi/.config/quickshell/ii/assets/gifs/cat-sleep.gif"
                                 }
                             }
                         }
