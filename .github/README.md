@@ -80,7 +80,7 @@ If the GIF does not appear in the bar (while system tray is enabled)
 
 edit `.config/quickshell/ii/modules/ii/bar/Resources.qml` 
 
-and replace /home/msi/ with /home/<username>/ in lines 390–391 and 488–489.
+and replace /home/msi/ with /home/your_username/ in lines 390–391 and 488–489.
 
 
 <div align="center">
