@@ -288,9 +288,10 @@ Singleton {
                 property bool vertical: false
                 
                 property JsonObject mediaPlayer: JsonObject {
+                    property bool useFixedSize: false
                     property int customSize: 250
                     property JsonObject lyrics: JsonObject {
-                        property bool enable: true
+                        property bool enable: false
                         property int customSize: 400
                         property string style: "scroller" // Options: scroller, static
                         property bool useGradientMask: true
@@ -331,6 +332,7 @@ Singleton {
                     property int maxWindowCount: 5 // Maximum windows to show in one workspace
                     property bool useNerdFont: false
                     property int activeIndicatorOpacity: 100 // 0-100
+                    property bool dynamicWorkspaces: false
                 }
                 property JsonObject weather: JsonObject {
                     property bool enable: false
