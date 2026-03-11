@@ -10,9 +10,9 @@
 <div align="center"> 
      <h2>• screenshots •</h2>
 
-| Overall view of widgets | Overlay and AI sidebar |
+| Just my picture | Overlay and AI sidebar |
 | ----------- | ----------- |
-| <img width="1919" height="1078" alt="image" src="https://github.com/user-attachments/assets/9297bec7-63b4-47bf-8905-9a4baa8de4e9" /> | <img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/53c3b4be-9ba0-40dc-8570-c6a3a80c18cf" /> |  
+| <img width="1918" height="1078" alt="image" src="https://github.com/user-attachments/assets/4040bd5d-5470-4529-943b-1fe93f1fe64c" /> | <img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/53c3b4be-9ba0-40dc-8570-c6a3a80c18cf" /> |  
 
 | Media mode | Wallpaper service and settings |
 | ----------- | ----------- |
