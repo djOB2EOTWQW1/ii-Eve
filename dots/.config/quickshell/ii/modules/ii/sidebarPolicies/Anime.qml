@@ -96,6 +96,67 @@ Item {
                 Persistent.states.booru.allowNsfw = true;
             }
         },
+        {
+            name: "limit",
+            description: Translation.tr("Set image limit. Usage: %1limit NUMBER").arg(root.commandPrefix),
+            execute: args => {
+                if (args.length === 0 || args[0] === "") {
+                    Booru.addSystemMessage(
+                        Translation.tr("Current limit: %1").arg(Config.options.sidebar.booru.limit)
+                    );
+                    return;
+                }
+
+                const value = parseInt(args[0]);
+
+                if (isNaN(value) || value < 1 || value > 100) {
+                    Booru.addSystemMessage(
+                        Translation.tr("Invalid value. Use %1limit NUMBER (1–100)").arg(root.commandPrefix)
+                    );
+                    return;
+                }
+
+                Config.options.sidebar.booru.limit = value;
+
+                Booru.addSystemMessage(
+                    Translation.tr("Limit set to %1").arg(value)
+                );
+            }
+        },
+        {
+            name: "thumbnail",
+            description: Translation.tr("Set thumbnail row height. Usage: %1thumbnail VALUE").arg(root.commandPrefix),
+            execute: args => {
+                if (args.length === 0 || args[0] === "") {
+                    Booru.addSystemMessage(
+                        Translation.tr("Current thumbnail: %1").arg(Config.options.sidebar.booru.rowTooShortThreshold)
+                    );
+                    return;
+                }
+
+                const value = parseInt(args[0]);
+
+                if (isNaN(value) || value < 100 || value > 1000) {
+                    Booru.addSystemMessage(
+                        Translation.tr("Invalid value. Use %1thumbnail VALUE (100–1000)").arg(root.commandPrefix)
+                    );
+                    return;
+                }
+
+                Config.options.sidebar.booru.rowTooShortThreshold = value;
+
+                for (let i = 0; i < booruResponseListView.count; i++) {
+                    const item = booruResponseListView.itemAtIndex(i);
+                    if (item && item.responseData.provider !== "system") {
+                        item.rowTooShortThreshold = value;
+                    }
+                }
+
+                Booru.addSystemMessage(
+                    Translation.tr("Thumbnail set to %1").arg(value)
+                );
+            }
+        },
     ]
 
     function handleInput(inputText) {
