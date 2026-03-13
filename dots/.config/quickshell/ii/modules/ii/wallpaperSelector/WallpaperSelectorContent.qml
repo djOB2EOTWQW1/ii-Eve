@@ -201,9 +201,9 @@ MouseArea {
                             { icon: "download", name: "Downloads", path: Directories.downloads }, 
                             { icon: "image", name: "Pictures", path: Directories.pictures }, 
                             { icon: "movie", name: "Videos", path: Directories.videos }, 
-                            { icon: "", name: "---", path: "INTENTIONALLY_INVALID_DIR" }, 
                             { icon: "favorite", name: "Favourites", path: "FAVOURITES_MODE" }, 
-                            { icon: "wallpaper", name: "Wallpapers", path: `${Directories.pictures}/Wallpapers` }, 
+                            { icon: "", name: "---", path: "INTENTIONALLY_INVALID_DIR" }, 
+                            ...Config.options.wallpaperSelector.directories,
                             ...(Config.options.policies.weeb === 1 ? [{ icon: "favorite", name: "Homework", path: `${Directories.pictures}/homework` }] : []),
                         ]
                         delegate: RippleButton {
