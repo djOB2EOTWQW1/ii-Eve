@@ -1,10 +1,26 @@
 <div align="center">
-     <h1>  [ ii-Eve hyprland dots ] </h1>
+  <h1>ii-Eve Hyprland Dots</h1>
+  <p>Customized Hyprland configuration with enhanced system tray and Anime booru commands.</p>
 </div>
 
 <div align="center"> 
 
 ![](https://img.shields.io/github/last-commit/djOB2EOTWQW1/ii-Eve?&style=for-the-badge&color=8ad7eb&logo=git&logoColor=D9E0EE&labelColor=1E202B)
+
+
+<div align="center">
+  <h2>• Improved / Added / Changed •</h2>
+</div>
+
+This fork introduces minor improvements over the original dots:
+
+1. **System tray modified** (from Elpro)
+2. **Anime booru commands added**:
+   - `/gelbooru_key` and `/gelbooru_id` (from *[nonetrix](https://github.com/end-4/dots-hyprland/pull/2520)*)
+   - `/history`, `/limit`, `/thumbnail` (from **me**)
+3. **Fixed Gelbooru image downloads** – previously downloaded empty 150 B files.
+
+4. **You can download functions for fish (with descriptions in English) from here** → *[Functions](https://github.com/djOB2EOTWQW1/fish-functions)*
 
 
 <div align="center"> 
@@ -23,13 +39,11 @@
 
 </div>
 
+
 <div align="center">
     <h2>• Custom functions •</h2>
 </div>
 
-You can download functions for fish (with descriptions in English) from here → **[Functions](https://github.com/djOB2EOTWQW1/fish-functions)**
-
-How to use them — see the comments at the beginning of each .fish file.
 
 <div align="center">
     <h2>• warning •</h2>
@@ -40,6 +54,7 @@ These dots are not mine! You can access original dots from: https://github.com/e
 The original fork can be taken here: https://github.com/vaguesyntax/ii-vynx
 
 Before you say anything — better don't. This setup is just for me. I don’t care about complaints :d
+
 
 <div align="center">
     <h2>• installation •</h2>
@@ -63,6 +78,7 @@ Tip: You can see all flags you can use with `--help`:
 ./setup-ii-eve.sh --help
 ```
 
+
 <div align="center">
     <h2>• updating •</h2>
 </div>
@@ -72,6 +88,8 @@ Run the setup script:
 ```
 ./setup-ii-eve.sh
 ```
+
+
 <div align="center">
     <h2>• -Tips- •</h2>
 </div>
