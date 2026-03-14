@@ -68,7 +68,7 @@ Item { // Bar content region
         z: -10 // making sure its behind everything
         color: root.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        border.width: 0
         border.color: Appearance.colors.colLayer0Border
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
