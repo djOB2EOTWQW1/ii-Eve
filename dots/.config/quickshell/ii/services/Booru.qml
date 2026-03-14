@@ -156,7 +156,7 @@ Singleton {
         "gelbooru": {
             "name": "Gelbooru",
             "url": "https://gelbooru.com",
-            "api": "https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&api_key=&user_id=",
+            "api": "https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1",
             "description": Translation.tr("The hentai one | Great quantity, a lot of NSFW, quality varies wildly"),
             "mapFunc": (response) => {
                 response = response.post
@@ -178,7 +178,7 @@ Singleton {
                     }
                 })
             },
-            "tagSearchTemplate": "https://gelbooru.com/index.php?page=dapi&s=tag&q=index&json=1&orderby=count&limit=10&name_pattern={{query}}%&api_key=&user_id=",
+            "tagSearchTemplate": "https://gelbooru.com/index.php?page=dapi&s=tag&q=index&json=1&orderby=count&limit=10&name_pattern={{query}}%",
             "tagMapFunc": (response) => {
                 return response.tag.map(item => {
                     return {
@@ -318,6 +318,20 @@ Singleton {
         }))
     }
 
+    readonly property var apiKeys: KeyringStorage.keyringData?.apiKeys ?? {}
+
+    function setApiKey(provider, key) {
+        if (!providers[provider]) return;
+        KeyringStorage.setNestedField(["apiKeys", provider], key.trim());
+        root.addSystemMessage(Translation.tr("API key set for %1").arg(providers[provider].name));
+    }
+
+    function setUserId(provider, id) {
+        if (!providers[provider]) return;
+        KeyringStorage.setNestedField(["apiKeys", provider + "_user_id"], id.trim());
+        root.addSystemMessage(Translation.tr("User ID set for %1").arg(providers[provider].name));
+    }
+
     function constructRequestUrl(tags, nsfw=true, limit=20, page=1) {
         var provider = providers[currentProvider]
         var baseUrl = provider.api
@@ -356,6 +370,10 @@ Singleton {
             params.push("limit=" + limit)
             if (currentProvider == "gelbooru") {
                 params.push("pid=" + page)
+                if (root.apiKeys["gelbooru"] && root.apiKeys["gelbooru_user_id"]) {
+                    params.push("api_key=" + root.apiKeys["gelbooru"])
+                    params.push("user_id=" + root.apiKeys["gelbooru_user_id"])
+                }
             }
             else {
                 params.push("page=" + page)
