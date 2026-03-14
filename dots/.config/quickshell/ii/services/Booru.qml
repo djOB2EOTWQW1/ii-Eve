@@ -463,6 +463,10 @@ Singleton {
             return
         }
         var url = provider.tagSearchTemplate.replace("{{query}}", encodeURIComponent(query))
+        if (currentProvider == "gelbooru" && root.apiKeys["gelbooru"] && root.apiKeys["gelbooru_user_id"]) {
+            url += "&api_key=" + root.apiKeys["gelbooru"]
+            url += "&user_id=" + root.apiKeys["gelbooru_user_id"]
+        }
 
         var xhr = new XMLHttpRequest()
         currentTagRequest = xhr
