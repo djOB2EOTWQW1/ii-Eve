@@ -359,7 +359,12 @@ Item {
                 visible: root.showHistory
                 z: 10
                 radius: Appearance.rounding.small
-                color: "#1c1b1d"
+                color: Appearance.m3colors.m3surfaceContainer
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
 
                 ColumnLayout {
                     anchors {
@@ -379,6 +384,21 @@ Item {
                         }
 
                         Item { Layout.fillWidth: true }
+
+                        RippleButton {
+                            implicitWidth: 30
+                            implicitHeight: 30
+                            buttonRadius: Appearance.rounding.small
+                            onClicked: {
+                                Persistent.states.booru.searchHistory = [];
+                            }
+                            contentItem: MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "delete"
+                                iconSize: 18
+                                color: Appearance.colors.colOnLayer2
+                            }
+                        }
 
                         RippleButton {
                             implicitWidth: 30
@@ -718,6 +738,10 @@ Item {
                     {
                         name: "mode",
                         sendDirectly: false,
+                    },
+                    {
+                        name: "history",
+                        sendDirectly: true,
                     },
                     {
                         name: "clear",
