@@ -158,20 +158,7 @@ ContentPage {
             onCheckedChanged: {
                 Config.options.sidebar.ai.showProviderAndModelButtons = checked;
             }
-        }
-
-        ConfigSwitch {
-            buttonIcon: "crop_square"
-            text: Translation.tr("Shell no rounding mode")
-            checked: Config.options.appearance.noRoundingMode
-            onCheckedChanged: {
-                Config.options.appearance.noRoundingMode = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("HIGHLY EXPERIMENTAL")
-            }
-        }
-    
+        }    
     }
 
     ContentSection {
@@ -581,7 +568,6 @@ ContentPage {
                 title: Translation.tr("Sidebar position")
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.sidebar.position
                     onSelected: newValue => {
                         Config.options.sidebar.position = newValue;
@@ -616,7 +602,6 @@ ContentPage {
             title: Translation.tr("Quick toggles")
             
             ConfigSelectionArray {
-                register: true
                 Layout.fillWidth: false
                 currentValue: Config.options.sidebar.quickToggles.style
                 onSelected: newValue => {
@@ -952,7 +937,6 @@ ContentPage {
             ConfigRow {
                 uniform: true
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.overview.orderRightLeft
                     onSelected: newValue => {
                         Config.options.overview.orderRightLeft = newValue
@@ -971,7 +955,6 @@ ContentPage {
                     ]
                 }
                 ConfigSelectionArray {
-                    register: true
                     Layout.leftMargin: 50
                     currentValue: Config.options.overview.orderBottomUp
                     onSelected: newValue => {
@@ -1010,7 +993,6 @@ ContentPage {
         ContentSubsection {
             title: Translation.tr("Scrolling overview style")
             ConfigSelectionArray {
-                register: true
                 currentValue: Config.options.overview.scrollingStyle.backgroundStyle
                 onSelected: newValue => {
                     Config.options.overview.scrollingStyle.backgroundStyle = newValue

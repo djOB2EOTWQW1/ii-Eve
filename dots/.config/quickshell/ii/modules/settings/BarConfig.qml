@@ -176,7 +176,6 @@ ContentPage {
                 Layout.fillWidth: true
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.bar.cornerStyle
                     onSelected: newValue => {
                         Config.options.bar.cornerStyle = newValue; // Update local copy
@@ -207,7 +206,6 @@ ContentPage {
                 Layout.fillWidth: false
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.bar.barGroupStyle
                     onSelected: newValue => {
                         Config.options.bar.barGroupStyle = newValue; // Update local copy
@@ -239,7 +237,6 @@ ContentPage {
             Layout.fillWidth: false
 
             ConfigSelectionArray {
-                register: true
                 currentValue: Config.options.bar.barBackgroundStyle
                 onSelected: newValue => {
                     Config.options.bar.barBackgroundStyle = newValue;

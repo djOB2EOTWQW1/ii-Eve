@@ -14,7 +14,10 @@ RippleButton {
     property real elementSpacing: 5
     implicitWidth: expanded ? (Math.max(contentRowLayout.implicitWidth + 10 * 2, baseSize)) : baseSize
     implicitHeight: baseSize
-    buttonRadius: baseSize / 14 * 4
+
+    readonly property bool noRoundingMode: Config.options.appearance.noRoundingMode
+    buttonRadius: noRoundingMode ? 0 : baseSize / 14 * 4
+    
     colBackground: Appearance.colors.colPrimaryContainer
     colBackgroundHover: Appearance.colors.colPrimaryContainerHover
     colRipple: Appearance.colors.colPrimaryContainerActive
