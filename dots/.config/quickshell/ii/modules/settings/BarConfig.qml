@@ -36,12 +36,8 @@ ContentPage {
             ConfigListView {
                 barSection: 0
                 listModel: Config.options.bar.layouts.left
-                sourceListModel: Config.options.bar.layouts.availableComps
                 onUpdated: (newList) => {
                     Config.options.bar.layouts.left = newList
-                } 
-                onSourceUpdated: (newList) => {
-                    Config.options.bar.layouts.availableComps = newList
                 }
             }
         }
@@ -51,12 +47,8 @@ ContentPage {
             ConfigListView {
                 barSection: 1
                 listModel: Config.options.bar.layouts.center
-                sourceListModel: Config.options.bar.layouts.availableComps
                 onUpdated: (newList) => {
                     Config.options.bar.layouts.center = newList
-                } 
-                onSourceUpdated: (newList) => {
-                    Config.options.bar.layouts.availableComps = newList
                 }
             }
         }
@@ -66,13 +58,9 @@ ContentPage {
             ConfigListView {
                 barSection: 2
                 listModel: Config.options.bar.layouts.right
-                sourceListModel: Config.options.bar.layouts.availableComps
                 onUpdated: (newList) => {
                     Config.options.bar.layouts.right = newList
                 }
-                onSourceUpdated: (newList) => {
-                    Config.options.bar.layouts.availableComps = newList
-                } 
             }
         }
     }
@@ -176,7 +164,6 @@ ContentPage {
                 Layout.fillWidth: true
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.bar.cornerStyle
                     onSelected: newValue => {
                         Config.options.bar.cornerStyle = newValue; // Update local copy
@@ -207,7 +194,6 @@ ContentPage {
                 Layout.fillWidth: false
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.bar.barGroupStyle
                     onSelected: newValue => {
                         Config.options.bar.barGroupStyle = newValue; // Update local copy
@@ -239,7 +225,6 @@ ContentPage {
             Layout.fillWidth: false
 
             ConfigSelectionArray {
-                register: true
                 currentValue: Config.options.bar.barBackgroundStyle
                 onSelected: newValue => {
                     Config.options.bar.barBackgroundStyle = newValue;

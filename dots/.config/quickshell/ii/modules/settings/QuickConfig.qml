@@ -325,7 +325,6 @@ ContentPage {
                 title: Translation.tr("Screen round corner")
 
                 ConfigSelectionArray {
-                    register: true
                     currentValue: Config.options.appearance.fakeScreenRounding
                     onSelected: newValue => {
                         Config.options.appearance.fakeScreenRounding = newValue;
@@ -370,35 +369,68 @@ ContentPage {
             }
         }
 
-        ContentSubsection {
-            title: Translation.tr("Bar background style")
-            Layout.fillWidth: false
+        ConfigRow {
+            ContentSubsection {
+                title: Translation.tr("Bar background style")
+                Layout.fillWidth: true
 
-            ConfigSelectionArray {
-                register: true
-                currentValue: Config.options.bar.barBackgroundStyle
-                onSelected: newValue => {
-                    Config.options.bar.barBackgroundStyle = newValue;
-                }
-                options: [ 
-                    {
-                        displayName: Translation.tr("Visible"),
-                        icon: "visibility",
-                        value: 1
-                    }, 
-                    {
-                        displayName: Translation.tr("Adaptive"),
-                        icon: "masked_transitions",
-                        value: 2
-                    },        
-                    {
-                        displayName: Translation.tr("Transparent"),
-                        icon: "opacity",
-                        value: 0
+                ConfigSelectionArray {
+                    currentValue: Config.options.bar.barBackgroundStyle
+                    onSelected: newValue => {
+                        Config.options.bar.barBackgroundStyle = newValue;
                     }
-                ]
+                    options: [ 
+                        {
+                            displayName: Translation.tr("Visible"),
+                            icon: "visibility",
+                            value: 1
+                        }, 
+                        {
+                            displayName: Translation.tr("Adaptive"),
+                            icon: "masked_transitions",
+                            value: 2
+                        },        
+                        {
+                            displayName: Translation.tr("Transparent"),
+                            icon: "opacity",
+                            value: 0
+                        }
+                    ]
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Rounding style")
+                tooltip: Translation.tr("Sharp mode is experimental")
+                Layout.fillWidth: false
+
+                ConfigSelectionArray {
+                    currentValue: Config.options.appearance.noRoundingMode
+                    onSelected: newValue => {
+                        Config.options.appearance.noRoundingMode = newValue;
+                        if (!Config.options.appearance.toggleWindowRounding) return;
+                        if (newValue) {
+                            Quickshell.execDetached(["hyprctl", "keyword", "decoration:rounding", "0"])
+                        } else {
+                            Quickshell.execDetached(["hyprctl", "keyword", "decoration:rounding", "18"]) // NOTE: Is using 18 okay here?
+                        }
+                    }
+                    options: [ 
+                        {
+                            displayName: Translation.tr("Default"),
+                            icon: "rounded_corner",
+                            value: false
+                        }, 
+                        {
+                            displayName: Translation.tr("Sharp"),
+                            icon: "square",
+                            value: true
+                        }
+                    ]
+                }
             }
         }
+        
     }
 
     
