@@ -369,7 +369,7 @@ Singleton {
             params.push("tags=" + encodeURIComponent(tagString))
             params.push("limit=" + limit)
             if (currentProvider == "gelbooru") {
-                params.push("pid=" + page)
+                params.push("pid=" + (page - 1))
                 if (root.apiKeys["gelbooru"] && root.apiKeys["gelbooru_user_id"]) {
                     params.push("api_key=" + root.apiKeys["gelbooru"])
                     params.push("user_id=" + root.apiKeys["gelbooru_user_id"])
