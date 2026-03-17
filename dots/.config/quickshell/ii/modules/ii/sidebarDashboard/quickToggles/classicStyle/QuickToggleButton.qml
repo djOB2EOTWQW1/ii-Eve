@@ -9,7 +9,9 @@ GroupButton {
     baseHeight: 40
     clickedWidth: baseWidth + 20
     toggled: false
-    buttonRadius: (altAction && toggled) ? Appearance?.rounding.normal : Math.min(baseHeight, baseWidth) / 2
+
+    readonly property bool noRoundingMode: Config.options.appearance.noRoundingMode
+    buttonRadius: (altAction && toggled) ? Appearance?.rounding.normal : noRoundingMode ? 0 : Math.min(baseHeight, baseWidth) / 2
     buttonRadiusPressed: Appearance?.rounding?.small
 
     contentItem: MaterialSymbol {

@@ -30,9 +30,10 @@ This fork introduces minor improvements over the original dots:
 | ----------- | ----------- |
 | <img width="1918" height="1078" alt="image" src="https://github.com/user-attachments/assets/4040bd5d-5470-4529-943b-1fe93f1fe64c" /> | <img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/53c3b4be-9ba0-40dc-8570-c6a3a80c18cf" /> |  
 
-| Media mode | Wallpaper service and settings |
+| Media mode | Sharp style |
 | ----------- | ----------- |
-| <img width="1920" height="1077" alt="image" src="https://github.com/user-attachments/assets/a966c5ca-ef0a-4ecf-882b-e7ef55dde74e" /> | <img width="1920" height="1078" alt="image" src="https://github.com/user-attachments/assets/aa822b97-cc55-46fe-a2e0-3ebdbdb247c6" /> |
+| <img width="1920" height="1077" alt="image" src="https://github.com/user-attachments/assets/a966c5ca-ef0a-4ecf-882b-e7ef55dde74e" /> | <img width="1918" height="1078" alt="image" src="https://github.com/user-attachments/assets/745aafcd-246e-4433-a81f-37a88ac5c1ee" /> |
+
 
 
 
