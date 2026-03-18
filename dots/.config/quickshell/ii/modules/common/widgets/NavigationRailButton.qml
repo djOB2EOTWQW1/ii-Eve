@@ -12,6 +12,9 @@ TabButton {
     property string buttonIcon
     property real buttonIconRotation: 0
     property string buttonText
+    property bool _isInitialized: false
+    Component.onCompleted: _isInitialized = true
+
     property bool expanded: false
     property bool showToggledHighlight: true
     readonly property real visualWidth: root.expanded ? root.baseSize + 20 + itemText.implicitWidth : root.baseSize
@@ -72,6 +75,8 @@ TabButton {
                 }
             }
             transitions: Transition {
+                enabled: root._isInitialized
+
                 AnchorAnimation {
                     duration: Appearance.animation.elementMoveFast.duration
                     easing.type: Appearance.animation.elementMoveFast.type
@@ -146,6 +151,8 @@ TabButton {
                 }
             ]
             transitions: Transition {
+                enabled: root._isInitialized
+
                 AnchorAnimation {
                     duration: Appearance.animation.elementMoveFast.duration
                     easing.type: Appearance.animation.elementMoveFast.type

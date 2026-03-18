@@ -328,6 +328,7 @@ MouseArea {
                                                 wallpaperSelectorContent.browserMode = false;
                                                 Wallpapers.setDirectory(quickDirButton.modelData.path)
                                             }
+                                            wallpaperSelectorContent.moreOptionsModelData = null
                                         }
                                         enabled: modelData.icon.length > 0
                                     }
