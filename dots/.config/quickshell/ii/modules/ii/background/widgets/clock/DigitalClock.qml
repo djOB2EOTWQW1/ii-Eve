@@ -39,7 +39,6 @@ ColumnLayout {
             active: !clockColumn.isVertical && showColon
             visible: active
             sourceComponent: ClockText {
-                id: timeTextBottom
                 text: ":"
                 color: colorful ? clockColumn.colTextSecondary : clockColumn.colText
                 horizontalAlignment: clockColumn.textHorizontalAlignment
@@ -55,7 +54,6 @@ ColumnLayout {
             active: !clockColumn.isVertical
             visible: active
             sourceComponent: ClockText {
-                id: timeTextBottom
                 text: DateTime.time.split(":")[1].split(" ")[0].padStart(2, "0")
                 color: colorful ? clockColumn.colTextTertiary : clockColumn.colText
                 horizontalAlignment: clockColumn.textHorizontalAlignment
