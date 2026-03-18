@@ -416,6 +416,14 @@ MouseArea {
                             onActivated: {
                                 wallpaperSelectorContent.selectWallpaperPath(fileModelData.actualPath || fileModelData.filePath);
                             }
+
+                            onSearchSimilarRequested: (path, id) => {
+                                WallpaperBrowser.clearResponses();
+                                WallpaperBrowser.moreLikeThisPicture(id, 1);
+                                wallpaperSelectorContent.browserMode = true;
+                                wallpaperSelectorContent.favMode = false;
+                                filterField.text = "";
+                            }
                         }
 
                         layer.enabled: true

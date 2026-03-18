@@ -29,6 +29,7 @@ MouseArea {
     padding: Appearance.sizes.wallpaperSelectorItemPadding
 
     signal activated
+    signal searchSimilarRequested(string filePath, string wallhavenId)
 
     hoverEnabled: true
     onClicked: root.activated()
@@ -128,18 +129,11 @@ MouseArea {
 
                 Loader {
                     id: similarImageButtonLoader
-                    active: root.getWallhavenId(fileModelData.fileName) && root.useThumbnail && wallpaperTabIndex !== -1
+                    active: root.getWallhavenId(fileModelData.fileName) && root.useThumbnail
                     
                     anchors.top: parent.top
                     anchors.right: parent.right
                     anchors.margins: 8
-
-                    property int wallpaperTabIndex: {
-                        let index = 0;
-                        if (Config.options.policies.ai !== 0) index++;
-                        if (Config.options.policies.translator !== 0) index++;
-                        return Config.options.policies.wallpapers !== 0 ? index : -1;
-                    }
 
                     asynchronous: true
                     sourceComponent: WallpaperActionButton {
@@ -149,15 +143,7 @@ MouseArea {
                         tooltipText: Translation.tr("Search for similar images")
 
                         onClicked: {
-                            if (similarImageButtonLoader.wallpaperTabIndex === -1) {
-                                return;
-                            }
-                            WallpaperBrowser.addSimilarImageMessage(Translation.tr("Searching for a similar image:"), fileModelData.filePath)
-                            WallpaperBrowser.moreLikeThisPicture(root.getWallhavenId(fileModelData.fileName), 1);
-                            Persistent.states.sidebar.policies.tab = similarImageButtonLoader.wallpaperTabIndex;
-                            
-                            GlobalStates.policiesPanelOpen = true;
-                            GlobalStates.wallpaperSelectorOpen = false;
+                            root.searchSimilarRequested(fileModelData.filePath, root.getWallhavenId(fileModelData.fileName));
                         }
                     }
                 }
