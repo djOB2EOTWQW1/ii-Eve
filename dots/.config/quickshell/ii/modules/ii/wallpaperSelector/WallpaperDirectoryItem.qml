@@ -12,6 +12,8 @@ MouseArea {
     required property var fileModelData
     property bool isDirectory: fileModelData.fileIsDir
 
+    property bool shouldLoad: true
+
     property bool isVideo: {
         const path = fileModelData.fileName.toLowerCase();
         return path.endsWith('.mp4') || path.endsWith('.webm') || path.endsWith('.mkv') || path.endsWith('.avi') || path.endsWith('.mov') || path.endsWith('.m4v') || path.endsWith('.ogv');
@@ -71,7 +73,7 @@ MouseArea {
 
                 Loader {
                     id: thumbnailShadowLoader
-                    active: thumbnailImageLoader.active && thumbnailImageLoader.item.status === Image.Ready
+                    active: thumbnailImageLoader.active && thumbnailImageLoader.item.status === Image.Ready && root.shouldLoad
                     anchors.fill: thumbnailImageLoader
                     sourceComponent: StyledRectangularShadow {
                         target: thumbnailImageLoader
@@ -83,7 +85,7 @@ MouseArea {
                 Loader {
                     id: thumbnailImageLoader
                     anchors.fill: parent
-                    active: root.useThumbnail
+                    active: root.useThumbnail && root.shouldLoad
                     sourceComponent: ThumbnailImage {
                         id: thumbnailImage
                         generateThumbnail: false
@@ -124,7 +126,7 @@ MouseArea {
 
                 Loader {
                     id: videoIconLoader
-                    active: root.isVideo && root.useThumbnail
+                    active: root.isVideo && root.useThumbnail && root.shouldLoad
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.margins: 8
@@ -139,7 +141,7 @@ MouseArea {
                 Loader {
                     z: 1
                     id: moreOptionsButtonLoader
-                    active: root.containsMouse && !root.isDirectory
+                    active: root.containsMouse && !root.isDirectory && root.shouldLoad
                     
                     anchors.top: parent.top
                     anchors.right: parent.right
@@ -159,7 +161,7 @@ MouseArea {
 
                 Loader {
                     id: iconLoader
-                    active: !root.useThumbnail && !root.isApi
+                    active: !root.useThumbnail && !root.isApi && root.shouldLoad
                     anchors.fill: parent
                     sourceComponent: DirectoryIcon {
                         fileModelData: root.fileModelData
@@ -170,7 +172,7 @@ MouseArea {
 
                 Loader {
                     id: apiImageLoader
-                    active: root.isApi
+                    active: root.isApi && root.shouldLoad
                     anchors.fill: parent
                     sourceComponent: StyledImage {
                         source: fileModelData.filePath

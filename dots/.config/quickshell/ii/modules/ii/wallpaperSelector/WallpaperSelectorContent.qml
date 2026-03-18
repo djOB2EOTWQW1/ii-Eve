@@ -109,6 +109,7 @@ MouseArea {
     }
 
     function getWallhavenId(url) {
+        if (!url) return null
         const urlStr = url.toString();
         const fileName = urlStr.split('/').pop();
         const fileNameWithoutExt = fileName.split('.')[0];
@@ -416,6 +417,7 @@ MouseArea {
                         ScrollBar.vertical: StyledScrollBar {}
 
                         Component.onCompleted: {
+                            Qt.callLater(() => loadTimer.start())
                             wallpaperSelectorContent.updateThumbnails()
                         }
 
@@ -429,6 +431,19 @@ MouseArea {
                             wallpaperSelectorContent.selectWallpaperPath(item.actualPath || item.filePath);
                         }
 
+                        property int loadedCount: 0
+
+                        Timer {
+                            id: loadTimer
+                            interval: 16
+                            repeat: true
+                            running: false
+                            onTriggered: {
+                                grid.loadedCount += 1
+                                if (grid.loadedCount >= grid.count) loadTimer.stop()
+                            }
+                        }
+
                         model: wallpaperSelectorContent.browserMode ? wallpaperSelectorContent.apiImages : (wallpaperSelectorContent.favMode ? favouritesModel : Wallpapers.folderModel)
                         onModelChanged: currentIndex = 0
                         delegate: WallpaperDirectoryItem {
@@ -439,6 +454,7 @@ MouseArea {
                             height: grid.cellHeight
                             colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
                             colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colOnSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                            shouldLoad: index < grid.loadedCount
 
                             onEntered: {
                                 grid.currentIndex = index;
