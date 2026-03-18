@@ -30,9 +30,18 @@ MouseArea {
 
     signal activated
     signal searchSimilarRequested(string filePath, string wallhavenId)
+    signal moreOptionsRequested(var modelData)
 
     hoverEnabled: true
-    onClicked: root.activated()
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onClicked: (event) => {
+        if (event.button === Qt.LeftButton) {
+            root.activated()
+        } else if (event.button === Qt.RightButton) {
+            root.moreOptionsRequested(fileModelData)
+        }
+    }
+    
 
     function getWallhavenId(url) {
         const urlStr = url.toString();
@@ -128,8 +137,9 @@ MouseArea {
                 }
 
                 Loader {
-                    id: similarImageButtonLoader
-                    active: root.getWallhavenId(fileModelData.fileName) && root.useThumbnail
+                    z: 1
+                    id: moreOptionsButtonLoader
+                    active: root.containsMouse && !root.isDirectory
                     
                     anchors.top: parent.top
                     anchors.right: parent.right
@@ -138,41 +148,11 @@ MouseArea {
                     asynchronous: true
                     sourceComponent: WallpaperActionButton {
                         id: button
-                        buttonIcon: "image_search"
+                        buttonIcon: "more_vert"
                         buttonFill: 1
-                        tooltipText: Translation.tr("Search for similar images")
 
                         onClicked: {
-                            root.searchSimilarRequested(fileModelData.filePath, root.getWallhavenId(fileModelData.fileName));
-                        }
-                    }
-                }
-
-                FadeLoader {
-                    id: favouriteButtonLoader
-                    shown: !root.isDirectory && (root.containsMouse || isFavourite)
-
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    anchors.margins: 8
-
-                    property bool isFavourite: Persistent.states.wallpaper.favourites.includes(fileModelData.filePath)
-
-                    sourceComponent: WallpaperActionButton {
-                        buttonIcon: favouriteButtonLoader.isFavourite ? "favorite" : "favorite_border"
-                        buttonFill: favouriteButtonLoader.isFavourite ? 1 : 0
-                        tooltipText: Translation.tr("Toggle favourite")
-
-                        onClicked: {
-                            const favs = Array.from(Persistent.states.wallpaper.favourites);
-                            const path = fileModelData.filePath;
-                            const index = favs.indexOf(path);
-                            if (index === -1) {
-                                favs.push(path);
-                            } else {
-                                favs.splice(index, 1);
-                            }
-                            Persistent.states.wallpaper.favourites = favs;
+                            root.moreOptionsRequested(fileModelData);
                         }
                     }
                 }
@@ -233,7 +213,6 @@ MouseArea {
 
         property alias buttonIcon: materialSymbol.text
         property alias buttonFill: materialSymbol.fill
-        property alias tooltipText: tooltip.text
 
         implicitWidth: 30
         implicitHeight: 30
@@ -253,9 +232,5 @@ MouseArea {
             font.pixelSize: Appearance.font.pixelSize.large
         }
 
-        StyledToolTip {
-            id: tooltip
-            text: button.tooltipText
-        }
     }
 }

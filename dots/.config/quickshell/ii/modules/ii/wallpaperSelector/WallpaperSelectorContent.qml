@@ -9,6 +9,7 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 
 MouseArea {
     id: wallpaperSelectorContent
@@ -17,6 +18,8 @@ MouseArea {
     property bool useDarkMode: Appearance.m3colors.darkmode
     property bool favMode: false
     property bool browserMode: false
+
+    property var moreOptionsModelData: null
 
     property var apiImages: {
         let allImages = [];
@@ -27,8 +30,8 @@ MouseArea {
                     let img = resp.images[j];
                     allImages.push({
                         filePath: img.preview_url,
-                        actualPath: img.file_url,
-                        fileName: img.id || "image",
+                        fileUrl: img.file_url,
+                        fileName: "wallhaven-" + img.id || "image",
                         fileIsDir: false,
                         isApi: true,
                         imageData: img
@@ -102,6 +105,33 @@ MouseArea {
             filterField.text = "";
             wallpaperSelectorContent.browserMode = false;
         }
+    }
+
+    function getWallhavenId(url) {
+        const urlStr = url.toString();
+        const fileName = urlStr.split('/').pop();
+        const fileNameWithoutExt = fileName.split('.')[0];
+        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i);
+        return match ? match[1] : null;
+    }
+    
+    function searchForSimilarImages(id) {
+        WallpaperBrowser.clearResponses();
+        WallpaperBrowser.moreLikeThisPicture(id, 1);
+        wallpaperSelectorContent.browserMode = true;
+        wallpaperSelectorContent.favMode = false;
+        filterField.text = "";
+    }
+
+    function toggleFavourite(path) {
+        const favs = Array.from(Persistent.states.wallpaper.favourites);
+        const index = favs.indexOf(path);
+        if (index === -1) {
+            favs.push(path);
+        } else {
+            favs.splice(index, 1);
+        }
+        Persistent.states.wallpaper.favourites = favs;
     }
 
     acceptedButtons: Qt.BackButton | Qt.ForwardButton
@@ -406,8 +436,8 @@ MouseArea {
                             fileModelData: modelData
                             width: grid.cellWidth
                             height: grid.cellHeight
-                            colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colSecondaryContainer : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
-                            colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0
+                            colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
+                            colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colOnSecondaryContainer : (fileModelData.filePath === wallpaperSelectorContent.moreOptionsModelData?.filePath) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
 
                             onEntered: {
                                 grid.currentIndex = index;
@@ -418,11 +448,11 @@ MouseArea {
                             }
 
                             onSearchSimilarRequested: (path, id) => {
-                                WallpaperBrowser.clearResponses();
-                                WallpaperBrowser.moreLikeThisPicture(id, 1);
-                                wallpaperSelectorContent.browserMode = true;
-                                wallpaperSelectorContent.favMode = false;
-                                filterField.text = "";
+                                wallpaperSelectorContent.searchForSimilarImages(id)
+                            }
+                            onMoreOptionsRequested: (modelData) => {
+                                //console.log("[Wallpaper Selector] More options requested:")
+                                wallpaperSelectorContent.moreOptionsModelData = modelData
                             }
                         }
 
@@ -436,129 +466,28 @@ MouseArea {
                         }
                     }
 
-                    Toolbar {
+                    ExtraOptionsToolbar {
                         id: extraOptions
-                        z: 1
                         colBackground: Appearance.m3colors.m3surfaceContainerLow
                         anchors {
                             bottom: parent.bottom
                             horizontalCenter: parent.horizontalCenter
                             bottomMargin: 8
                         }
+                    }
 
-                        IconToolbarButton {
-                            implicitWidth: height
-                            onClicked: {
-                                Wallpapers.openFallbackPicker(wallpaperSelectorContent.useDarkMode);
-                                GlobalStates.wallpaperSelectorOpen = false;
-                            }
-                            altAction: () => {
-                                Wallpapers.openFallbackPicker(wallpaperSelectorContent.useDarkMode);
-                                GlobalStates.wallpaperSelectorOpen = false;
-                                Config.options.wallpaperSelector.useSystemFileDialog = true
-                            }
-                            text: "open_in_new"
-                            StyledToolTip {
-                                text: Translation.tr("Use the system file picker instead\nRight-click to make this the default behavior")
-                            }
-                        }
-
-                        IconToolbarButton {
-                            implicitWidth: height
-                             onClicked: {
-                                 if (wallpaperSelectorContent.browserMode) {
-                                     if (wallpaperSelectorContent.apiImages.length > 0) {
-                                         const randomImg = wallpaperSelectorContent.apiImages[Math.floor(Math.random() * wallpaperSelectorContent.apiImages.length)];
-                                         wallpaperSelectorContent.selectWallpaperPath(randomImg.actualPath || randomImg.filePath);
-                                     }
-                                 } else if (wallpaperSelectorContent.favMode) {
-                                     const favs = Persistent.states.wallpaper.favourites;
-                                     if (favs.length > 0) {
-                                         const randomPath = favs[Math.floor(Math.random() * favs.length)];
-                                         wallpaperSelectorContent.selectWallpaperPath(randomPath);
-                                     }
-                                 } else {
-                                     Wallpapers.randomFromCurrentFolder();
-                                 }
-                             }
-                            text: "ifl"
-                            StyledToolTip {
-                                text: Translation.tr("Pick random from this folder")
-                            }
-                        }
-
-                        IconToolbarButton {
-                            implicitWidth: height
-                             onClicked: wallpaperSelectorContent.useDarkMode = !wallpaperSelectorContent.useDarkMode
-                             text: wallpaperSelectorContent.useDarkMode ? "dark_mode" : "light_mode"
-                            StyledToolTip {
-                                text: Translation.tr("Click to toggle light/dark mode\n(applied when wallpaper is chosen)")
-                            }
-                        }
-
-                        ToolbarTextField {
-                            id: filterField
-                            placeholderText: {
-                                if (wallpaperSelectorContent.browserMode) return Translation.tr("Search API (e.g. nature, city)");
-                                return focus ? Translation.tr("Search wallpapers") : Translation.tr("Hit \"/\" to search")
-                            }
-
-                            // Style
-                            clip: true
-                            font.pixelSize: Appearance.font.pixelSize.small
-
-                            // Search
-                            onTextChanged: {
-                                if (!wallpaperSelectorContent.browserMode) {
-                                    Wallpapers.searchQuery = text;
-                                    if (wallpaperSelectorContent.favMode) {
-                                        wallpaperSelectorContent.refreshFavourites();
-                                    }
-                                }
-                            }
-
-                            onAccepted: {
-                                if (wallpaperSelectorContent.browserMode && text.trim().length > 0) {
-                                    const tags = text.trim().split(/\s+/);
-                                    WallpaperBrowser.clearResponses();
-                                    WallpaperBrowser.makeRequest(tags, 20, 1);
-                                    grid.currentIndex = 0;
-                                }
-                            }
-
-                            Keys.onPressed: event => {
-                                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
-                                    wallpaperSelectorContent.handleFilePasting(event);
-                                    return;
-                                }
-                                else if (text.length !== 0) {
-                                    // No filtering, just navigate grid
-                                    if (event.key === Qt.Key_Down) {
-                                        grid.moveSelection(grid.columns);
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                    if (event.key === Qt.Key_Up) {
-                                        grid.moveSelection(-grid.columns);
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                }
-                                event.accepted = false;
-                            }
-                        }
-
-                        IconToolbarButton {
-                            implicitWidth: height
-                            onClicked: {
-                                GlobalStates.wallpaperSelectorOpen = false;
-                            }
-                            text: "close"
-                            StyledToolTip {
-                                text: Translation.tr("Cancel wallpaper selection")
-                            }
+                    ImageOptionsToolbar {
+                        z: 1
+                        colBackground: Appearance.colors.colPrimary
+                        anchors {
+                            bottom: parent.bottom
+                            bottomMargin: 8
+                            right: parent.right
+                            rightMargin: 16
                         }
                     }
+
+                    
                 }
             }
         }
