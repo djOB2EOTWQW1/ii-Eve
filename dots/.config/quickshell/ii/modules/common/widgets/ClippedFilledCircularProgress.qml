@@ -157,7 +157,7 @@ Item {
 
     OpacityMask {
         anchors.fill: parent
-        visible: !Config.options.appearance.noRoundingMode
+        visible: !Config.options.appearance.sharpMode
         source: circularContent
         invert: true
         maskSource: root.textMask
@@ -165,7 +165,7 @@ Item {
 
     OpacityMask {
         anchors.fill: parent
-        visible: Config.options.appearance.noRoundingMode
+        visible: Config.options.appearance.sharpMode
         source: squareContent
         invert: true
         maskSource: root.textMask

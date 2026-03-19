@@ -39,8 +39,8 @@ Slider {
     property real unsharpenRadius: Appearance.rounding.unsharpen
     property real trackWidth: configuration
 
-    readonly property bool noRoundingMode: Config.options.appearance.noRoundingMode
-    property real trackRadius: noRoundingMode ? 0 : trackWidth >= StyledSlider.Configuration.XL ? 21
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
+    property real trackRadius: sharpMode ? 0 : trackWidth >= StyledSlider.Configuration.XL ? 21
         : trackWidth >= StyledSlider.Configuration.L ? 12
         : trackWidth >= StyledSlider.Configuration.M ? 9
         : trackWidth >= StyledSlider.Configuration.S ? 6

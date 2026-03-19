@@ -43,7 +43,7 @@ RippleButton {
     property bool loaded: false
     property bool shouldLoad: false
 
-    readonly property bool noRoundingMode: Config.options.appearance.noRoundingMode
+    readonly property bool sharpMode: Config.options.appearance.sharpMode
 
     colBackground: toggled ? Appearance.colors.colPrimaryContainer : Appearance.colors.colLayer2
     colBackgroundHover: toggled ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colLayer2Hover
@@ -129,7 +129,7 @@ RippleButton {
                 ctx.reset();
 
                 // there should be a better way than this...
-                if (root.noRoundingMode) {
+                if (root.sharpMode) {
                     ctx.beginPath();
                     ctx.fillStyle = root.primaryColor;
                     ctx.rect(0, 0, width, centerY);
