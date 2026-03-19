@@ -108,8 +108,8 @@ Singleton {
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen | 3: Wrapped
                 property int wrappedFrameThickness: 10
-                property bool noRoundingMode: false
-                property bool toggleWindowRounding: true // Changes Hyprland window rounding to 0 if noRoundingMode is true
+                property bool sharpMode: false
+                property bool toggleWindowRounding: true // Changes Hyprland window rounding to 0 if sharpMode is true
                 property JsonObject fonts: JsonObject {
                     property bool enableCustom: false
                     property string main: "Google Sans Flex"
@@ -198,6 +198,8 @@ Singleton {
                             property bool showDate: true
                             property bool animateChange: true
                             property bool vertical: false
+                            property bool colorful: false
+                            property bool showColon: true
                             property JsonObject font: JsonObject {
                                 property string family: "Google Sans Flex"
                                 property real weight: 350

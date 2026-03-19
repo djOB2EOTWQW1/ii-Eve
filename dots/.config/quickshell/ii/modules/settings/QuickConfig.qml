@@ -405,9 +405,9 @@ ContentPage {
                 Layout.fillWidth: false
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.appearance.noRoundingMode
+                    currentValue: Config.options.appearance.sharpMode
                     onSelected: newValue => {
-                        Config.options.appearance.noRoundingMode = newValue;
+                        Config.options.appearance.sharpMode = newValue;
                         if (!Config.options.appearance.toggleWindowRounding) return;
                         if (newValue) {
                             Quickshell.execDetached(["hyprctl", "keyword", "decoration:rounding", "0"])
