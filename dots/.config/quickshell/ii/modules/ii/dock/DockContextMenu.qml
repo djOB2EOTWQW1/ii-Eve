@@ -15,6 +15,7 @@ Loader {
     property var appToplevel: null
     property var desktopEntry: null
     property Item anchorItem: parent
+    readonly property string dockPos: dock.dockEffectivePosition
 
     property bool isClosing: false
 
@@ -54,7 +55,7 @@ Loader {
             onAnchoring: {
                 const item = root.anchorItem
                 if (!item) return
-                const pos = GlobalStates.dockEffectivePosition
+                const pos = root.dockPos
                 const win = item.QsWindow.window
                 const mapped = item.mapToItem(null, item.width / 2, item.height / 2)
                 const dm = popupWindow.dockMargin

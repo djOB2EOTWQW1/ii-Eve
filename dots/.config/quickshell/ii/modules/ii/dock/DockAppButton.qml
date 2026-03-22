@@ -42,7 +42,7 @@ DockButton {
 
     readonly property bool appIsRunning: appToplevel && appToplevel.toplevels && appToplevel.toplevels.length > 0
 
-    readonly property string dockPos: GlobalStates.dockEffectivePosition
+    readonly property string dockPos: dock.dockEffectivePosition
 
     pointingHandCursor: false
 

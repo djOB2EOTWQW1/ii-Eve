@@ -17,7 +17,7 @@ PopupWindow {
     property var dockWindow: null
 
     readonly property bool isVertical: dockRoot?.isVertical ?? false
-    readonly property string dockPos: GlobalStates.dockEffectivePosition
+    readonly property string dockPos: dock.dockEffectivePosition
 
     readonly property int maxPreviews: {
         if (!dockWindow || !dockRoot) return 1

@@ -24,7 +24,7 @@ Item {
     property bool isPinned: false
 
     readonly property real dockPadding: 0
-    readonly property bool isVertical: GlobalStates.dockIsVertical
+    readonly property bool isVertical: dock.isVertical
 
     readonly property real dotMargin: (Config.options?.dock.height ?? 60) * 0.2
 

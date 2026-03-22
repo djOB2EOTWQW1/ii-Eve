@@ -75,14 +75,6 @@ Singleton {
         
     }
 
-    // Dock
-    readonly property string dockEffectivePosition: {
-        const pos = Config.options?.dock.position ?? "bottom"
-        if (pos !== "auto") return pos
-        return (Config.options?.bar.bottom && !Config.options?.bar.vertical) ? "top" : "bottom"
-    }
-
-    readonly property bool dockIsVertical: dockEffectivePosition === "left" || dockEffectivePosition === "right"
     property bool dockIsResizing: false // TODO this is how i tried to improve the resizing , by blocking the animations while it's resizing, i didn't apply it to all the dock components yet as i don't know if it's the best approach
 
     GlobalShortcut {

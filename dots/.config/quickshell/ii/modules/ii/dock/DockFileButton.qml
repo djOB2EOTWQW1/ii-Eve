@@ -238,7 +238,7 @@ DockButton {
 
         property int tooltipOffset: -root.dotMargin
         readonly property bool showTooltip: fileMouseArea.containsMouse && !(dockContent?.fileDragActive ?? false)
-        readonly property string dockPosition: GlobalStates.dockEffectivePosition
+        readonly property string dockPosition: dock.dockEffectivePosition
 
         anchor.rect.x: {
             const mapped = root.mapToItem(null, 0, 0)

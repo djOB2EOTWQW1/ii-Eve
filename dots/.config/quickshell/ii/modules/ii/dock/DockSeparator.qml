@@ -8,8 +8,8 @@ Rectangle {
     anchors.fill: parent
     color: "transparent"
 
-    readonly property bool isVertical: GlobalStates.dockIsVertical
-    readonly property string dockPos: GlobalStates.dockEffectivePosition
+    readonly property bool isVertical: dock.isVertical
+    readonly property string dockPos: dock.dockEffectivePosition
 
     property alias isResizing: dragArea.pressed
 

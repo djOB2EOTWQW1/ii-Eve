@@ -12,10 +12,20 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
+pragma ComponentBehavior: Bound
+
 Scope {
-    id: root
+    id: dock
 
     property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
+
+    readonly property string dockEffectivePosition: {
+        const pos = Config.options?.dock.position ?? "bottom"
+        if (pos !== "auto") return pos
+        return (Config.options?.bar.bottom && !Config.options?.bar.vertical) ? "top" : "bottom"
+    }
+
+    readonly property bool isVertical: dockEffectivePosition === "left" || dockEffectivePosition === "right"
 
     Variants {
         model: Quickshell.screens
@@ -24,10 +34,12 @@ Scope {
             id: dockRoot
             required property var modelData
             screen: modelData
+            
             visible: !GlobalStates.screenLocked && !positionChanging
 
             property bool positionChanging: false
-            readonly property bool isVertical: GlobalStates.dockIsVertical
+            
+            readonly property bool isVertical: dock.isVertical
 
             readonly property real availableW: screen?.width ?? 1920
             readonly property real availableH: screen?.height ?? 1080
@@ -60,23 +72,21 @@ Scope {
             implicitWidth: Math.max(1, dockWidth)
             implicitHeight: Math.max(1, dockHeight)
 
-            readonly property real dockThickness: isVertical
-                ? dockWidth
-                : dockHeight
+            readonly property real dockThickness: isVertical ? dockWidth : dockHeight
 
-            property bool reveal: root.pinned
+            property bool reveal: dock.pinned
                             || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
                             || (dockContent.requestDockShow)
                             || (!ToplevelManager.activeToplevel?.activated)
 
             anchors {
-                top: GlobalStates.dockEffectivePosition !== "bottom"
-                bottom: GlobalStates.dockEffectivePosition !== "top"
-                left: GlobalStates.dockEffectivePosition !== "right"
-                right: GlobalStates.dockEffectivePosition !== "left"
+                top: dock.dockEffectivePosition !== "bottom"
+                bottom: dock.dockEffectivePosition !== "top"
+                left: dock.dockEffectivePosition !== "right"
+                right: dock.dockEffectivePosition !== "left"
             }
 
-            exclusiveZone: root.pinned ? dockThickness : 0
+            exclusiveZone: dock.pinned ? dockThickness : 0
             WlrLayershell.namespace: "quickshell:dock"
             WlrLayershell.layer: WlrLayer.Overlay
             color: "transparent"
@@ -92,7 +102,7 @@ Scope {
             }
 
             Connections {
-                target: GlobalStates
+                target: dock
                 function onDockEffectivePositionChanged() {
                     dockRoot.positionChanging = true
                     positionChangeTimer.restart()
@@ -104,10 +114,8 @@ Scope {
                 active: dockContent.dragActive || dockContent.fileDragActive
                 windows: [dockRoot]
                 onCleared: {
-                    if (dockContent.dragActive)
-                        dockContent.endDrag()
-                    if (dockContent.fileDragActive)
-                        dockContent.endFileDrag()
+                    if (dockContent.dragActive) dockContent.endDrag()
+                    if (dockContent.fileDragActive) dockContent.endFileDrag()
                 }
             }
 
@@ -119,56 +127,32 @@ Scope {
                 property real fullyHiddenOffset: dockRoot.dockThickness + 1
                 property real currentOffset: dockRoot.reveal ? 0 : (Config.options?.dock.hoverToReveal ? hiddenOffset : fullyHiddenOffset)
 
-                width: dockRoot.isVertical ? dockRoot.dockThickness
+                width: dock.isVertical ? dockRoot.dockThickness
                     : dockContent.visualWidth + dockContent.dockPadding * 2 + Appearance.sizes.hyprlandGapsOut * 2
-                height: dockRoot.isVertical ? dockContent.visualHeight + dockContent.dockPadding * 2 + Appearance.sizes.hyprlandGapsOut * 2
+                height: dock.isVertical ? dockContent.visualHeight + dockContent.dockPadding * 2 + Appearance.sizes.hyprlandGapsOut * 2
                     : dockRoot.dockThickness
 
-                state: GlobalStates.dockEffectivePosition
+                state: dock.dockEffectivePosition
 
                 states: [
                     State {
                         name: "top"
-                        AnchorChanges {
-                            target: dockMouseArea
-                            anchors.top: parent.top; anchors.bottom: undefined
-                            anchors.left: undefined; anchors.right: undefined
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: undefined
-                        }
+                        AnchorChanges { target: dockMouseArea; anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter }
                         PropertyChanges { target: dockMouseArea; anchors.topMargin: -currentOffset }
                     },
                     State {
                         name: "bottom"
-                        AnchorChanges {
-                            target: dockMouseArea
-                            anchors.bottom: parent.bottom; anchors.top: undefined
-                            anchors.left: undefined; anchors.right: undefined
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: undefined
-                        }
+                        AnchorChanges { target: dockMouseArea; anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter }
                         PropertyChanges { target: dockMouseArea; anchors.bottomMargin: -currentOffset }
                     },
                     State {
                         name: "left"
-                        AnchorChanges {
-                            target: dockMouseArea
-                            anchors.left: parent.left; anchors.right: undefined
-                            anchors.top: undefined; anchors.bottom: undefined
-                            anchors.horizontalCenter: undefined
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                        AnchorChanges { target: dockMouseArea; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter }
                         PropertyChanges { target: dockMouseArea; anchors.leftMargin: -currentOffset }
                     },
                     State {
                         name: "right"
-                        AnchorChanges {
-                            target: dockMouseArea
-                            anchors.right: parent.right; anchors.left: undefined
-                            anchors.top: undefined; anchors.bottom: undefined
-                            anchors.horizontalCenter: undefined
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                        AnchorChanges { target: dockMouseArea; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter }
                         PropertyChanges { target: dockMouseArea; anchors.rightMargin: -currentOffset }
                     }
                 ]
@@ -184,11 +168,11 @@ Scope {
                     id: dockVisualBackground
                     anchors.centerIn: parent
 
-                    width: isVertical
+                    width: dock.isVertical
                         ? dockContent.visualWidth + dockContent.dockPadding * 2
                         : Math.min(dockContent.visualWidth + dockContent.dockPadding * 2, maxWidth - Appearance.sizes.hyprlandGapsOut * 2)
 
-                    height: isVertical
+                    height: dock.isVertical
                         ? Math.min(dockContent.visualHeight + dockContent.dockPadding * 2, maxHeight - Appearance.sizes.hyprlandGapsOut * 2)
                         : dockContent.visualHeight + dockContent.dockPadding * 2
 
@@ -224,10 +208,10 @@ Scope {
                     DockContent {
                         id: dockContent
                         anchors.fill: parent
-                        isPinned: root.pinned
+                        isPinned: dock.pinned
                         currentScreen: dockRoot.screen
                         onTogglePinRequested: {
-                            root.pinned = !root.pinned
+                            dock.pinned = !root.pinned
                         }
                     }
                 }
