@@ -20,6 +20,8 @@ ColumnLayout {
 
     // Time
     RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        Layout.fillWidth: false
         ClockText {
             id: timeTextTop
             text: DateTime.time.split(":")[0].padStart(2, "0")

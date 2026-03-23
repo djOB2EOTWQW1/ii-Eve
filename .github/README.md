@@ -74,7 +74,7 @@ git clone https://github.com/djOB2EOTWQW1/ii-Eve.git --recurse-submodules
 ./setup-ii-eve.sh
 ```
 
-Tip: You can see all flags you can use with `--help`:
+Tip: You can see all flags with `--help`:
 ```
 ./setup-ii-eve.sh --help
 ```
