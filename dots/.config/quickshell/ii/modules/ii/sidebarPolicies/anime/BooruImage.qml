@@ -182,6 +182,25 @@ Button {
                                 ])
                             }
                         }
+                        MenuButton {
+                            id: favoriteButton
+                            visible: root.imageData.file_url.includes("gelbooru.com")
+                            Layout.fillWidth: true
+                            buttonText: Translation.tr("Add to favorites")
+                            onClicked: {
+                                root.showActions = false;
+
+                                const favUrl = `https://gelbooru.com/public/addfav.php?id=${root.imageData.id}`;
+
+                                Hyprland.dispatch("keyword cursor:no_warps true")
+                                Qt.openUrlExternally(favUrl)
+                                Hyprland.dispatch("keyword cursor:no_warps false")
+
+                                Quickshell.execDetached(["bash", "-c",
+                                                        `notify-send '✅ ${Translation.tr("Added to favorites")}' 'Post #${root.imageData.id}' -a 'Shell'`
+                                ])
+                            }
+                        }
                     }
                 }
             }
