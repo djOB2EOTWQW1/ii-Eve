@@ -56,7 +56,7 @@ StyledPopup {
     property int optTempReadbackMs: 80
 
     property bool optReadTempsFromJson: true
-    property string optTempsJsonPath: "/home/jcgomez91/.cache/quickshell/temps.json"
+    property string optTempsJsonPath: "/home/msi/.cache/quickshell/temps.json"
     property string optCpuTempPath: "/sys/class/thermal/thermal_zone0/temp"
 
     property bool optAnimations: true
