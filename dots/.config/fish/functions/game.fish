@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# An empty function with docstrings, available in English -> https://github.com/djOB2EOTWQW1/fish-functions
+
 #------------------------------------------------#
 # Вставить директории для игр через "\" Пример:  #
 #   "$HOME/.NSFW/Games/HaremHotel" \             #
@@ -46,15 +46,20 @@ set -g GAME_DIRS \
     "$HOME/.NSFW/Games Linux/Unity/IN HEAT" \
     "$HOME/.NSFW/Games Linux/Unity/MyDystopianRobotGirlfriend" \
     "$HOME/.NSFW/Games Linux/Unity/PonyWaifuSim" \
-    "$HOME/.NSFW/Games Linux/Other/LonaRPG/usr/bin/LonaRPG_RUS_Launcher" \
     #PortProton (NOT NATIVE)
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Adulttale(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/DailyLivesofMyCountryside(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/ElenastoryFull(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV1(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoAppV2(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/LovelyCraftPistonTrap(PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/PriceForFreedom(PP)"
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Adulttale (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Daily Lives (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Imouto Life (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Living With SIster (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/LonaRPG/usr/bin/LonaRPG (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Other/Succum Brewery (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Elenastory (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoApp V1 (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoApp V2 (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Loop Train (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Lovely Craft (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Price For Freedom (PP)" \
+    "$HOME/.NSFW/Games Windows(PortProton)/Unity/ReSister (PP)"
 
 #-------------------------------------------------------------------------------------------------------------#
 # Если у вас нет интегрированной графики, то удалите переменные оставив set -g GAME_NV_ENV                    #

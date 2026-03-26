@@ -182,6 +182,36 @@ Button {
                                 ])
                             }
                         }
+                        MenuButton {
+                            id: favoriteButton
+                            visible: root.imageData.file_url.includes("gelbooru.com")
+                            Layout.fillWidth: true
+                            buttonText: Translation.tr("Add to favorites")
+                            onClicked: {
+                                root.showActions = false;
+
+                                const postId = root.imageData.id;
+                                const favUrl = `https://gelbooru.com/public/addfav.php?id=${postId}`;
+
+                                const cookieString = "user_id=; pass_hash=; post_threshold=";
+
+                                Quickshell.execDetached([
+                                    "curl",
+                                    "-H", `Referer https://gelbooru.com/index.php?page=post&s=view&id=${postId}`,
+                                    "-b", cookieString, favUrl ],
+                                    (output) => {
+                                    if (output.trim() === "1" || output.trim() === "2") {
+                                        Quickshell.execDetached(["bash", "-c",
+                                                                `notify-send '✅ ${Translation.tr("Added to favorites")}' 'Post #${postId}' -a 'Shell'`
+                                        ]);
+                                    } else {
+                                        Quickshell.execDetached(["bash", "-c",
+                                                                `notify-send '❌ Failed to add to favorites' 'Post #${postId} (response: ${output.trim()})' -a 'Shell'`
+                                        ]);
+                                    }
+                                });
+                            }
+                        }
                     }
                 }
             }
