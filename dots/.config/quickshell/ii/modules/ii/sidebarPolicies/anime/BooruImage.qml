@@ -189,27 +189,11 @@ Button {
                             buttonText: Translation.tr("Add to favorites")
                             onClicked: {
                                 root.showActions = false;
-
                                 const postId = root.imageData.id;
-                                const favUrl = `https://gelbooru.com/public/addfav.php?id=${postId}`;
-
                                 const cookieString = "user_id=; pass_hash=; post_threshold=";
-
-                                Quickshell.execDetached([
-                                    "curl",
-                                    "-H", `Referer https://gelbooru.com/index.php?page=post&s=view&id=${postId}`,
-                                    "-b", cookieString, favUrl ],
-                                    (output) => {
-                                    if (output.trim() === "1" || output.trim() === "2") {
-                                        Quickshell.execDetached(["bash", "-c",
-                                                                `notify-send '✅ ${Translation.tr("Added to favorites")}' 'Post #${postId}' -a 'Shell'`
-                                        ]);
-                                    } else {
-                                        Quickshell.execDetached(["bash", "-c",
-                                                                `notify-send '❌ Failed to add to favorites' 'Post #${postId} (response: ${output.trim()})' -a 'Shell'`
-                                        ]);
-                                    }
-                                });
+                                Quickshell.execDetached(["bash", "-c",
+                                                        `response=$(curl -s -H 'Referer: https://gelbooru.com/index.php?page=post&s=view&id=${postId}' -b '${cookieString}' 'https://gelbooru.com/public/addfav.php?id=${postId}'); if [ "$response" = "1" ] || [ "$response" = "3" ]; then notify-send '✅ Added to favorites' 'Post #${postId}' -a 'Shell'; else notify-send '❌ Failed to add' "Post #${postId} (response: $response)" -a 'Shell'; fi`
+                                ]);
                             }
                         }
                     }
