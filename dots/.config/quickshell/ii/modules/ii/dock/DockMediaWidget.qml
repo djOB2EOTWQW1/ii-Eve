@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
+import Quickshell.Widgets
 import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs
@@ -33,7 +34,7 @@ Item {
     readonly property int marqueeRunningThreshold: isVertical ? 10 : 14
 
     implicitWidth: isVertical ? slotSize : fixedLength
-    implicitHeight: isVertical ? fixedLength : slotSize
+    implicitHeight: isVertical ? buttonSize + dotMargin * 1.3 : slotSize
 
     readonly property MprisPlayer currentPlayer: MprisController.activePlayer
     readonly property bool isPlaying: currentPlayer?.isPlaying ?? false
@@ -44,8 +45,26 @@ Item {
 
     property bool mediaHovered: false
 
-    HoverHandler {
-        onHoveredChanged: root.mediaHovered = hovered
+    MouseArea {
+        id: mediaMouseArea
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+        
+        onEntered: root.mediaHovered = true
+        onExited: root.mediaHovered = false
+        
+        onClicked: (mouse) => {
+            if (mouse.button === Qt.MiddleButton) {
+                root.currentPlayer?.togglePlaying();
+            } else if (mouse.button === Qt.RightButton) {
+                root.currentPlayer?.next();
+            } else if (mouse.button === Qt.BackButton) {
+                root.currentPlayer?.previous();
+            } else if (mouse.button === Qt.ForwardButton) {
+                root.currentPlayer?.next();
+            }
+        }
     }
 
     component ArtworkItem: Item {
@@ -90,19 +109,6 @@ Item {
         }
     }
 
-    component NextButton: DockMediaButton {
-        width: root.controlSize
-        height: root.controlSize
-        symbolName: "skip_next"
-        onClicked: root.currentPlayer?.next()
-    }
-    
-    component PlayButton: DockMediaButton {
-        width: root.controlSize
-        height: root.controlSize
-        symbolName: root.isPlaying ? "pause" : "play_arrow"
-        onClicked: root.currentPlayer?.togglePlaying()
-    }
 
     Loader {
         active: !root.isVertical
@@ -117,22 +123,11 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Row {
-                id: controlsH
-                anchors.right: parent.right
-                anchors.rightMargin: root.dotMargin * 0.4
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 0
-
-                PlayButton {}
-                NextButton {}
-            }
-
             ColumnLayout {
                 anchors.left: artH.right
-                anchors.right: controlsH.left
+                anchors.right: parent.right
                 anchors.leftMargin: root.dotMargin * 0.6
-                anchors.rightMargin: root.dotMargin * 0.3
+                anchors.rightMargin: root.dotMargin * 0.6
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 2
 
@@ -180,48 +175,14 @@ Item {
                 anchors.topMargin: 8
                 anchors.horizontalCenter: parent.horizontalCenter
             }
-
-            Column {
-                id: controlsV
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: root.dotMargin * 0.6
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 0
-
-                PlayButton {}
-                NextButton {}
-            }
-
-            ColumnLayout {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: artV.bottom
-                anchors.topMargin: root.dotMargin 
-                anchors.leftMargin: root.dotMargin
-                anchors.rightMargin: root.dotMargin
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: Math.round((artV.height - controlsV.height) / 2)
-                spacing: 2
-
-                MarqueeText {
-                    id: titleV
-                    Layout.fillWidth: true
-                    text: root.finalTitle
-                    fontSize: root.textSizeL
-                    fontWeight: Font.DemiBold
-                    textColor: Appearance.colors.colOnLayer0
-                    running: root.mediaHovered && text.length > root.marqueeRunningThreshold
-                }
-
-                StyledText {
-                    id: artistV
-                    Layout.fillWidth: true
-                    text: root.finalArtist
-                    font.pixelSize: root.textSizeS
-                    font.weight: Font.Normal
-                    color: Appearance.colors.colSubtext
-                }
-            }
         }
+    }
+
+    DockTooltip {
+        id: mediaTooltip
+        parentItem: root
+        text: root.finalTitle + " - " + root.finalArtist
+        showTooltip: root.mediaHovered
+        tooltipOffset: -root.dotMargin * 0.5
     }
 }

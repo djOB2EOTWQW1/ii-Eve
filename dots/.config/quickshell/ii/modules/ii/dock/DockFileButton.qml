@@ -10,6 +10,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Hyprland
 import Quickshell.Io
+import "./widgets"
 
 DockButton {
     id: root
@@ -212,57 +213,12 @@ DockButton {
         }
     }
 
-    PopupWindow {
-        id: fileTooltipPopup
-
-        anchor.window: dockContent.QsWindow.window
-        implicitWidth: tooltipRect.implicitWidth
-        implicitHeight: tooltipRect.implicitHeight
-
-        property int tooltipOffset: -root.dotMargin
-        readonly property bool showTooltip: fileMouseArea.containsMouse && !(dockContent?.fileDragActive ?? false)
-        readonly property string dockPosition: dock.dockEffectivePosition
-
-        anchor.rect.x: {
-            const mapped = root.mapToItem(null, 0, 0)
-            return mapped.x + (root.width - fileTooltipPopup.width) / 2
-        }
-        anchor.rect.y: {
-            const mapped = root.mapToItem(null, 0, 0)
-            return mapped.y - fileTooltipPopup.height - tooltipOffset
-        }
-
-        visible: showTooltip || tooltipRect.opacity > 0.01
-        color: "transparent"
-
-        Rectangle {
-            id: tooltipRect
-            implicitWidth: tooltipText.implicitWidth + 24
-            implicitHeight: tooltipText.implicitHeight + 12
-            opacity: fileTooltipPopup.showTooltip ? 1.0 : 0.0
-            scale: fileTooltipPopup.showTooltip ? 1.0 : 0.8
-            transformOrigin: fileTooltipPopup.dockPosition === "top" ? Item.Top : Item.Bottom
-
-            Behavior on opacity {
-                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(tooltipRect)
-            }
-            Behavior on scale {
-                animation: Appearance.animation.elementResize.numberAnimation.createObject(tooltipRect)
-            }
-
-            color: Appearance.m3colors.m3surfaceContainer
-            radius: Appearance.rounding.small
-            border.width: 1
-            border.color: Appearance.colors.colLayer0Border
-
-            StyledText {
-                id: tooltipText
-                anchors.centerIn: parent
-                text: root.fileName
-                color: Appearance.colors.colOnSurface
-                font.pixelSize: Appearance.font.pixelSize.small
-            }
-        }
+    DockTooltip {
+        id: fileTooltip
+        parentItem: root
+        text: root.fileName
+        showTooltip: fileMouseArea.containsMouse && !(dockContent?.fileDragActive ?? false)
+        tooltipOffset: -root.dotMargin
     }
 
     contentItem: Item {
