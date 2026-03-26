@@ -190,15 +190,26 @@ Button {
                             onClicked: {
                                 root.showActions = false;
 
-                                const favUrl = `https://gelbooru.com/public/addfav.php?id=${root.imageData.id}`;
+                                const postId = root.imageData.id;
+                                const favUrl = `https://gelbooru.com/public/addfav.php?id=${postId}`;
 
-                                Hyprland.dispatch("keyword cursor:no_warps true")
-                                Qt.openUrlExternally(favUrl)
-                                Hyprland.dispatch("keyword cursor:no_warps false")
+                                const cookieString = "user_id=; pass_hash=; post_threshold=";
 
-                                Quickshell.execDetached(["bash", "-c",
-                                                        `notify-send '✅ ${Translation.tr("Added to favorites")}' 'Post #${root.imageData.id}' -a 'Shell'`
-                                ])
+                                Quickshell.execDetached([
+                                    "curl",
+                                    "-H", `Referer https://gelbooru.com/index.php?page=post&s=view&id=${postId}`,
+                                    "-b", cookieString, favUrl ],
+                                    (output) => {
+                                    if (output.trim() === "1" || output.trim() === "2") {
+                                        Quickshell.execDetached(["bash", "-c",
+                                                                `notify-send '✅ ${Translation.tr("Added to favorites")}' 'Post #${postId}' -a 'Shell'`
+                                        ]);
+                                    } else {
+                                        Quickshell.execDetached(["bash", "-c",
+                                                                `notify-send '❌ Failed to add to favorites' 'Post #${postId} (response: ${output.trim()})' -a 'Shell'`
+                                        ]);
+                                    }
+                                });
                             }
                         }
                     }
