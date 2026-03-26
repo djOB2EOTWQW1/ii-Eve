@@ -65,7 +65,7 @@ MouseArea {
     property bool reserveCatSpace: false
 
 
-    property bool borderless: Config.options.bar.borderless
+    property bool borderless: Config.options.bar?.borderless || false
     property bool alwaysShowAllResources: true
     readonly property bool isMediaPlaying: (MprisController.activePlayer?.trackTitle?.length ?? 0) > 0
 
@@ -309,7 +309,7 @@ MouseArea {
 
    
         MouseArea {
-            anchors.fill: parent
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
             enabled: root.tooltipsEnabledEffective
             hoverEnabled: root.tooltipsEnabledEffective
             acceptedButtons: Qt.NoButton

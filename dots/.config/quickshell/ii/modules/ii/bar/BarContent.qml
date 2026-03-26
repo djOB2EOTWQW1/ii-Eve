@@ -145,21 +145,18 @@ Item { // Bar content region
         }
     }
 
-    Row { // Middle section
+    RowLayout { // Middle section
         id: middleSection
         anchors {
             top: parent.top
             bottom: parent.bottom
             horizontalCenter: parent.horizontalCenter
         }
+        spacing: 0
 
         RowLayout {
-            anchors {
-                top: parent.top
-                bottom: parent.bottom
-                right: centerCenter.left
-                rightMargin: 4
-            }
+            Layout.fillHeight: true
+            spacing: 4
             Repeater {
                 id: middleLeftRepeater
                 model: root.leftList
@@ -173,11 +170,8 @@ Item { // Bar content region
 
         RowLayout { //center
             id: centerCenter
-            anchors {
-                top: parent.top
-                bottom: parent.bottom
-                horizontalCenter: parent.horizontalCenter
-            }
+            Layout.fillHeight: true
+            spacing: 4
             Repeater {
                 model: root.centerList
                 delegate: BarComponent {
@@ -189,12 +183,8 @@ Item { // Bar content region
         }
 
         RowLayout {
-            anchors {
-                top: parent.top
-                bottom: parent.bottom
-                left: centerCenter.right
-                leftMargin: 4
-            }
+            Layout.fillHeight: true
+            spacing: 4
             Repeater {
                 id: middleRightRepeater
                 model: root.rightList
@@ -205,7 +195,6 @@ Item { // Bar content region
                 }
             }
         }
-
     }
 
     RowLayout { // Right section

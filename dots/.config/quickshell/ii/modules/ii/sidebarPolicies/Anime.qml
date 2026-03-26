@@ -490,6 +490,7 @@ Item {
                     }
 
                     PagePlaceholder {
+                        Layout.alignment: Qt.AlignCenter
                         visible: (Persistent.states.booru.searchHistory ?? []).length === 0
                         shown: (Persistent.states.booru.searchHistory ?? []).length === 0
                         icon: "manage_search"
