@@ -18,28 +18,23 @@ PopupWindow {
 
     readonly property bool isVertical: dockRoot?.isVertical ?? false
     readonly property string dockPos: dock.dockEffectivePosition
-
+    
     readonly property int maxPreviews: {
         if (!dockWindow || !dockRoot) return 1
 
         const spacing = 6
-        const previewSize = isVertical
-            ? dockRoot.maxWindowPreviewHeight + dockRoot.windowControlsHeight
-            : dockRoot.maxWindowPreviewWidth
+        const previewSize = isVertical ? dockRoot.maxWindowPreviewHeight + dockRoot.windowControlsHeight : dockRoot.maxWindowPreviewWidth
 
-        const availableSpace = isVertical
-            ? (dockWindow.height ?? 1080) - popupBackground.margins * 2 - popupBackground.padding * 2
-            : (dockWindow.width ?? 1920) - popupBackground.margins * 2 - popupBackground.padding * 2
+        const availableSpace = isVertical ? (dockWindow.height ?? 1080) - popupBackground.margins * 2 - popupBackground.padding * 2 : (dockWindow.width ?? 1920) - popupBackground.margins * 2 - popupBackground.padding * 2
         return Math.max(1, Math.floor((availableSpace + spacing) / (previewSize + spacing)))
     }
 
+    property bool show: false
     readonly property bool shouldShow:
         !dockRoot.dragActive &&
         !dockRoot.anyContextMenuOpen &&
         (backgroundHover.hovered || dockRoot.buttonHovered || dockRoot.popupIsResizing) &&
         (appTopLevel?.toplevels?.length > 0)
-
-    property bool show: false
 
     onShouldShowChanged: {
         if (shouldShow)
@@ -78,21 +73,10 @@ PopupWindow {
         edges: Edges.Top | Edges.Left
     }
 
-    implicitWidth: isVertical
-        ? dockRoot.maxWindowPreviewWidth
-            + dockRoot.windowControlsHeight
-            + popupBackground.padding * 2
-            + popupBackground.margins * 2
-            - 25
-        : dockWindow?.width ?? 0
+    readonly property int _extra: popupBackground.padding * 2 + popupBackground.margins * 2
 
-    implicitHeight: isVertical
-        ? dockWindow?.height ?? 0
-        : dockRoot.maxWindowPreviewHeight
-            + dockRoot.windowControlsHeight
-            + popupBackground.padding * 2
-            + popupBackground.margins * 2
-            + 5
+    implicitWidth: isVertical ? dockRoot.maxWindowPreviewWidth + dockRoot.windowControlsHeight + _extra - 25 : dockWindow?.width ?? 0
+    implicitHeight: isVertical ? dockWindow?.height ?? 0 : dockRoot.maxWindowPreviewHeight + dockRoot.windowControlsHeight + _extra + 5
 
     StyledRectangularShadow {
         target: popupBackground
@@ -115,29 +99,10 @@ PopupWindow {
             onTriggered: dockRoot.popupIsResizing = false
         }
 
-        x: isVertical
-            ? (dockPos === "left"
-                ? margins
-                : parent.width - implicitWidth - margins)
-            : Math.max(
-                margins,
-                Math.min(
-                    dockRoot.hoveredButtonCenter.x - implicitWidth / 2,
-                    parent.width - implicitWidth - margins
-                )
-            )
-
-        y: isVertical
-            ? Math.max(
-                margins,
-                Math.min(
-                    dockRoot.hoveredButtonCenter.y - implicitHeight / 2,
-                    parent.height - implicitHeight - margins
-                )
-            )
-            : (dockPos === "top"
-                ? margins
-                : parent.height - implicitHeight - margins)
+        readonly property real _clampedX: Math.max(margins, Math.min(dockRoot.hoveredButtonCenter.x - implicitWidth  / 2, parent.width  - implicitWidth  - margins))
+        readonly property real _clampedY: Math.max(margins, Math.min(dockRoot.hoveredButtonCenter.y - implicitHeight / 2, parent.height - implicitHeight - margins))
+        x: isVertical ? (dockPos === "left" ? margins : parent.width - implicitWidth - margins) : _clampedX
+        y: isVertical ? _clampedY : (dockPos === "top" ? margins : parent.height - implicitHeight - margins)
 
         opacity: previewPopup.show ? 1 : 0
         visible: (appTopLevel?.toplevels?.length ?? 0) > 0

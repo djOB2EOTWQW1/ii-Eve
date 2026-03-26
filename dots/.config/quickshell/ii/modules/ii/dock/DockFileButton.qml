@@ -23,7 +23,6 @@ DockButton {
 
     readonly property bool isVertical: dockContent?.isVertical ?? false
 
-    // ── File metadata ─────────────────────────────────────────────────────
     readonly property string fileName: {
         const parts = filePath.split("/").filter(s => s.length > 0)
         return parts[parts.length - 1] ?? filePath
@@ -36,7 +35,6 @@ DockButton {
 
     readonly property string mimeIcon: dockContent?.mimeIconFromPath(filePath) ?? "insert_drive_file"
 
-    // Heuristic: entries without a dot extension are treated as directories
     readonly property bool isDirectory: {
         const lastPart = filePath.toString().split("/").filter(s => s).pop() ?? ""
         return !lastPart.includes(".") || filePath.endsWith("/")
@@ -44,7 +42,6 @@ DockButton {
 
     readonly property bool isImage: /\.(png|jpe?g|webp|gif|svg|bmp|ico)$/i.test(filePath)
 
-    // ── Async MIME icon resolution via xdg-mime ───────────────────────────
     property string cachedXdgIcon: ""
 
     Process {
@@ -71,7 +68,6 @@ DockButton {
         }
     }
 
-    // ── Resolved icon ─────────────────────────────────────────────────────
     readonly property string resolvedXdgIcon: {
         TaskbarApps.iconThemeRevision   // reactive dependency — retriggers on theme change
         const dirs = TaskbarApps.xdgUserDirs
@@ -98,7 +94,6 @@ DockButton {
         return Quickshell.iconPath("text-x-generic", "application-x-generic")
     }
 
-    // ── Drag state ────────────────────────────────────────────────────────
     readonly property bool isDragging: dockContent?.fileDragActive === true
                                     && dockContent?.fileDraggedIndex === delegateIndex
 
@@ -121,7 +116,6 @@ DockButton {
         return 0
     }
 
-    // ── Size & animation ──────────────────────────────────────────────────
     width: buttonSize + dotMargin * 2
     height: buttonSize + dotMargin * 2
 
@@ -138,25 +132,16 @@ DockButton {
         y: root.isVertical ? root.shiftOffset : 0
         Behavior on x {
             enabled: !root.isDragging && !(dockContent?.fileSuppressAnim ?? false)
-            NumberAnimation {
-                duration: Appearance.animation.elementMove.duration
-                easing.type: Appearance.animation.elementMove.type
-                easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-            }
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
         Behavior on y {
             enabled: !root.isDragging && !(dockContent?.fileSuppressAnim ?? false)
-            NumberAnimation {
-                duration: Appearance.animation.elementMove.duration
-                easing.type: Appearance.animation.elementMove.type
-                easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-            }
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
     }
 
     pointingHandCursor: false
 
-    // ── Mouse interaction ─────────────────────────────────────────────────
     MouseArea {
         id: fileMouseArea
         anchors.centerIn: parent
@@ -209,12 +194,11 @@ DockButton {
                 fileContextMenu.open()
                 return
             }
-            // Left click: open file with the default application
+
             Quickshell.execDetached({ command: ["xdg-open", root.filePath] })
         }
     }
 
-    // ── Context menu ──────────────────────────────────────────────────────
     DockFileContextMenu {
         id: fileContextMenu
         filePath: root.filePath
@@ -228,7 +212,6 @@ DockButton {
         }
     }
 
-    // ── Tooltip ───────────────────────────────────────────────────────────
     PopupWindow {
         id: fileTooltipPopup
 
@@ -282,7 +265,6 @@ DockButton {
         }
     }
 
-    // ── Visual content ────────────────────────────────────────────────────
     contentItem: Item {
         anchors.fill: parent
 
