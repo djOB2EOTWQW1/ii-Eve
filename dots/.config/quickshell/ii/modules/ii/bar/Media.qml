@@ -61,7 +61,7 @@ Item {
     ClippedFilledCircularProgress {
         id: mediaCircProg
         visible: !loadingIndLoader.active
-        
+
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
 
@@ -75,7 +75,7 @@ Item {
             anchors.centerIn: parent
             width: mediaCircProg.implicitSize
             height: mediaCircProg.implicitSize
-            
+
             MaterialSymbol {
                 anchors.centerIn: parent
                 fill: 1
@@ -84,6 +84,11 @@ Item {
                 color: Appearance.m3colors.m3onSecondaryContainer
             }
         }
+    }
+
+    Loader {
+        id: loadingIndLoader
+        active: false
     }
 
     TextMetrics {
