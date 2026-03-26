@@ -49,6 +49,7 @@ MouseArea {
         sourceComponent: SysTrayMenu {
             Component.onCompleted: this.open();
             trayItemMenuHandle: root.item.menu
+            trayItemId: root.item.id
             
             anchor {
                 window: root.QsWindow.window
