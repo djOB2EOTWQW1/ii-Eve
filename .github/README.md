@@ -95,11 +95,7 @@ Run the setup script:
     <h2>• -Tips- •</h2>
 </div>
 
-If the GIF does not appear in the bar (while system tray is enabled)
-
-edit `.config/quickshell/ii/modules/ii/bar/Resources.qml` 
-
-and replace /home/msi/ with /home/your_username/ in lines 390–391 and 488–489.
+To make sure everything works for you, please go to the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki)
 
 
 <div align="center">
