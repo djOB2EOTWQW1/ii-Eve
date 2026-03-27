@@ -22,4 +22,5 @@ if status is-interactive
         alias ls 'eza --icons'
     end
 
+    fastfetch
 end
