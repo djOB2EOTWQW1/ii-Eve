@@ -375,7 +375,6 @@ Item {
 
                 SectionSeparator {
                     show: root.processedPinnedApps.length > 0 && root.processedRunningApps.length > 0
-                    marginScale: 0.3
                 }
 
                 DockListView {

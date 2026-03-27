@@ -6,8 +6,13 @@ import qs
 Item {
     id: root
     
-    property bool isVertical: true
-    property real marginScale: 0.15
+    readonly property string dockEffectivePosition: {
+        const pos = Config.options?.dock.position ?? "bottom"
+        if (pos !== "auto") return pos
+        return (Config.options?.bar.bottom && !Config.options?.bar.vertical) ? "top" : "bottom"
+    }
+    readonly property bool isVertical: dockEffectivePosition === "left" || dockEffectivePosition === "right"
+    property real marginScale: 0.2
     property color color: Appearance.colors.colOutlineVariant
 
     Rectangle {
