@@ -691,8 +691,9 @@ Singleton {
                 property JsonObject quickSliders: JsonObject {
                     property bool enable: true
                     property bool showMic: true
+                    property bool showGamma: true
                     property bool showVolume: true
-                    property bool showBrightness: true
+                    property bool showBrightness: false // gamma setting also works for brightness
                 }
             }
 
