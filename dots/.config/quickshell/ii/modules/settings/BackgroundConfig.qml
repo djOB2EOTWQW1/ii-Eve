@@ -57,6 +57,14 @@ ContentPage {
                 Config.options.background.parallax.workspaceZoom = value / 100;
             }
         }
+        ConfigSwitch {
+            buttonIcon: "masked_transitions"
+            text: Translation.tr("Animate wallpaper changes")
+            checked: Config.options.background.animateWallpaperChanges
+            onCheckedChanged: {
+                Config.options.background.animateWallpaperChanges = checked;
+            }
+        }
     }
 
     ContentSection {
