@@ -14,7 +14,7 @@
 
 This fork adds new commands for Anime booru, a new system tray from Elpo, as well as fixes for QuickShell warnings (at least I'm trying).
 
-See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki) ← (clickable)
+See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki/What's-New) ← (clickable)
 
 
 <div align="center"> 
