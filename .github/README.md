@@ -16,6 +16,7 @@ This fork adds new commands for Anime booru, a new system tray from Elpo, as wel
 
 See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki) ← (clickable)
 
+
 <div align="center"> 
      <h2>• screenshots •</h2>
 
@@ -32,6 +33,13 @@ See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Ev
 
 
 </div>
+
+
+<div align="center">
+    <h2>• -Tips- •</h2>
+</div>
+
+To make sure everything works for you, please go to the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki)
 
 
 <div align="center">
@@ -83,17 +91,10 @@ Run the setup script:
 ./setup-ii-eve.sh
 ```
 <div align="center">
-    <h2>• vynx cli •</h2>
+    <h2>• eve cli •</h2>
 </div>
 
-Installation script also install the vynx cli. This cli is mostly used to change the hyprland configs from the shell settings. But you can also use it from terminal or automate something with it. Detailed command descriptions are on the [wiki](https://github.com/vaguesyntax/ii-vynx/wiki).
-
-
-<div align="center">
-    <h2>• -Tips- •</h2>
-</div>
-
-To make sure everything works for you, please go to the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki)
+Installation script also installs the eve CLI. This CLI is mostly used to change Hyprland configs from the shell settings. But you can also use it from the terminal or automate something with it. Detailed command descriptions are available in the original [vynx wiki](https://github.com/vaguesyntax/ii-vynx/wiki).
 
 
 <div align="center">
