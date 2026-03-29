@@ -311,7 +311,7 @@ ContentPage {
 
             MaterialTextArea {
                 Layout.fillWidth: true
-                placeholderText: Translation.tr("Direct path to setup-ii-vynx.sh")
+                placeholderText: Translation.tr("Direct path to setup-ii-eve.sh")
                 text: Config.options.update.scriptPath
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: {

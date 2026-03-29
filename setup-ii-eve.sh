@@ -64,27 +64,57 @@ setup_hyprland_source() {
     local II_EVE_CONF="$II_EVE_DIR/hyprland.conf"
     local MAIN_HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
     local REPO_HYPR_CONF="$SCRIPT_DIR/dots/.local/share/ii-eve/hyprland.conf"
-
+    local HYPRMERGE="$SCRIPT_DIR/sdata/cli/lib/hyprmerge.sh"
+ 
+    local II_EVE_DIR="$HOME/.local/share/ii-eve"
+    local II_EVE_CONF="$II_EVE_DIR/hyprland.conf"
+    local MAIN_HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
+    local REPO_HYPR_CONF="$SCRIPT_DIR/dots/.local/share/ii-eve/hyprland.conf"
+    local HYPRMERGE="$SCRIPT_DIR/sdata/cli/lib/hyprmerge.sh"
+ 
     echo -e "${NC}• Checking for custom ii-eve config in Hyprland config file 'source' settings...${NC}"
-
+ 
     if [ ! -d "$II_EVE_DIR" ]; then
         log_verbose "Creating directory: $II_EVE_DIR"
         mkdir -p "$II_EVE_DIR"
     fi
-
-    if [ -f "$REPO_HYPR_CONF" ]; then
-        cp "$REPO_HYPR_CONF" "$II_EVE_CONF"
-        log_verbose "Copied $REPO_HYPR_CONF to $II_EVE_CONF"
-    else
+ 
+    if [ ! -f "$REPO_HYPR_CONF" ]; then
         echo -e "${RED}⚠ Error: Couldn't find Hyprland config ($REPO_HYPR_CONF), please report this bug!${NC}"
         return 1
     fi
+ 
+    # Fresh install: local config doesn't exist yet → just copy
+    if [ ! -f "$II_EVE_CONF" ]; then
+        cp "$REPO_HYPR_CONF" "$II_EVE_CONF"
+        echo -e "${GREEN}✓ Fresh install: copied hyprland.conf${NC}"
+        log_verbose "Copied $REPO_HYPR_CONF to $II_EVE_CONF"
+    else
+        # Update: merge repo config into existing local config
+        echo -e "${BLUE}• Merging hyprland.conf (preserving local changes)...${NC}"
+        if [ -f "$HYPRMERGE" ]; then
+            
+            if [ "$VERBOSE" = true ]; then
+                log_verbose "Firing hyprmerge with full verbose power..."
+                export VERBOSE=true
+                bash "$HYPRMERGE" "$REPO_HYPR_CONF" "$II_EVE_CONF" -v
+            else
+                export VERBOSE=false
+                bash "$HYPRMERGE" "$REPO_HYPR_CONF" "$II_EVE_CONF"
+            fi
 
+        else
+            echo -e "${YELLOW}⚠ hyprmerge.sh not found at $HYPRMERGE, falling back to cp${NC}"
+            cp "$REPO_HYPR_CONF" "$II_EVE_CONF"
+            echo -e "${GREEN}✓ Copied hyprland.conf (fallback)${NC}"
+        fi
+    fi
+ 
     if [ -f "$MAIN_HYPR_CONF" ]; then
-        if grep -q "# ii-eve" "$MAIN_HYPR_CONF"; then
+        if grep -q "$II_EVE_CONF" "$MAIN_HYPR_CONF"; then
             log_verbose "Source already exists in $MAIN_HYPR_CONF, skipping append."
         else
-            cp "$MAIN_HYPR_CONF" "${MAIN_HYPR_CONF}.bak" # Backup the original file
+            cp "$MAIN_HYPR_CONF" "${MAIN_HYPR_CONF}.bak"
             echo -e "\n# ii-eve\nsource = $II_EVE_CONF" >> "$MAIN_HYPR_CONF"
             echo -e "${GREEN}✓ Successfully appended source to $MAIN_HYPR_CONF.${NC}"
         fi
@@ -92,6 +122,7 @@ setup_hyprland_source() {
         echo -e "${YELLOW}⚠ Warning: Couldn't find Hyprland config ($MAIN_HYPR_CONF). WTF IS THIS? ${NC}"
     fi
 }
+
 
 install_original_dots() {
     echo -e "${RED}Original dots are not installed! Do you want to install them? (y/n): ${NC}"
@@ -135,6 +166,41 @@ ${NC}"
         exit 1
     fi
 }
+
+install_cli() {
+    local BIN_PATH="/usr/local/bin"
+    local CLI_NAME="eve"
+    local CLI_EXEC_PATH="$SCRIPT_DIR/sdata/cli/$CLI_NAME"
+
+    echo -e "${BLUE}• Installing Eve CLI tool...${NC}"
+
+    if [ ! -d "$BIN_PATH" ]; then
+        log_verbose "Creating directory: $BIN_PATH"
+        mkdir -p "$BIN_PATH"
+    fi
+
+    # Ensure lib directory exists and scripts are executable
+    if [ -f "$CLI_EXEC_PATH" ]; then
+        chmod +x "$CLI_EXEC_PATH"
+        if [ -d "$SCRIPT_DIR/sdata/cli/lib" ]; then
+            chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh
+        fi
+
+        echo -e "${BLUE}• Creating symlink in $BIN_PATH...${NC}"
+        sudo ln -sf "$CLI_EXEC_PATH" "$BIN_PATH/$CLI_NAME"
+        echo -e "${GREEN}✓ Successfully installed $CLI_NAME to $BIN_PATH${NC}"
+    else
+        echo -e "${RED}⚠ Warning: Could not find CLI executable at $CLI_EXEC_PATH${NC}"
+    fi
+}
+
+# Clear sudo timestamp and request fresh credentials
+if [[ $EUID -ne 0 ]]; then
+    echo -e "${BLUE}This script requires sudo permissions for some installation steps.${NC}"
+    sudo -v || exit 1
+    # Keep-alive: update existing sudo time stamp until script has finished
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+fi
 
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -277,6 +343,8 @@ cp -r "$SOURCE_DIR/." "$TARGET_DIR/"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Successfully copied: $TARGET_DIR${NC}"
+    install_cli
+    sleep 1.0
     setup_hyprland_source
 else
     echo -e "${RED}✗ An error occurred while copying!${NC}"

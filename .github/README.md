@@ -9,19 +9,12 @@
 
 
 <div align="center">
-  <h2>• Improved / Added / Changed •</h2>
+  <h2>• About this Fork •</h2>
 </div>
 
-This fork introduces minor improvements over the original dots:
+This fork adds new commands for Anime booru, a new system tray from Elpo, as well as fixes for QuickShell warnings (at least I'm trying).
 
-1. **System tray modified** (from Elpro)
-2. **Anime booru commands added**:
-   - `/gelbooru_key` and `/gelbooru_id` (from *[nonetrix](https://github.com/end-4/dots-hyprland/pull/2520)*)
-   - `/history`, `/limit`, `/thumbnail` (from **me**)
-3. **Fixed Gelbooru image downloads** – previously downloaded empty 150 B files.
-
-4. **You can download functions for fish (with descriptions in English) from here** → *[Functions](https://github.com/djOB2EOTWQW1/fish-functions)*
-
+See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki) ← (clickable)
 
 <div align="center"> 
      <h2>• screenshots •</h2>
@@ -89,6 +82,11 @@ Run the setup script:
 ```
 ./setup-ii-eve.sh
 ```
+<div align="center">
+    <h2>• vynx cli •</h2>
+</div>
+
+Installation script also install the vynx cli. This cli is mostly used to change the hyprland configs from the shell settings. But you can also use it from terminal or automate something with it. Detailed command descriptions are on the [wiki](https://github.com/vaguesyntax/ii-vynx/wiki).
 
 
 <div align="center">
