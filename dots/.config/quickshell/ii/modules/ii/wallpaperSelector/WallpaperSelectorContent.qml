@@ -24,6 +24,7 @@ MouseArea {
 
     property string activeColorFilter: ""
     property real colorCacheProgress: 0
+    property bool isColorFiltering: false
 
     property var apiImages: {
         let allImages = [];
@@ -101,10 +102,29 @@ MouseArea {
         colorCacheProc.running = true
     }
 
+    Timer {
+        id: deferredColorFilterTimer
+        interval: 10
+        running: false
+        repeat: false
+        onTriggered: wallpaperSelectorContent.executeColorFilter()
+    }
+
     function applyColorFilter() {
+        if (!activeColorFilter || activeColorFilter === "") {
+            isColorFiltering = false;
+            colorFilteredModel.clear();
+            grid.loadedCount = 0;
+            loadTimer.restart();
+            return;
+        }
+
+        isColorFiltering = true;
         colorFilteredModel.clear();
-        if (!activeColorFilter || activeColorFilter === "") return;
-        
+        deferredColorFilterTimer.restart();
+    }
+
+    function executeColorFilter() {
         const wps = Wallpapers.wallpapers;
         let results = [];
         
@@ -135,6 +155,9 @@ MouseArea {
                 fileIsDir: false
             });
         }
+        grid.loadedCount = 0;
+        loadTimer.restart();
+        isColorFiltering = false;
     }
 
     onActiveColorFilterChanged: {
@@ -474,7 +497,7 @@ MouseArea {
 
                     StyledIndeterminateProgressBar {
                         id: indeterminateProgressBar
-                        visible: (Wallpapers.thumbnailGenerationRunning && value == 0) || (wallpaperSelectorContent.browserMode && WallpaperBrowser.runningRequests > 0) || (wallpaperSelectorContent.colorCacheProgress === 0 && colorCacheProc.running)
+                        visible: (Wallpapers.thumbnailGenerationRunning && value == 0) || (wallpaperSelectorContent.browserMode && WallpaperBrowser.runningRequests > 0) || (wallpaperSelectorContent.colorCacheProgress === 0 && colorCacheProc.running) || wallpaperSelectorContent.isColorFiltering
                         anchors {
                             bottom: parent.top
                             left: parent.left
