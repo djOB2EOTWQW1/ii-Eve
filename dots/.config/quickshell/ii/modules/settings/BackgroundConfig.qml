@@ -22,6 +22,7 @@ ContentPage {
             text: Translation.tr("Vertical")
             checked: Config.options.background.parallax.vertical
             onCheckedChanged: {
+                HyprlandSettings.changeAnimation("workspaces", checked ? "slidevert" : "slide");
                 Config.options.background.parallax.vertical = checked;
             }
         }
@@ -455,18 +456,6 @@ ContentPage {
                 }
                 StyledToolTip {
                     text: Translation.tr("Uses Gemini to categorize the wallpaper then picks a preset based on it.\nYou'll need to set Gemini API key on the left sidebar first.\nImages are downscaled for performance, but just to be safe,\ndo not select wallpapers with sensitive information.")
-                }
-            }
-
-            ConfigSwitch {
-                buttonIcon: "airwave"
-                text: Translation.tr("Use old sine wave cookie implementation")
-                checked: Config.options.background.widgets.clock.cookie.useSineCookie
-                onCheckedChanged: {
-                    Config.options.background.widgets.clock.cookie.useSineCookie = checked;
-                }
-                StyledToolTip {
-                    text: Translation.tr("Looks a bit softer and more consistent with different number of sides,\nbut has less impressive morphing")
                 }
             }
 

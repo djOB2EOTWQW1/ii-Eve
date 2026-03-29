@@ -9,18 +9,12 @@
 
 
 <div align="center">
-  <h2>• Improved / Added / Changed •</h2>
+  <h2>• About this Fork •</h2>
 </div>
 
-This fork introduces minor improvements over the original dots:
+This fork adds new commands for Anime booru, a new system tray from Elpo, as well as fixes for QuickShell warnings (at least I'm trying).
 
-1. **System tray modified** (from Elpro)
-2. **Anime booru commands added**:
-   - `/gelbooru_key` and `/gelbooru_id` (from *[nonetrix](https://github.com/end-4/dots-hyprland/pull/2520)*)
-   - `/history`, `/limit`, `/thumbnail` (from **me**)
-3. **Fixed Gelbooru image downloads** – previously downloaded empty 150 B files.
-
-4. **You can download functions for fish (with descriptions in English) from here** → *[Functions](https://github.com/djOB2EOTWQW1/fish-functions)*
+See the full list of changes in the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki) ← (clickable)
 
 
 <div align="center"> 
@@ -39,6 +33,13 @@ This fork introduces minor improvements over the original dots:
 
 
 </div>
+
+
+<div align="center">
+    <h2>• -Tips- •</h2>
+</div>
+
+To make sure everything works for you, please go to the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki)
 
 
 <div align="center">
@@ -89,13 +90,11 @@ Run the setup script:
 ```
 ./setup-ii-eve.sh
 ```
-
-
 <div align="center">
-    <h2>• -Tips- •</h2>
+    <h2>• eve cli •</h2>
 </div>
 
-To make sure everything works for you, please go to the [Wiki](https://github.com/djOB2EOTWQW1/ii-Eve/wiki)
+Installation script also installs the eve CLI. This CLI is mostly used to change Hyprland configs from the shell settings. But you can also use it from the terminal or automate something with it. Detailed command descriptions are available in the original [vynx wiki](https://github.com/vaguesyntax/ii-vynx/wiki).
 
 
 <div align="center">

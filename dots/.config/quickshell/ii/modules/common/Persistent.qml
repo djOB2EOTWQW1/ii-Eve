@@ -90,6 +90,10 @@ Singleton {
                 property list<var> searchHistory: []
             }
 
+            property JsonObject hyprland: JsonObject {
+                property string layout: "dwindle"
+            }
+
             property JsonObject idle: JsonObject {
                 property bool inhibit: false
                 property string sessionId: ""
