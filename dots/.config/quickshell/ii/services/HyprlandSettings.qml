@@ -47,7 +47,7 @@ Singleton {
             const field = parts[1].trim()
 
             
-            sedCmd = `vynx hyprset key '${section}:${field}' '${value}' >/dev/null 2>&1 || true`
+            sedCmd = `${Directories.cliPath} hyprset key '${section}:${field}' '${value}' >/dev/null 2>&1 || true`
         } else {
             // idk.. put smthng here
         }
