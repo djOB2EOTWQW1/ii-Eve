@@ -214,7 +214,6 @@ install_cli() {
     chmod +x "$SCRIPT_DIR/setup-ii-eve.sh"
     if [ -d "$SCRIPT_DIR/sdata/cli/lib" ]; then
         chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh
->>>>>>> upstream/main:setup-ii-eve.sh
     fi
     sudo ln -sf "$SCRIPT_DIR/setup-ii-eve.sh" "$BIN_PATH/$CLI_NAME"
     echo -e "${GREEN}✓ Successfully installed $CLI_NAME to $BIN_PATH${NC}"
