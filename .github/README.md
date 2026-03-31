@@ -90,11 +90,14 @@ Run the setup script:
 ```
 ./setup-ii-eve.sh
 ```
+
 <div align="center">
-    <h2>• eve cli •</h2>
+    <h2>• documentation •</h2>
 </div>
 
-Installation script also installs the eve CLI. This CLI is mostly used to change Hyprland configs from the shell settings. But you can also use it from the terminal or automate something with it. Detailed command descriptions are available in the original [vynx wiki](https://github.com/vaguesyntax/ii-vynx/wiki).
+Please refer to [Vynx repository wiki page](https://github.com/vaguesyntax/ii-vynx/wiki) for detailed component descriptions and further information.
+
+Please refer to [this wiki page about limitations](https://github.com/vaguesyntax/ii-vynx/wiki/Known-Issues-and-Limitations) to see current bugs, the details of known issues about this repo and limitations of hyprscrolling plugin implementation.
 
 
 <div align="center">

@@ -9,6 +9,45 @@ NC='\033[0m' # white
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+INVOKED_AS="$(basename "$0")"
+if [[ "$INVOKED_AS" == "eve" ]]; then
+    _SOURCE="${BASH_SOURCE[0]}"
+    while [ -L "$_SOURCE" ]; do
+        _DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
+        _SOURCE="$(readlink "$_SOURCE")"
+        [[ "$_SOURCE" != /* ]] && _SOURCE="$_DIR/$_SOURCE"
+    done
+    SCRIPT_DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
+
+    LIB_DIR="$SCRIPT_DIR/sdata/cli/lib"
+    BASE_DIR="$SCRIPT_DIR"
+    VERBOSE=false
+    TEMP_ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -v|--verbose) VERBOSE=true; shift ;;
+            *) TEMP_ARGS+=("$1"); shift ;;
+        esac
+    done
+    set -- "${TEMP_ARGS[@]}"
+
+    COMMAND="$1"; shift
+    case "$COMMAND" in
+        run|restart|update|remove-cli|hyprset)
+            if [ -f "$LIB_DIR/${COMMAND}.sh" ]; then
+                source "$LIB_DIR/${COMMAND}.sh" "$@"
+                exit $?
+            else
+                echo -e "${RED}Error: $COMMAND not found${NC}"; exit 1
+            fi
+            ;;
+        "")
+            echo "Usage: eve [-v] {run|restart|update|remove-cli|hyprset}"; exit 1 ;;
+        *)
+            echo -e "${RED}Invalid command: $COMMAND${NC}"; exit 1 ;;
+    esac
+fi
+
 DO_PULL=true
 VERBOSE=false
 FORCE_INSTALL=false
@@ -170,28 +209,14 @@ ${NC}"
 install_cli() {
     local BIN_PATH="/usr/local/bin"
     local CLI_NAME="eve"
-    local CLI_EXEC_PATH="$SCRIPT_DIR/sdata/cli/$CLI_NAME"
 
     echo -e "${BLUE}• Installing Eve CLI tool...${NC}"
-
-    if [ ! -d "$BIN_PATH" ]; then
-        log_verbose "Creating directory: $BIN_PATH"
-        mkdir -p "$BIN_PATH"
+    chmod +x "$SCRIPT_DIR/setup-ii-eve.sh"
+    if [ -d "$SCRIPT_DIR/sdata/cli/lib" ]; then
+        chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh
     fi
-
-    # Ensure lib directory exists and scripts are executable
-    if [ -f "$CLI_EXEC_PATH" ]; then
-        chmod +x "$CLI_EXEC_PATH"
-        if [ -d "$SCRIPT_DIR/sdata/cli/lib" ]; then
-            chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh
-        fi
-
-        echo -e "${BLUE}• Creating symlink in $BIN_PATH...${NC}"
-        sudo ln -sf "$CLI_EXEC_PATH" "$BIN_PATH/$CLI_NAME"
-        echo -e "${GREEN}✓ Successfully installed $CLI_NAME to $BIN_PATH${NC}"
-    else
-        echo -e "${RED}⚠ Warning: Could not find CLI executable at $CLI_EXEC_PATH${NC}"
-    fi
+    sudo ln -sf "$SCRIPT_DIR/setup-ii-eve.sh" "$BIN_PATH/$CLI_NAME"
+    echo -e "${GREEN}✓ Successfully installed $CLI_NAME to $BIN_PATH${NC}"
 }
 
 # Clear sudo timestamp and request fresh credentials
@@ -336,6 +361,24 @@ else
     echo -e "${RED}Skipping the backup process...${NC}"
 fi
 
+if command -v eve &> /dev/null; then
+    install_cli
+else
+    if [ "$NO_CONFIRM" = true ]; then
+        install_cli
+    else
+        echo ""
+        echo -e "${BLUE}• Eve CLI is not installed. CLI is required for some features yet still optional. ${NC}"
+        echo -e "${BLUE}• Do you want to install it? (y/n): ${NC}"
+        read -r cli_response
+        if [[ "$cli_response" =~ ^[Yy]$ ]]; then
+            install_cli
+        else
+            echo -e "${YELLOW}⚠ Skipping CLI installation.${NC}"
+        fi
+    fi
+fi
+
 echo ""
 echo -e "${NC}• Copying...${NC}"
 log_verbose "Copying from $SOURCE_DIR to $TARGET_DIR"
@@ -343,7 +386,6 @@ cp -r "$SOURCE_DIR/." "$TARGET_DIR/"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Successfully copied: $TARGET_DIR${NC}"
-    install_cli
     sleep 1.0
     setup_hyprland_source
 else
