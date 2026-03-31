@@ -365,7 +365,7 @@ ContentPage {
                     currentValue: Config.options.appearance.sharpMode
                     onSelected: newValue => {
                         Config.options.appearance.sharpMode = newValue;
-                        HyprlandSettings.setRounding(newValue ? 0 : 18)
+                        HyprlandSettings.setRounding(newValue ? 0 : Config.options.appearance.defaultBorderRadius);
                     }
                     options: [ 
                         {
