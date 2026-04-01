@@ -120,6 +120,17 @@ Item {
             }
         },
         {
+            name: "gelbooru_pass_hash",
+            description: Translation.tr("Set Gelbooru Pass Hash"),
+            execute: (args) => {
+                if (args.length > 0) {
+                    Booru.setPassHash("gelbooru", args[0]);
+                } else {
+                    Booru.addSystemMessage(Translation.tr("Usage: /gelbooru_pass_hash <hash>"));
+                }
+            }
+        },
+        {
             name: "history",
             description: Translation.tr("Show your last 10 searches"),
             execute: () => {

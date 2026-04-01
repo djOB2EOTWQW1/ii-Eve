@@ -190,7 +190,7 @@ Button {
                             onClicked: {
                                 root.showActions = false;
                                 const postId = root.imageData.id;
-                                const cookieString = "user_id=; pass_hash=; post_threshold=";
+                                const cookieString = `user_id=${Booru.apiKeys["gelbooru_user_id"] || ""}; pass_hash=${Booru.apiKeys["gelbooru_pass_hash"] || ""}; post_threshold=0`;
                                 Quickshell.execDetached(["bash", "-c",
                                                         `response=$(curl -s -H 'Referer: https://gelbooru.com/index.php?page=post&s=view&id=${postId}' -b '${cookieString}' 'https://gelbooru.com/public/addfav.php?id=${postId}'); if [ "$response" = "1" ] || [ "$response" = "3" ]; then notify-send '✅ Added to favorites' 'Post #${postId}' -a 'Shell'; else notify-send '❌ Failed to add' "Post #${postId} (response: $response)" -a 'Shell'; fi`
                                 ]);

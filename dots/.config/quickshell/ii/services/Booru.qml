@@ -332,6 +332,12 @@ Singleton {
         root.addSystemMessage(Translation.tr("User ID set for %1").arg(providers[provider].name));
     }
 
+    function setPassHash(provider, hash) {
+        if (!providers[provider]) return;
+        KeyringStorage.setNestedField(["apiKeys", provider + "_pass_hash"], hash.trim());
+        root.addSystemMessage(Translation.tr("Pass hash set for %1").arg(providers[provider].name));
+    }
+
     function constructRequestUrl(tags, nsfw=true, limit=20, page=1) {
         var provider = providers[currentProvider]
         var baseUrl = provider.api
