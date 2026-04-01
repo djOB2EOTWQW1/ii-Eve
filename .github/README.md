@@ -1,6 +1,6 @@
 <div align="center">
   <h1>ii-Eve Hyprland Dots</h1>
-  <p>Customized Hyprland configuration with enhanced system tray and Anime booru commands.</p>
+  <p>This fork is mainly based on changes to the Anime booru.</p>
 </div>
 
 <div align="center"> 
