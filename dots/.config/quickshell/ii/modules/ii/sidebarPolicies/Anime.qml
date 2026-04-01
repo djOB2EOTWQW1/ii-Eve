@@ -34,13 +34,13 @@ Item {
         target: Booru
 
         function onTagSuggestion(query, suggestions) {
-            root.suggestionQuery = query
-            root.suggestionList = suggestions
+            root.suggestionQuery = query;
+            root.suggestionList = suggestions;
         }
 
         function onRunningRequestsChanged() {
             if (Booru.runningRequests === 0) {
-                root.pullLoading = false
+                root.pullLoading = false;
             }
         }
 
