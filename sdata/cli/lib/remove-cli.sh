@@ -1,20 +1,34 @@
 #!/usr/bin/env bash
 
-# Command: eve remove-cli
-BIN_PATH="/usr/local/bin/eve"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-echo -e "${RED}• Removing Eve CLI from the system (requires sudo)...${NC}"
+CLI_NAME="eve"
+BIN_PATH="$HOME/.local/bin/$CLI_NAME"
+
+echo -e "${RED}• Removing Eve CLI (user mode)...${NC}"
 
 if [ -L "$BIN_PATH" ]; then
-    echo -e "${RED}Are you sure you want to remove Vynx CLI? (y/n): ${NC}"
+    echo -e "${RED}Are you sure you want to remove Eve CLI? (y/n): ${NC}"
     read -r response
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
         echo -e "${YELLOW}Operation cancelled.${NC}"
         exit 0
     fi
-    sudo rm "$BIN_PATH"
-    echo -e "${GREEN}✓ Eve CLI has been successfully removed from $BIN_PATH.${NC}"
+    rm "$BIN_PATH"
+
+    echo -e "${GREEN}✓ Eve CLI removed from $BIN_PATH.${NC}"
     echo -e "${BLUE}The repository at $BASE_DIR remains intact.${NC}"
 else
-    echo -e "${YELLOW}Eve CLI (/usr/local/bin/eve) not found.${NC}"
+    echo -e "${YELLOW}Eve CLI not found at $BIN_PATH.${NC}"
+
+    ALT_PATH="$(command -v $CLI_NAME 2>/dev/null)"
+
+    if [ -n "$ALT_PATH" ]; then
+        echo -e "${YELLOW}⚠ Found $CLI_NAME at: $ALT_PATH${NC}"
+        echo -e "${YELLOW}You may need to remove it manually.${NC}"
+    fi
 fi

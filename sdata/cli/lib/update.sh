@@ -20,7 +20,7 @@ for arg in "$@"; do
         --no-confirm)    NO_CONFIRM=true ;;
         *)
             echo -e "${RED}Unknown flag: $arg${NC}"
-            echo "Usage: vynx update [--no-pull] [--no-backup] [--force-install] [--full-install] [--no-confirm]"
+            echo "Usage: eve update [--no-pull] [--no-backup] [--force-install] [--full-install] [--no-confirm]"
             exit 1
             ;;
     esac
