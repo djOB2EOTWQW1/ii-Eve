@@ -55,13 +55,6 @@ Item {
 
     property var allCommands: [
         {
-            name: "mode",
-            description: Translation.tr("Set the current API provider"),
-            execute: (args) => {
-                Booru.setProvider(args[0]);
-            }
-        },
-        {
             name: "clear",
             description: Translation.tr("Clear the current list of images"),
             execute: () => {
@@ -243,14 +236,15 @@ Item {
     }
 
     onFocusChanged: (focus) => {
-        if (focus) {
+        if (focus && !keyInputDialogLoader.active) {
             tagInputField.forceActiveFocus()
         }
     }
 
     property real pageKeyScrollAmount: booruResponseListView.height / 2
     Keys.onPressed: (event) => {
-        tagInputField.forceActiveFocus()
+        if (keyInputDialogLoader.active) return
+            tagInputField.forceActiveFocus()
         if (event.modifiers === Qt.NoModifier) {
             if (event.key === Qt.Key_PageUp) {
                 if (booruResponseListView.atYBeginning) return;
@@ -514,6 +508,145 @@ Item {
             showArrows: root.suggestionList.length > 1
         }
 
+        Loader { // Loader for Gelbooru API credentials input buttons
+            id: gelbooruButtonsLoader
+            width: item?.implicitWidth
+            height: item?.implicitHeight
+            Layout.alignment: Qt.AlignHCenter
+
+            active: root.responses.length === 0 &&
+            (!Booru.apiKeys["gelbooru"] || !Booru.apiKeys["gelbooru_user_id"] || !Booru.apiKeys["gelbooru_pass_hash"])
+            visible: active
+
+            sourceComponent: Item {
+                implicitWidth: contentLayout.implicitWidth
+                implicitHeight: contentLayout.implicitHeight
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                ColumnLayout {
+                    id: contentLayout
+                    width: 330
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    RowLayout {
+                        id: gelbooruSelector
+                        Layout.alignment: Qt.AlignHCenter
+                        width: parent.width
+                        spacing: 2
+
+                        property var options: {
+                            var opts = []
+                            if (!Booru.apiKeys["gelbooru"])
+                                opts.push({ displayName: "API Key", icon: "key", value: "gelbooru_key" })
+                                if (!Booru.apiKeys["gelbooru_user_id"])
+                                    opts.push({ displayName: "User ID", icon: "person", value: "gelbooru_id" })
+                                    if (!Booru.apiKeys["gelbooru_pass_hash"])
+                                        opts.push({ displayName: "Pass Hash", icon: "password", value: "gelbooru_pass_hash" })
+                                        return opts
+                        }
+
+                        Repeater {
+                            model: gelbooruSelector.options
+                            delegate: SelectionGroupButton {
+                                required property var modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                leftmost: index === 0
+                                rightmost: index === gelbooruSelector.options.length - 1
+                                toggled: false
+
+                                colBackground: Appearance.colors.colSecondaryContainer
+                                colBackgroundHover: Appearance.colors.colSecondaryContainerHover
+                                colBackgroundActive: Appearance.colors.colSecondaryContainerActive
+
+                                onClicked: keyInputDialogLoader.open(modelData.value)
+
+                                contentItem: Row {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 4
+
+                                    Item {
+                                        width: Appearance.font.pixelSize.larger
+                                        height: Appearance.font.pixelSize.larger
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        MaterialSymbol {
+                                            anchors.centerIn: parent
+                                            width: Appearance.font.pixelSize.larger
+                                            height: Appearance.font.pixelSize.larger
+                                            text: modelData.icon
+                                            iconSize: Appearance.font.pixelSize.larger
+                                            color: Appearance.colors.colOnSecondaryContainer
+                                        }
+                                    }
+
+                                    StyledText {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.displayName
+                                        color: Appearance.colors.colOnSecondaryContainer
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Loader { // Loader for provider selection dropdown
+            id: providerSelectorLoader
+            width: item?.implicitWidth
+            height: item?.implicitHeight
+            Layout.alignment: Qt.AlignHCenter
+
+            active: root.responses.length === 0
+            visible: active
+
+            sourceComponent: Item {
+                implicitWidth: providerContentLayout.implicitWidth
+                implicitHeight: providerContentLayout.implicitHeight
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                ColumnLayout {
+                    id: providerContentLayout
+                    width: 330
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    StyledComboBox {
+                        id: booruProviderSelector
+                        width: parent.width
+
+                        buttonIcon: "image_search"
+                        textRole: "title"
+                        model: [
+                            { title: "yande.re",   icon: "image",         value: "yandere" },
+                            { title: "Konachan",   icon: "wallpaper",     value: "konachan" },
+                            { title: "Zerochan",   icon: "child_care",    value: "zerochan" },
+                            { title: "Danbooru",   icon: "photo_library", value: "danbooru" },
+                            { title: "Gelbooru",   icon: "collections",   value: "gelbooru" },
+                            { title: "waifu.im",   icon: "favorite",      value: "waifu.im" },
+                            { title: "Alcy",       icon: "landscape",     value: "t.alcy.cc" }
+                        ]
+                        enabled: true
+
+                        currentIndex: {
+                            const providers = booruProviderSelector.model;
+                            for (var i = 0; i < providers.length; i++) {
+                                if (providers[i].value === Booru.currentProvider) {
+                                    return i;
+                                }
+                            }
+                            return 0;
+                        }
+
+                        onActivated: index => {
+                            Persistent.states.booru.provider = booruProviderSelector.model[index].value
+                        }
+                    }
+                }
+            }
+        }
+
         FlowButtonGroup { // Tag suggestions
             id: tagSuggestions
             visible: root.suggestionList.length > 0 && tagInputField.text.length > 0
@@ -636,27 +769,6 @@ Item {
                             searchTimer.stop();
                             return
                         }
-                        if(tagInputField.text.startsWith(`${root.commandPrefix}mode`)) {
-                            root.suggestionQuery = tagInputField.text.split(" ")[1] ?? ""
-                            const providerResults = Fuzzy.go(root.suggestionQuery, Booru.providerList.map(provider => {
-                                return {
-                                    name: Fuzzy.prepare(provider),
-                                    obj: provider,
-                                }
-                            }), {
-                                all: true,
-                                key: "name"
-                            })
-                            root.suggestionList = providerResults.map(provider => {
-                                return {
-                                    name: `${tagInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "mode ") : ""}${provider.target}`,
-                                    displayName: `${Booru.providers[provider.target].name}`,
-                                    description: `${Booru.providers[provider.target].description}`,
-                                }
-                            })
-                            searchTimer.stop();
-                            return
-                        }
                         if(tagInputField.text.startsWith(root.commandPrefix)) {
                             root.suggestionQuery = tagInputField.text
                             root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(tagInputField.text.substring(1))).map(cmd => {
@@ -742,10 +854,6 @@ Item {
                 spacing: 5
 
                 property var commandsShown: [
-                    {
-                        name: "mode",
-                        sendDirectly: false,
-                    },
                     {
                         name: "history",
                         sendDirectly: true,
@@ -838,6 +946,132 @@ Item {
                 }
             }
 
+        }
+    }
+
+    Loader { // Loader for Gelbooru key input dialog
+        anchors.fill: parent
+        z: 100
+        active: false
+
+        property string keyType: ""
+
+        function open(type) {
+            keyType = type
+            active = true
+        }
+
+        onActiveChanged: {
+            if (active && item) {
+                item.show = true
+                item.forceActiveFocus()
+            }
+        }
+
+        sourceComponent: WindowDialog {
+            id: keyDialog
+            anchors.fill: parent
+            backgroundWidth: 380
+            show: false
+
+            Component.onCompleted: {
+                show = true
+                dialogInput.forceActiveFocus()
+            }
+
+            onDismiss: {
+                show = false
+            }
+
+            onVisibleChanged: {
+                if (!visible) {
+                    keyInputDialogLoader.active = false
+                    keyInputDialogLoader.keyType = ""
+                }
+            }
+
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignHCenter
+                iconSize: 26
+                text: keyInputDialogLoader.keyType === "gelbooru_id" ? "person" :
+                keyInputDialogLoader.keyType === "gelbooru_pass_hash" ? "password" : "key"
+                color: Appearance.colors.colSecondary
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: Appearance.font.pixelSize.large
+                font.weight: Font.DemiBold
+                color: Appearance.m3colors.m3onSurface
+                text: {
+                    if (keyInputDialogLoader.keyType === "gelbooru_key")
+                        return Translation.tr("Gelbooru API Key")
+                        if (keyInputDialogLoader.keyType === "gelbooru_id")
+                            return Translation.tr("Gelbooru User ID")
+                            if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
+                                return Translation.tr("Gelbooru Pass Hash")
+                                return ""
+                }
+            }
+
+            MaterialTextField {
+                id: dialogInput
+                Layout.fillWidth: true
+                focus: true
+                placeholderText: {
+                    if (keyInputDialogLoader.keyType === "gelbooru_key")
+                        return Translation.tr("Enter API Key...")
+                        if (keyInputDialogLoader.keyType === "gelbooru_id")
+                            return Translation.tr("Enter User ID...")
+                            if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
+                                return Translation.tr("Enter Pass Hash...")
+                                return ""
+                }
+
+                Keys.onPressed: event => {
+                    if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
+                        event.accepted = false
+                    } else if (event.key === Qt.Key_Escape) {
+                        keyDialog.dismiss()
+                        event.accepted = true
+                    }
+                }
+
+                onAccepted: keyDialog.submitValue()
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.bottomMargin: 10
+                Item { Layout.fillWidth: true }
+
+                DialogButton {
+                    buttonText: Translation.tr("Cancel")
+                    onClicked: keyDialog.dismiss()
+                }
+
+                DialogButton {
+                    enabled: dialogInput.text.trim().length > 0
+                    buttonText: Translation.tr("Save")
+                    onClicked: keyDialog.submitValue()
+                }
+            }
+
+            function submitValue() {
+                const value = dialogInput.text.trim()
+                if (value.length === 0) return
+
+                    if (keyInputDialogLoader.keyType === "gelbooru_key") {
+                        KeyringStorage.setNestedField(["apiKeys", "gelbooru"], value)
+                    } else if (keyInputDialogLoader.keyType === "gelbooru_id") {
+                        KeyringStorage.setNestedField(["apiKeys", "gelbooru_user_id"], value)
+                    } else if (keyInputDialogLoader.keyType === "gelbooru_pass_hash") {
+                        KeyringStorage.setNestedField(["apiKeys", "gelbooru_pass_hash"], value)
+                    }
+
+                    keyDialog.dismiss()
+            }
         }
     }
 }
