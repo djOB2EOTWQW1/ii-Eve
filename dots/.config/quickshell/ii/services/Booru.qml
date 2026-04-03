@@ -379,6 +379,9 @@ Singleton {
                 if (root.apiKeys["gelbooru"] && root.apiKeys["gelbooru_user_id"]) {
                     params.push("api_key=" + root.apiKeys["gelbooru"])
                     params.push("user_id=" + root.apiKeys["gelbooru_user_id"])
+                    if (root.apiKeys["gelbooru_pass_hash"]) {
+                        params.push("pass_hash=" + root.apiKeys["gelbooru_pass_hash"])
+                    }
                 }
             }
             else {
