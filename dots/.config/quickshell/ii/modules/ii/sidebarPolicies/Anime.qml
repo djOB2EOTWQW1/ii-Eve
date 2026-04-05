@@ -169,7 +169,7 @@ Item {
                 }
                 Booru.resetApiKeys(provider);
             }
-        },
+        }
     ]
 
     function handleInput(inputText) {
@@ -571,10 +571,10 @@ Item {
             height: item?.implicitHeight
             Layout.alignment: Qt.AlignHCenter
 
-            active: Booru.currentProvider === "gelbooru" &&
+            active: (Booru.currentProvider === "gelbooru" || Booru.currentProvider === "danbooru") &&
             root.responses.length === 0 &&
-            (!Booru.apiKeys["gelbooru"] || !Booru.apiKeys["gelbooru_user_id"] || !Booru.apiKeys["gelbooru_pass_hash"])
-            visible: active
+            ((Booru.currentProvider === "gelbooru" && (!Booru.apiKeys["gelbooru"] || !Booru.apiKeys["gelbooru_user_id"] || !Booru.apiKeys["gelbooru_pass_hash"])) ||
+            (Booru.currentProvider === "danbooru" && (!Booru.apiKeys["danbooru"] || !Booru.apiKeys["danbooru_user_id"])))
 
             sourceComponent: Item {
                 implicitWidth: contentLayout.implicitWidth
@@ -594,13 +594,21 @@ Item {
 
                         property var options: {
                             var opts = []
-                            if (!Booru.apiKeys["gelbooru"])
-                                opts.push({ displayName: "API Key", icon: "key", value: "gelbooru_key" })
-                                if (!Booru.apiKeys["gelbooru_user_id"])
-                                    opts.push({ displayName: "User ID", icon: "person", value: "gelbooru_id" })
-                                    if (!Booru.apiKeys["gelbooru_pass_hash"])
-                                        opts.push({ displayName: "Pass Hash", icon: "password", value: "gelbooru_pass_hash" })
-                                        return opts
+                            if (Booru.currentProvider === "gelbooru") {
+                                if (!Booru.apiKeys["gelbooru"])
+                                    opts.push({ displayName: "API Key", icon: "key", value: "gelbooru_key" })
+                                    if (!Booru.apiKeys["gelbooru_user_id"])
+                                        opts.push({ displayName: "User ID", icon: "person", value: "gelbooru_id" })
+                                        if (!Booru.apiKeys["gelbooru_pass_hash"])
+                                            opts.push({ displayName: "Pass Hash", icon: "password", value: "gelbooru_pass_hash" })
+                            }
+                            else if (Booru.currentProvider === "danbooru") {
+                                if (!Booru.apiKeys["danbooru"])
+                                    opts.push({ displayName: "API Key", icon: "key", value: "danbooru_key" })
+                                    if (!Booru.apiKeys["danbooru_user_id"])
+                                        opts.push({ displayName: "Login", icon: "person", value: "danbooru_login" })
+                            }
+                            return opts
                         }
 
                         Repeater {
@@ -1052,7 +1060,8 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 iconSize: 26
                 text: keyInputDialogLoader.keyType === "gelbooru_id" ? "person" :
-                keyInputDialogLoader.keyType === "gelbooru_pass_hash" ? "password" : "key"
+                keyInputDialogLoader.keyType === "gelbooru_pass_hash" ? "password" :
+                keyInputDialogLoader.keyType === "danbooru_login" ? "person" : "key"
                 color: Appearance.colors.colSecondary
             }
 
@@ -1069,7 +1078,11 @@ Item {
                             return Translation.tr("Gelbooru User ID")
                             if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
                                 return Translation.tr("Gelbooru Pass Hash")
-                                return ""
+                                if (keyInputDialogLoader.keyType === "danbooru_key")
+                                    return Translation.tr("Danbooru API Key")
+                                    if (keyInputDialogLoader.keyType === "danbooru_login")
+                                        return Translation.tr("Danbooru Login")
+                                        return ""
                 }
             }
 
@@ -1084,7 +1097,11 @@ Item {
                             return Translation.tr("Enter User ID...")
                             if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
                                 return Translation.tr("Enter Pass Hash...")
-                                return ""
+                                if (keyInputDialogLoader.keyType === "danbooru_key")
+                                    return Translation.tr("Enter API Key...")
+                                    if (keyInputDialogLoader.keyType === "danbooru_login")
+                                        return Translation.tr("Enter Login...")
+                                        return ""
                 }
 
                 Keys.onPressed: event => {
@@ -1126,6 +1143,10 @@ Item {
                         KeyringStorage.setNestedField(["apiKeys", "gelbooru_user_id"], value)
                     } else if (keyInputDialogLoader.keyType === "gelbooru_pass_hash") {
                         KeyringStorage.setNestedField(["apiKeys", "gelbooru_pass_hash"], value)
+                    } else if (keyInputDialogLoader.keyType === "danbooru_key") {
+                        KeyringStorage.setNestedField(["apiKeys", "danbooru"], value)
+                    } else if (keyInputDialogLoader.keyType === "danbooru_login") {
+                        KeyringStorage.setNestedField(["apiKeys", "danbooru_user_id"], value)
                     }
 
                     keyDialog.dismiss()
@@ -1190,7 +1211,7 @@ Item {
                     text: {
                         if (Booru.currentProvider === "gelbooru") {
                             return "# Gelbooru\n\n" +
-                            "1. Register on [Gelbooru.com](https://gelbooru.com/index.php?page=account&s=home)\n" +
+                            "1. Register on [Gelbooru](https://gelbooru.com/index.php?page=account&s=home)\n" +
                             "2. After registration, go to [Options](https://gelbooru.com/index.php?page=account&s=options)\n" +
                             "3. Copy the `api_key` and `user_id` values (after =)\n" +
                             "- paste them into the corresponding fields.\n" +
@@ -1202,8 +1223,11 @@ Item {
                             "### WITHOUT AN API KEY IT DOESN'T WORK"
                         } else if (Booru.currentProvider === "danbooru") {
                             return "## Danbooru\n\n" +
-                            "1. WORK IN PROGRESS\n" +
-                            "### WITHOUT AN API KEY IT DOESN'T WORK"
+                            "1. Register on [Danbooru](https://danbooru.donmai.us/)\n" +
+                            "2. After registration, go to [API Keys settings](https://danbooru.donmai.us/users/1470906/api_keys)\n" +
+                            "3. Create a new API key\n" +
+                            "- Copy the `api_key` and `login` values (after =)\n" +
+                            "#### This can work without the API, but with some limits."
                         } else if (Booru.currentProvider === "zerochan") {
                             return "## Zerochan\n\n" +
                             "1. WORK IN PROGRESS\n" +

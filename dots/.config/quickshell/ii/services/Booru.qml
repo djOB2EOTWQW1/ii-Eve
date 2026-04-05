@@ -374,6 +374,13 @@ Singleton {
                     }
                 }
             }
+            else if (currentProvider == "danbooru") {
+                params.push("page=" + page)
+                if (root.apiKeys["danbooru"] && root.apiKeys["danbooru_user_id"]) {
+                    params.push("api_key=" + root.apiKeys["danbooru"])
+                    params.push("login=" + root.apiKeys["danbooru_user_id"])
+                }
+            }
             else {
                 params.push("page=" + page)
             }
@@ -435,7 +442,7 @@ Singleton {
         try {
             // Required for danbooru
             if (currentProvider == "danbooru") {
-                xhr.setRequestHeader("User-Agent", defaultUserAgent)
+                xhr.setRequestHeader("User-Agent", "Quickshell-Booru/1.0");
             }
             else if (currentProvider == "zerochan") {
                 const userAgent = Config.options?.sidebar?.booru?.zerochan?.username ? `Desktop sidebar booru viewer - username: ${Config.options.sidebar.booru.zerochan.username}` : defaultUserAgent
