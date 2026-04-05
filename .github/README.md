@@ -6,6 +6,7 @@
 <div align="center"> 
 
 ![](https://img.shields.io/github/last-commit/djOB2EOTWQW1/ii-Eve?&style=for-the-badge&color=8ad7eb&logo=git&logoColor=D9E0EE&labelColor=1E202B)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/djOB2EOTWQW1/ii-Eve)
 
 
 <div align="center">
