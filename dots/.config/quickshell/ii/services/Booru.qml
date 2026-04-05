@@ -320,22 +320,12 @@ Singleton {
 
     readonly property var apiKeys: KeyringStorage.keyringData?.apiKeys ?? {}
 
-    function setApiKey(provider, key) {
+    function resetApiKeys(provider) {
         if (!providers[provider]) return;
-        KeyringStorage.setNestedField(["apiKeys", provider], key.trim());
-        root.addSystemMessage(Translation.tr("API key set for %1").arg(providers[provider].name));
-    }
-
-    function setUserId(provider, id) {
-        if (!providers[provider]) return;
-        KeyringStorage.setNestedField(["apiKeys", provider + "_user_id"], id.trim());
-        root.addSystemMessage(Translation.tr("User ID set for %1").arg(providers[provider].name));
-    }
-
-    function setPassHash(provider, hash) {
-        if (!providers[provider]) return;
-        KeyringStorage.setNestedField(["apiKeys", provider + "_pass_hash"], hash.trim());
-        root.addSystemMessage(Translation.tr("Pass hash set for %1").arg(providers[provider].name));
+        KeyringStorage.setNestedField(["apiKeys", provider], undefined);
+        KeyringStorage.setNestedField(["apiKeys", provider + "_user_id"], undefined);
+        KeyringStorage.setNestedField(["apiKeys", provider + "_pass_hash"], undefined);
+        root.addSystemMessage(Translation.tr("API keys reset for %1").arg(providers[provider].name));
     }
 
     function constructRequestUrl(tags, nsfw=true, limit=20, page=1) {

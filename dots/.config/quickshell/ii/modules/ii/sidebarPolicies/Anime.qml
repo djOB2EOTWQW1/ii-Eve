@@ -91,39 +91,6 @@ Item {
             }
         },
         {
-            name: "gelbooru_key",
-            description: Translation.tr("Set Gelbooru API key"),
-            execute: (args) => {
-                if (args.length > 0) {
-                    Booru.setApiKey("gelbooru", args[0]);
-                } else {
-                    Booru.addSystemMessage(Translation.tr("Usage: /gelbooru_key <key>"));
-                }
-            }
-        },
-        {
-            name: "gelbooru_id",
-            description: Translation.tr("Set Gelbooru User ID"),
-            execute: (args) => {
-                if (args.length > 0) {
-                    Booru.setUserId("gelbooru", args[0]);
-                } else {
-                    Booru.addSystemMessage(Translation.tr("Usage: /gelbooru_id <id>"));
-                }
-            }
-        },
-        {
-            name: "gelbooru_pass_hash",
-            description: Translation.tr("Set Gelbooru Pass Hash"),
-            execute: (args) => {
-                if (args.length > 0) {
-                    Booru.setPassHash("gelbooru", args[0]);
-                } else {
-                    Booru.addSystemMessage(Translation.tr("Usage: /gelbooru_pass_hash <hash>"));
-                }
-            }
-        },
-        {
             name: "history",
             description: Translation.tr("Show your last 10 searches"),
             execute: () => {
@@ -189,6 +156,18 @@ Item {
                 Booru.addSystemMessage(
                     Translation.tr("Thumbnail set to %1").arg(value)
                 );
+            }
+        },
+        {
+            name: "reset_api",
+            description: Translation.tr("Reset API keys for current provider"),
+            execute: () => {
+                const provider = Booru.currentProvider;
+                if (provider === "system") {
+                    Booru.addSystemMessage(Translation.tr("Cannot reset keys for system provider"));
+                    return;
+                }
+                Booru.resetApiKeys(provider);
             }
         },
     ]
@@ -273,6 +252,79 @@ Item {
             margins: root.padding
         }
         spacing: root.padding
+
+                Loader { // Banner: API key instructions
+            id: apiKeyBannerLoader
+            width: item?.implicitWidth
+            height: item?.implicitHeight
+            Layout.alignment: Qt.AlignHCenter
+
+            active: Booru.currentProvider !== "yandere" &&
+            root.responses.length === 0 &&
+            !Persistent.states.booru.apiKeyBannerDismissed &&
+            (!Booru.apiKeys[Booru.currentProvider])
+            visible: active
+
+            sourceComponent: Item {
+                implicitWidth: bannerLayout.implicitWidth
+                implicitHeight: bannerLayout.implicitHeight
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                ColumnLayout {
+                    id: bannerLayout
+                    width: 330
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 8
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        radius: Appearance.rounding.small
+                        color: Appearance.colors.colSecondaryContainer
+                        implicitHeight: bannerContent.implicitHeight + 20
+
+                        ColumnLayout {
+                            id: bannerContent
+                            anchors { fill: parent; margins: 10 }
+                            spacing: 6
+
+                            RowLayout {
+                                MaterialSymbol {
+                                    text: "info"
+                                    iconSize: 20
+                                    color: Appearance.colors.colOnSecondaryContainer
+                                }
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: Translation.tr("API keys improve search results")
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    color: Appearance.colors.colOnSecondaryContainer
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                DialogButton {
+                                    buttonText: Translation.tr("Learn more")
+                                    onClicked: apiKeyArticleDialogLoader.active = true
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                DialogButton {
+                                    buttonText: Translation.tr("Don't show again")
+                                    onClicked: {
+                                        Persistent.states.booru.apiKeyBannerDismissed = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         Item {
             Layout.fillWidth: true
@@ -951,7 +1003,6 @@ Item {
                     }
                 }
             }
-
         }
     }
 
@@ -1078,6 +1129,107 @@ Item {
                     }
 
                     keyDialog.dismiss()
+            }
+        }
+    }
+
+    Loader { // Loader for API key instructions article dialog
+        id: apiKeyArticleDialogLoader
+        anchors.fill: parent
+        z: 100
+        active: false
+
+        onActiveChanged: {
+            if (active && item) {
+                item.show = true
+                item.forceActiveFocus()
+            }
+        }
+
+        sourceComponent: WindowDialog {
+            id: articleDialog
+            anchors.fill: parent
+            backgroundWidth: 420
+            show: false
+
+            Component.onCompleted: show = true
+
+            onDismiss: show = false
+            onVisibleChanged: {
+                if (!visible) apiKeyArticleDialogLoader.active = false
+            }
+
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignHCenter
+                iconSize: 26
+                text: "key"
+                color: Appearance.colors.colSecondary
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: Appearance.font.pixelSize.large
+                font.weight: Font.DemiBold
+                color: Appearance.m3colors.m3onSurface
+                text: Translation.tr("How to set up API keys")
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 400
+                clip: true
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                StyledText {
+                    width: parent.width
+                    wrapMode: Text.Wrap
+                    textFormat: Text.MarkdownText
+                    color: Appearance.m3colors.m3onSurface
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    text: {
+                        if (Booru.currentProvider === "gelbooru") {
+                            return "# Gelbooru\n\n" +
+                            "1. Register on [Gelbooru.com](https://gelbooru.com/index.php?page=account&s=home)\n" +
+                            "2. After registration, go to [Options](https://gelbooru.com/index.php?page=account&s=options)\n" +
+                            "3. Copy the `api_key` and `user_id` values (after =)\n" +
+                            "- paste them into the corresponding fields.\n" +
+                            "4. If you want to unlock the **'Add to favorites'** button\n" +
+                            "- open developer settings in the browser\n" +
+                            "- go to **Storage → Cookies**\n" +
+                            "- copy the `pass_hash` value\n" +
+                            "- paste them into the corresponding fields.\n" +
+                            "### WITHOUT AN API KEY IT DOESN'T WORK"
+                        } else if (Booru.currentProvider === "danbooru") {
+                            return "## Danbooru\n\n" +
+                            "1. WORK IN PROGRESS\n" +
+                            "### WITHOUT AN API KEY IT DOESN'T WORK"
+                        } else if (Booru.currentProvider === "zerochan") {
+                            return "## Zerochan\n\n" +
+                            "1. WORK IN PROGRESS\n" +
+                            "### WITHOUT AN API KEY IT DOESN'T WORK"
+                        } else if (Booru.currentProvider === "konachan") {
+                            return Translation.tr("%1 does not require an API key").arg("Konachan");
+                        } else if (Booru.currentProvider === "waifu.im") {
+                            return Translation.tr("%1 does not require an API key").arg("waifu.im");
+                        } else if (Booru.currentProvider === "t.alcy.cc") {
+                            return Translation.tr("%1 does not require an API key").arg("Alcy");
+                        }
+                        return "";
+                    }
+                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                    PointingHandLinkHover {}
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.bottomMargin: 10
+                Item { Layout.fillWidth: true }
+                DialogButton {
+                    buttonText: Translation.tr("Close")
+                    onClicked: articleDialog.dismiss()
+                }
             }
         }
     }

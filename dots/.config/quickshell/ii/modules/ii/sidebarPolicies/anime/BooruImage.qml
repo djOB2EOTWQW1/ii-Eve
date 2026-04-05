@@ -184,7 +184,7 @@ Button {
                         }
                         MenuButton {
                             id: favoriteButton
-                            visible: root.imageData.file_url.includes("gelbooru.com")
+                            visible: root.imageData.file_url.includes("gelbooru.com") && Booru.apiKeys["gelbooru_pass_hash"]
                             Layout.fillWidth: true
                             buttonText: Translation.tr("Add to favorites")
                             onClicked: {
