@@ -865,10 +865,6 @@ Item {
                         sendDirectly: true,
                     },
                     {
-                        name: "history",
-                        sendDirectly: true,
-                    },
-                    {
                         name: "clear",
                         sendDirectly: true,
                     },
