@@ -184,16 +184,27 @@ Button {
                         }
                         MenuButton {
                             id: favoriteButton
-                            visible: root.imageData.file_url.includes("gelbooru.com") && Booru.apiKeys["gelbooru_pass_hash"]
+                            visible: (root.imageData.file_url.includes("gelbooru.com") && Booru.apiKeys["gelbooru_pass_hash"]) ||
+                            (root.imageData.file_url.includes("donmai.us") && Booru.apiKeys["danbooru"] && Booru.apiKeys["danbooru_user_id"])
                             Layout.fillWidth: true
                             buttonText: Translation.tr("Add to favorites")
                             onClicked: {
                                 root.showActions = false;
                                 const postId = root.imageData.id;
-                                const cookieString = `user_id=${Booru.apiKeys["gelbooru_user_id"] || ""}; pass_hash=${Booru.apiKeys["gelbooru_pass_hash"] || ""}; post_threshold=0`;
-                                Quickshell.execDetached(["bash", "-c",
-                                                        `response=$(curl -s -H 'Referer: https://gelbooru.com/index.php?page=post&s=view&id=${postId}' -b '${cookieString}' 'https://gelbooru.com/public/addfav.php?id=${postId}'); if [ "$response" = "1" ] || [ "$response" = "3" ]; then notify-send '✅ Added to favorites' 'Post #${postId}' -a 'Shell'; else notify-send '❌ Failed to add' "Post #${postId} (response: $response)" -a 'Shell'; fi`
-                                ]);
+
+                                if (root.imageData.file_url.includes("gelbooru.com")) {
+                                    // Gelbooru logic
+                                    const cookieString = `user_id=${Booru.apiKeys["gelbooru_user_id"] || ""}; pass_hash=${Booru.apiKeys["gelbooru_pass_hash"] || ""}; post_threshold=0`;
+                                    Quickshell.execDetached(["bash", "-c",
+                                                            `response=$(curl -s -H 'Referer: https://gelbooru.com/index.php?page=post&s=view&id=${postId}' -b '${cookieString}' 'https://gelbooru.com/public/addfav.php?id=${postId}'); if [ "$response" = "1" ] || [ "$response" = "3" ]; then notify-send '✅ Added to favorites' 'Post #${postId}' -a 'Shell'; else notify-send '❌ Failed to add' "Post #${postId} (response: $response)" -a 'Shell'; fi`
+                                    ]);
+                                }
+                                else if (root.imageData.file_url.includes("donmai.us")) {
+                                    // Danbooru logic
+                                    Quickshell.execDetached(["bash", "-c",
+                                                            `response=$(curl -s -X POST "https://danbooru.donmai.us/favorites.json?login=${Booru.apiKeys["danbooru_user_id"]}&api_key=${Booru.apiKeys["danbooru"]}" -d "post_id=${postId}"); if echo "$response" | grep -q '"success":true\|"post_id"' || [ "$response" != "null" ] && [ "$response" != "" ]; then notify-send '✅ Added to favorites' 'Post #${postId}' -a 'Shell'; else notify-send '❌ Failed to add' "Post #${postId} - Response: $response" -a 'Shell'; fi`
+                                    ]);
+                                }
                             }
                         }
                     }
