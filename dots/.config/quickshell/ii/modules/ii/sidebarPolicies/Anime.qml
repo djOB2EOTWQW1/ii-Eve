@@ -565,8 +565,8 @@ Item {
             showArrows: root.suggestionList.length > 1
         }
 
-        Loader { // Loader for Gelbooru API credentials input buttons
-            id: gelbooruButtonsLoader
+        Loader { // Loader for Provider API credentials input buttons
+            id: apiButtonsLoader
             width: item?.implicitWidth
             height: item?.implicitHeight
             Layout.alignment: Qt.AlignHCenter
@@ -587,7 +587,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     RowLayout {
-                        id: gelbooruSelector
+                        id: providerSelector
                         Layout.alignment: Qt.AlignHCenter
                         width: parent.width
                         spacing: 2
@@ -604,13 +604,13 @@ Item {
                         }
 
                         Repeater {
-                            model: gelbooruSelector.options
+                            model: providerSelector.options
                             delegate: SelectionGroupButton {
                                 required property var modelData
                                 required property int index
                                 Layout.fillWidth: true
                                 leftmost: index === 0
-                                rightmost: index === gelbooruSelector.options.length - 1
+                                rightmost: index === providerSelector.options.length - 1
                                 toggled: false
 
                                 colBackground: Appearance.colors.colSecondaryContainer
@@ -1006,7 +1006,7 @@ Item {
         }
     }
 
-    Loader { // Loader for Gelbooru key input dialog
+    Loader { // Loader key input dialog
         id: keyInputDialogLoader
         anchors.fill: parent
         z: 100
