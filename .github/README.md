@@ -54,7 +54,7 @@ To make sure everything works for you, please go to the [Wiki](https://github.co
 
 These dots are based on **illogical-impulse**. You can access original **illogical-impulse** dots from [here](https://github.com/end-4/dots-hyprland)
 
-This dots contains my tweaks to original illogical-impulse dots. It's mostly up to date with original dots and my daily driver. However there may be bugs and stability issues. You can join this [ii-vynx channel](https://discord.com/channels/1393080422245863506/1457739857240653961) in end-4's official discord server to report the bugs and chat about this repository. Use [Github Issues](https://github.com/vaguesyntax/ii-eve/issues) for real issue though.
+This dots contains my tweaks to original illogical-impulse dots. It's mostly up to date with original dots and my daily driver. However there may be bugs and stability issues. You can join this [ii-vynx channel](https://discord.com/channels/1393080422245863506/1457739857240653961) in end-4's official discord server to report the bugs and chat about this repository. Use [Github Issues](https://github.com/djOB2EOTWQW1/ii-eve/issues) for real issue though.
 
 **P.S.** Before you say anything — better don't. This setup is just for me. I don’t care about complaints :d
 
