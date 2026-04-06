@@ -440,9 +440,15 @@ Singleton {
         }
 
         try {
-            // Required for danbooru
-            if (currentProvider == "danbooru") {
-                xhr.setRequestHeader("User-Agent", "Quickshell-Booru/1.0");
+            // Required for danbooru & kanochan & t.alcy.cc
+            if (currentProvider == "danbooru" || currentProvider == "konachan" || currentProvider == "t.alcy.cc") {
+                if (currentProvider == "danbooru") {
+                    xhr.setRequestHeader("User-Agent", "Quickshell-Booru/1.0");
+                } else if (currentProvider == "konachan") {
+                    xhr.setRequestHeader("User-Agent", defaultUserAgent);
+                } else if (currentProvider == "t.alcy.cc") {
+                    xhr.setRequestHeader("User-Agent", defaultUserAgent);
+                }
             }
             else if (currentProvider == "zerochan") {
                 const userAgent = Config.options?.sidebar?.booru?.zerochan?.username ? `Desktop sidebar booru viewer - username: ${Config.options.sidebar.booru.zerochan.username}` : defaultUserAgent

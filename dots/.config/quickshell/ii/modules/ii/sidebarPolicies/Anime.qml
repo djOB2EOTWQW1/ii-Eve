@@ -259,7 +259,7 @@ Item {
             height: item?.implicitHeight
             Layout.alignment: Qt.AlignHCenter
 
-            active: Booru.currentProvider !== "yandere" &&
+            active: Booru.currentProvider !== "yandere" && Booru.currentProvider !== "waifu.im" && Booru.currentProvider !== "t.alcy.cc" && Booru.currentProvider !== "konachan" &&
             root.responses.length === 0 &&
             !Persistent.states.booru.apiKeyBannerDismissed &&
             (!Booru.apiKeys[Booru.currentProvider])
@@ -1227,17 +1227,12 @@ Item {
                             "2. After registration, go to [API Keys settings](https://danbooru.donmai.us/users/1470906/api_keys)\n" +
                             "3. Create a new API key\n" +
                             "- Copy the `api_key` and `login` values (after =)\n" +
+                            "4. paste them into the corresponding fields.\n" +
                             "#### This can work without the API, but with some limits."
                         } else if (Booru.currentProvider === "zerochan") {
                             return "## Zerochan\n\n" +
                             "1. WORK IN PROGRESS\n" +
                             "### WITHOUT AN API KEY IT DOESN'T WORK"
-                        } else if (Booru.currentProvider === "konachan") {
-                            return Translation.tr("%1 does not require an API key").arg("Konachan");
-                        } else if (Booru.currentProvider === "waifu.im") {
-                            return Translation.tr("%1 does not require an API key").arg("waifu.im");
-                        } else if (Booru.currentProvider === "t.alcy.cc") {
-                            return Translation.tr("%1 does not require an API key").arg("Alcy");
                         }
                         return "";
                     }
