@@ -11,6 +11,7 @@ LazyLoader {
     property Item hoverTarget
     default property Item contentItem
     property real popupBackgroundMargin: 0
+    property int popupRadius: Appearance.rounding.small
     
     active: hoverTarget && hoverTarget.containsMouse
     
@@ -87,7 +88,7 @@ LazyLoader {
             implicitWidth: root.contentItem.implicitWidth + margin * 2
             implicitHeight: root.contentItem.implicitHeight + margin * 2
             color: Appearance.m3colors.m3surfaceContainer
-            radius: Appearance.rounding.small
+            radius: root.popupRadius
             children: [root.contentItem]
             border.width: 1
             border.color: Appearance.colors.colLayer0Border

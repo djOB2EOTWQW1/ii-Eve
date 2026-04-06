@@ -10,6 +10,7 @@ import qs.modules.ii.bar
 
 StyledPopup {
     id: root
+    popupRadius: Appearance.rounding.large
 
     // Adaptive layout properties based on screen height
     property real availableHeight: Screen.height
