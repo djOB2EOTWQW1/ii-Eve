@@ -18,7 +18,8 @@ Item {
     property bool cache: false
     property bool antialiasing: true
     property bool asynchronous: true
-    property bool smooth: false
+    property bool smooth: true
+    property bool mipmap: true
 
     onImageSourceChanged: fadeTo(imageSource)
     Component.onCompleted: imgA.source = imageSource
@@ -60,7 +61,7 @@ Item {
         anchors.fill: parent
         fillMode: root.fillMode
         sourceSize: root.sourceSize
-        cache: root.cache; antialiasing: root.antialiasing; asynchronous: root.asynchronous; smooth: root.smooth
+        cache: root.cache; antialiasing: root.antialiasing; asynchronous: root.asynchronous; smooth: root.smooth; mipmap: root.mipmap
     }
 
     Image {
@@ -69,6 +70,6 @@ Item {
         opacity: 0
         fillMode: root.fillMode
         sourceSize: root.sourceSize
-        cache: root.cache; antialiasing: root.antialiasing; asynchronous: root.asynchronous; smooth: root.smooth
+        cache: root.cache; antialiasing: root.antialiasing; asynchronous: root.asynchronous; smooth: root.smooth; mipmap: root.mipmap
     }
 }
