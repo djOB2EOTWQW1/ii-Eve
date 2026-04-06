@@ -10,6 +10,9 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
 
+// Anime loaders components
+import "anime" as AnimeComponents
+
 Item {
     id: root
     property real padding: 4
@@ -265,64 +268,9 @@ Item {
             (!Booru.apiKeys[Booru.currentProvider])
             visible: active
 
-            sourceComponent: Item {
-                implicitWidth: bannerLayout.implicitWidth
-                implicitHeight: bannerLayout.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                ColumnLayout {
-                    id: bannerLayout
-                    width: 330
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 8
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        radius: Appearance.rounding.small
-                        color: Appearance.colors.colSecondaryContainer
-                        implicitHeight: bannerContent.implicitHeight + 20
-
-                        ColumnLayout {
-                            id: bannerContent
-                            anchors { fill: parent; margins: 10 }
-                            spacing: 6
-
-                            RowLayout {
-                                MaterialSymbol {
-                                    text: "info"
-                                    iconSize: 20
-                                    color: Appearance.colors.colOnSecondaryContainer
-                                }
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    text: Translation.tr("API keys improve search results")
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colOnSecondaryContainer
-                                    wrapMode: Text.Wrap
-                                }
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                DialogButton {
-                                    buttonText: Translation.tr("Learn more")
-                                    onClicked: apiKeyArticleDialogLoader.active = true
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                DialogButton {
-                                    buttonText: Translation.tr("Don't show again")
-                                    onClicked: {
-                                        Persistent.states.booru.apiKeyBannerDismissed = true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            sourceComponent: AnimeComponents.ApiKeyBanner {
+                responses: root.responses
+                onLearnMoreClicked: apiKeyArticleDialogLoader.active = true
             }
         }
 
@@ -576,85 +524,10 @@ Item {
             ((Booru.currentProvider === "gelbooru" && (!Booru.apiKeys["gelbooru"] || !Booru.apiKeys["gelbooru_user_id"] || !Booru.apiKeys["gelbooru_pass_hash"])) ||
             (Booru.currentProvider === "danbooru" && (!Booru.apiKeys["danbooru"] || !Booru.apiKeys["danbooru_user_id"])))
 
-            sourceComponent: Item {
-                implicitWidth: contentLayout.implicitWidth
-                implicitHeight: contentLayout.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                ColumnLayout {
-                    id: contentLayout
-                    width: 330
-                    anchors.horizontalCenter: parent.horizontalCenter
-
-                    RowLayout {
-                        id: providerSelector
-                        Layout.alignment: Qt.AlignHCenter
-                        width: parent.width
-                        spacing: 2
-
-                        property var options: {
-                            var opts = []
-                            if (Booru.currentProvider === "gelbooru") {
-                                if (!Booru.apiKeys["gelbooru"])
-                                    opts.push({ displayName: "API Key", icon: "key", value: "gelbooru_key" })
-                                    if (!Booru.apiKeys["gelbooru_user_id"])
-                                        opts.push({ displayName: "User ID", icon: "person", value: "gelbooru_id" })
-                                        if (!Booru.apiKeys["gelbooru_pass_hash"])
-                                            opts.push({ displayName: "Pass Hash", icon: "password", value: "gelbooru_pass_hash" })
-                            }
-                            else if (Booru.currentProvider === "danbooru") {
-                                if (!Booru.apiKeys["danbooru"])
-                                    opts.push({ displayName: "API Key", icon: "key", value: "danbooru_key" })
-                                    if (!Booru.apiKeys["danbooru_user_id"])
-                                        opts.push({ displayName: "Login", icon: "person", value: "danbooru_login" })
-                            }
-                            return opts
-                        }
-
-                        Repeater {
-                            model: providerSelector.options
-                            delegate: SelectionGroupButton {
-                                required property var modelData
-                                required property int index
-                                Layout.fillWidth: true
-                                leftmost: index === 0
-                                rightmost: index === providerSelector.options.length - 1
-                                toggled: false
-
-                                colBackground: Appearance.colors.colSecondaryContainer
-                                colBackgroundHover: Appearance.colors.colSecondaryContainerHover
-                                colBackgroundActive: Appearance.colors.colSecondaryContainerActive
-
-                                onClicked: keyInputDialogLoader.open(modelData.value)
-
-                                contentItem: Row {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 4
-
-                                    Item {
-                                        width: Appearance.font.pixelSize.larger
-                                        height: Appearance.font.pixelSize.larger
-                                        anchors.verticalCenter: parent.verticalCenter
-
-                                        MaterialSymbol {
-                                            anchors.centerIn: parent
-                                            width: Appearance.font.pixelSize.larger
-                                            height: Appearance.font.pixelSize.larger
-                                            text: modelData.icon
-                                            iconSize: Appearance.font.pixelSize.larger
-                                            color: Appearance.colors.colOnSecondaryContainer
-                                        }
-                                    }
-
-                                    StyledText {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: modelData.displayName
-                                        color: Appearance.colors.colOnSecondaryContainer
-                                    }
-                                }
-                            }
-                        }
-                    }
+            sourceComponent: AnimeComponents.ApiButtonsPanel {
+                responses: root.responses
+                onOpenKeyInputDialog: keyType => {
+                    keyInputDialogLoader.open(keyType)
                 }
             }
         }
@@ -668,49 +541,7 @@ Item {
             active: root.responses.length === 0
             visible: active
 
-            sourceComponent: Item {
-                implicitWidth: providerContentLayout.implicitWidth
-                implicitHeight: providerContentLayout.implicitHeight
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                ColumnLayout {
-                    id: providerContentLayout
-                    width: 330
-                    anchors.horizontalCenter: parent.horizontalCenter
-
-                    StyledComboBox {
-                        id: booruProviderSelector
-                        width: parent.width
-
-                        buttonIcon: "image_search"
-                        textRole: "title"
-                        model: [
-                            { title: "yande.re",   icon: "image",         value: "yandere" },
-                            { title: "Konachan",   icon: "wallpaper",     value: "konachan" },
-                            { title: "Zerochan",   icon: "child_care",    value: "zerochan" },
-                            { title: "Danbooru",   icon: "photo_library", value: "danbooru" },
-                            { title: "Gelbooru",   icon: "collections",   value: "gelbooru" },
-                            { title: "waifu.im",   icon: "favorite",      value: "waifu.im" },
-                            { title: "Alcy",       icon: "landscape",     value: "t.alcy.cc" }
-                        ]
-                        enabled: true
-
-                        currentIndex: {
-                            const providers = booruProviderSelector.model;
-                            for (var i = 0; i < providers.length; i++) {
-                                if (providers[i].value === Booru.currentProvider) {
-                                    return i;
-                                }
-                            }
-                            return 0;
-                        }
-
-                        onActivated: index => {
-                            Persistent.states.booru.provider = booruProviderSelector.model[index].value
-                        }
-                    }
-                }
-            }
+            sourceComponent: AnimeComponents.ProviderSelector {}
         }
 
         FlowButtonGroup { // Tag suggestions
@@ -1027,129 +858,11 @@ Item {
             active = true
         }
 
-        onActiveChanged: {
-            if (active && item) {
-                item.show = true
-                item.forceActiveFocus()
-            }
-        }
-
-        sourceComponent: WindowDialog {
-            id: keyDialog
-            anchors.fill: parent
-            backgroundWidth: 380
-            show: false
-
-            Component.onCompleted: {
-                show = true
-                dialogInput.forceActiveFocus()
-            }
-
-            onDismiss: {
-                show = false
-            }
-
-            onVisibleChanged: {
-                if (!visible) {
-                    keyInputDialogLoader.active = false
-                    keyInputDialogLoader.keyType = ""
-                }
-            }
-
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignHCenter
-                iconSize: 26
-                text: keyInputDialogLoader.keyType === "gelbooru_id" ? "person" :
-                keyInputDialogLoader.keyType === "gelbooru_pass_hash" ? "password" :
-                keyInputDialogLoader.keyType === "danbooru_login" ? "person" : "key"
-                color: Appearance.colors.colSecondary
-            }
-
-            StyledText {
-                Layout.fillWidth: true
-                horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: Appearance.font.pixelSize.large
-                font.weight: Font.DemiBold
-                color: Appearance.m3colors.m3onSurface
-                text: {
-                    if (keyInputDialogLoader.keyType === "gelbooru_key")
-                        return Translation.tr("Gelbooru API Key")
-                        if (keyInputDialogLoader.keyType === "gelbooru_id")
-                            return Translation.tr("Gelbooru User ID")
-                            if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
-                                return Translation.tr("Gelbooru Pass Hash")
-                                if (keyInputDialogLoader.keyType === "danbooru_key")
-                                    return Translation.tr("Danbooru API Key")
-                                    if (keyInputDialogLoader.keyType === "danbooru_login")
-                                        return Translation.tr("Danbooru Login")
-                                        return ""
-                }
-            }
-
-            MaterialTextField {
-                id: dialogInput
-                Layout.fillWidth: true
-                focus: true
-                placeholderText: {
-                    if (keyInputDialogLoader.keyType === "gelbooru_key")
-                        return Translation.tr("Enter API Key...")
-                        if (keyInputDialogLoader.keyType === "gelbooru_id")
-                            return Translation.tr("Enter User ID...")
-                            if (keyInputDialogLoader.keyType === "gelbooru_pass_hash")
-                                return Translation.tr("Enter Pass Hash...")
-                                if (keyInputDialogLoader.keyType === "danbooru_key")
-                                    return Translation.tr("Enter API Key...")
-                                    if (keyInputDialogLoader.keyType === "danbooru_login")
-                                        return Translation.tr("Enter Login...")
-                                        return ""
-                }
-
-                Keys.onPressed: event => {
-                    if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
-                        event.accepted = false
-                    } else if (event.key === Qt.Key_Escape) {
-                        keyDialog.dismiss()
-                        event.accepted = true
-                    }
-                }
-
-                onAccepted: keyDialog.submitValue()
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.bottomMargin: 10
-                Item { Layout.fillWidth: true }
-
-                DialogButton {
-                    buttonText: Translation.tr("Cancel")
-                    onClicked: keyDialog.dismiss()
-                }
-
-                DialogButton {
-                    enabled: dialogInput.text.trim().length > 0
-                    buttonText: Translation.tr("Save")
-                    onClicked: keyDialog.submitValue()
-                }
-            }
-
-            function submitValue() {
-                const value = dialogInput.text.trim()
-                if (value.length === 0) return
-
-                    if (keyInputDialogLoader.keyType === "gelbooru_key") {
-                        KeyringStorage.setNestedField(["apiKeys", "gelbooru"], value)
-                    } else if (keyInputDialogLoader.keyType === "gelbooru_id") {
-                        KeyringStorage.setNestedField(["apiKeys", "gelbooru_user_id"], value)
-                    } else if (keyInputDialogLoader.keyType === "gelbooru_pass_hash") {
-                        KeyringStorage.setNestedField(["apiKeys", "gelbooru_pass_hash"], value)
-                    } else if (keyInputDialogLoader.keyType === "danbooru_key") {
-                        KeyringStorage.setNestedField(["apiKeys", "danbooru"], value)
-                    } else if (keyInputDialogLoader.keyType === "danbooru_login") {
-                        KeyringStorage.setNestedField(["apiKeys", "danbooru_user_id"], value)
-                    }
-
-                    keyDialog.dismiss()
+        sourceComponent: AnimeComponents.KeyInputDialog {
+            keyType: keyInputDialogLoader.keyType
+            onClosed: {
+                keyInputDialogLoader.active = false
+                keyInputDialogLoader.keyType = ""
             }
         }
     }
@@ -1160,95 +873,9 @@ Item {
         z: 100
         active: false
 
-        onActiveChanged: {
-            if (active && item) {
-                item.show = true
-                item.forceActiveFocus()
-            }
-        }
-
-        sourceComponent: WindowDialog {
-            id: articleDialog
-            anchors.fill: parent
-            backgroundWidth: 420
-            show: false
-
-            Component.onCompleted: show = true
-
-            onDismiss: show = false
-            onVisibleChanged: {
-                if (!visible) apiKeyArticleDialogLoader.active = false
-            }
-
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignHCenter
-                iconSize: 26
-                text: "key"
-                color: Appearance.colors.colSecondary
-            }
-
-            StyledText {
-                Layout.fillWidth: true
-                horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: Appearance.font.pixelSize.large
-                font.weight: Font.DemiBold
-                color: Appearance.m3colors.m3onSurface
-                text: Translation.tr("How to set up API keys")
-            }
-
-            ScrollView {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 400
-                clip: true
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
-                StyledText {
-                    width: parent.width
-                    wrapMode: Text.Wrap
-                    textFormat: Text.MarkdownText
-                    color: Appearance.m3colors.m3onSurface
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    text: {
-                        if (Booru.currentProvider === "gelbooru") {
-                            return "# Gelbooru\n\n" +
-                            "1. Register on [Gelbooru](https://gelbooru.com/index.php?page=account&s=home)\n" +
-                            "2. After registration, go to [Options](https://gelbooru.com/index.php?page=account&s=options)\n" +
-                            "3. Copy the `api_key` and `user_id` values (after =)\n" +
-                            "- paste them into the corresponding fields.\n" +
-                            "4. If you want to unlock the **'Add to favorites'** button\n" +
-                            "- open developer settings in the browser\n" +
-                            "- go to **Storage → Cookies**\n" +
-                            "- copy the `pass_hash` value\n" +
-                            "- paste them into the corresponding fields.\n" +
-                            "### WITHOUT AN API KEY IT DOESN'T WORK"
-                        } else if (Booru.currentProvider === "danbooru") {
-                            return "## Danbooru\n\n" +
-                            "1. Register on [Danbooru](https://danbooru.donmai.us/)\n" +
-                            "2. After registration, go to [API Keys settings](https://danbooru.donmai.us/users/1470906/api_keys)\n" +
-                            "3. Create a new API key\n" +
-                            "- Copy the `api_key` and `login` values (after =)\n" +
-                            "4. paste them into the corresponding fields.\n" +
-                            "#### This can work without the API, but with some limits."
-                        } else if (Booru.currentProvider === "zerochan") {
-                            return "## Zerochan\n\n" +
-                            "1. WORK IN PROGRESS\n" +
-                            "### WITHOUT AN API KEY IT DOESN'T WORK"
-                        }
-                        return "";
-                    }
-                    onLinkActivated: (link) => Qt.openUrlExternally(link)
-                    PointingHandLinkHover {}
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.bottomMargin: 10
-                Item { Layout.fillWidth: true }
-                DialogButton {
-                    buttonText: Translation.tr("Close")
-                    onClicked: articleDialog.dismiss()
-                }
+        sourceComponent: AnimeComponents.ApiKeyArticleDialog {
+            onClosed: {
+                apiKeyArticleDialogLoader.active = false
             }
         }
     }
