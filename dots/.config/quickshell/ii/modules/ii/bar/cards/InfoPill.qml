@@ -11,13 +11,15 @@ Rectangle {
     implicitHeight: 64
     radius: 32
 
-    color: Appearance.colors.colSecondaryContainer
+    color: containerColor
 
     property string shapeString: "Circle"
     property int shapeSize: 40
+    property string icon: ""
+
     property color containerColor: Appearance.colors.colSecondaryContainer
     property color shapeColor: Appearance.colors.colSecondary
-    property color onShapeColor: Appearance.colors.colOnSecondary
+    property color symbolColor: Appearance.colors.colOnSecondary
     property color textColor: Appearance.colors.colOnSecondaryContainer
 
     default property alias shapeContent: shapeItem.children
@@ -32,6 +34,15 @@ Rectangle {
             shapeString: root.shapeString
             implicitSize: root.shapeSize
             color: root.shapeColor
+
+            MaterialSymbol {
+                id: iconSymbol
+                visible: root.icon !== "" && shapeItem.children.length <= 1
+                anchors.centerIn: parent
+                text: root.icon
+                iconSize: Appearance.font.pixelSize.large
+                color: root.symbolColor
+            }
         }
 
         StyledText {

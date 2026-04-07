@@ -92,7 +92,6 @@ StyledPopup {
         const min = Math.min(...temps);
         const max = Math.max(...temps);
         // Add 20% padding (minimum 2°) to make small differences more visible
-        // e.g., temps 20-21 become range 18-23, making 1° difference span ~20% of bar height
         const padding = Math.max(2, (max - min) * 0.2);
         return {
             min: min - padding,
@@ -127,6 +126,7 @@ StyledPopup {
             }
         }
 
+        // Hero card — uses icon, title, subtitle, pill properties
         HeroCard {
             id: weatherHero
             Layout.minimumWidth: 320
@@ -135,7 +135,6 @@ StyledPopup {
             icon: Icons.getWeatherIcon(Weather.data.wCode)
             pillText: Weather.data.city || "--"
             pillIcon: Weather.data.city ? "location_on" : ""
-            
             title: Weather.data.temp
             subtitle: Weather.data.wDesc
         }
@@ -147,29 +146,20 @@ StyledPopup {
             radius: 1
         }
 
+        // Hourly forecast — uses icon property + headerExtra
         SectionCard {
             Layout.minimumWidth: 360
             margins: root.cardMargins
             spacing: 6
             shapeString: "Clover4Leaf"
             shapeColor: Appearance.colors.colSecondaryContainer
+            symbolColor: Appearance.colors.colOnSecondaryContainer
             showDivider: false
             title: Translation.tr("Hourly")
+            icon: "schedule"
+            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--").slice(0, 20)
 
-            shapeContent: MaterialSymbol {
-                anchors.centerIn: parent
-                text: "schedule"
-                iconSize: Appearance.font.pixelSize.normal
-                color: Appearance.colors.colOnSecondaryContainer
-            }
-
-            headerExtra: StyledText {
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                text: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--").slice(0, 20)
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnSurfaceVariant
-            }
-
+            // Bar chart
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.hourlyChartHeight
@@ -268,33 +258,16 @@ StyledPopup {
                 }
             }
 
-            Rectangle {
-                Layout.fillWidth: true
+            LoadingPlaceholder {
                 Layout.preferredHeight: root.hourlyChartHeight
                 visible: root.forecastLoading || root.filteredHourlyData.length === 0
-                color: "transparent"
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    MaterialLoadingIndicator {
-                        Layout.alignment: Qt.AlignHCenter
-                        loading: root.forecastLoading
-                        visible: root.forecastLoading
-                    }
-
-                    StyledText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: root.forecastLoading ? Translation.tr("Loading forecast...") : Translation.tr("No forecast data")
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        color: Appearance.colors.colOnSurfaceVariant
-                    }
-                }
+                loading: root.forecastLoading
+                loadingText: Translation.tr("Loading forecast...")
+                emptyText: Translation.tr("No forecast data")
             }
         }
 
-        // Metrics grid
+        // Metrics grid — uses symbolColor instead of onAccentColor
         GridLayout {
             Layout.fillWidth: true
             columns: 2
@@ -307,7 +280,7 @@ StyledPopup {
                 symbol: "wb_sunny"
                 value: Weather.data.uv
                 accentColor: Appearance.colors.colTertiaryContainer
-                onAccentColor: Appearance.colors.colOnTertiaryContainer
+                symbolColor: Appearance.colors.colOnTertiaryContainer
                 compact: root.semiCompactMode
             }
             MetricCard {
@@ -315,7 +288,7 @@ StyledPopup {
                 symbol: "air"
                 value: `(${Weather.data.windDir}) ${Weather.data.wind}`
                 accentColor: Appearance.colors.colSecondaryContainer
-                onAccentColor: Appearance.colors.colOnSecondaryContainer
+                symbolColor: Appearance.colors.colOnSecondaryContainer
                 compact: root.semiCompactMode
             }
             MetricCard {
@@ -323,7 +296,7 @@ StyledPopup {
                 symbol: "rainy_light"
                 value: Weather.data.precip
                 accentColor: Appearance.colors.colPrimaryContainer
-                onAccentColor: Appearance.colors.colOnPrimaryContainer
+                symbolColor: Appearance.colors.colOnPrimaryContainer
                 compact: root.semiCompactMode
             }
             MetricCard {
@@ -331,27 +304,24 @@ StyledPopup {
                 symbol: "humidity_low"
                 value: Weather.data.humidity
                 accentColor: Appearance.colors.colTertiaryContainer
-                onAccentColor: Appearance.colors.colOnTertiaryContainer
+                symbolColor: Appearance.colors.colOnTertiaryContainer
                 compact: root.semiCompactMode
             }
         }
 
+        // 3-day forecast — uses icon property instead of shapeContent
         SectionCard {
             Layout.minimumWidth: 360
             margins: root.cardMargins
             spacing: root.semiCompactMode ? 8 : 12
             shapeString: "Cookie6Sided"
             shapeColor: Appearance.colors.colSecondaryContainer
+            symbolColor: Appearance.colors.colOnSecondaryContainer
             showDivider: false
             title: Translation.tr("Forecast")
+            icon: "calendar_month"
 
-            shapeContent: MaterialSymbol {
-                anchors.centerIn: parent
-                text: "calendar_month"
-                iconSize: Appearance.font.pixelSize.normal
-                color: Appearance.colors.colOnSecondaryContainer
-            }
-
+            // Forecast Days Row
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
@@ -366,7 +336,6 @@ StyledPopup {
                         Layout.preferredHeight: root.forecastCardHeight
                         radius: Appearance.rounding.normal
 
-                        // tried a gradient-like effect, but dont know if i should switch secondary and tertiary colors
                         color: {
                             const colors = [Appearance.colors.colPrimaryContainer, Appearance.colors.colSecondaryContainer, Appearance.colors.colTertiaryContainer];
                             return colors[index % 3];
@@ -391,7 +360,6 @@ StyledPopup {
                                 color: dayCard.textColor
                             }
 
-                            // Weather shape
                             MaterialShape {
                                 Layout.alignment: Qt.AlignHCenter
                                 shapeString: index === 0 ? "Cookie9Sided" : (index === 1 ? "Flower" : "Clover4Leaf")
@@ -410,7 +378,6 @@ StyledPopup {
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 0
 
-                                // Max temp
                                 StyledText {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: Weather.useUSCS ? modelData.maxF + "°" : modelData.maxC + "°"
@@ -419,7 +386,6 @@ StyledPopup {
                                     color: dayCard.textColor
                                 }
 
-                                // Min temp
                                 StyledText {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: Weather.useUSCS ? modelData.minF + "°" : modelData.minC + "°"
@@ -433,30 +399,12 @@ StyledPopup {
                 }
             }
 
-            // Loading placeholder
-            Rectangle {
-                Layout.fillWidth: true
+            LoadingPlaceholder {
                 Layout.preferredHeight: root.forecastCardHeight
                 visible: root.forecastLoading || root.forecastData.length === 0
-                color: "transparent"
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    MaterialLoadingIndicator {
-                        Layout.alignment: Qt.AlignHCenter
-                        loading: root.forecastLoading
-                        visible: root.forecastLoading
-                    }
-
-                    StyledText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: root.forecastLoading ? Translation.tr("Loading forecast...") : Translation.tr("No forecast data")
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        color: Appearance.colors.colOnSurfaceVariant
-                    }
-                }
+                loading: root.forecastLoading
+                loadingText: Translation.tr("Loading forecast...")
+                emptyText: Translation.tr("No forecast data")
             }
         }
     }

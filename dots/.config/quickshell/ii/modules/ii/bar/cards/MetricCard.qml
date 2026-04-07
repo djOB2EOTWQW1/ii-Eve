@@ -7,7 +7,7 @@ import qs.modules.common.widgets
 Rectangle {
     id: root
 
-    radius: Appearance.rounding.large
+    radius: Appearance.rounding.normal
     color: Appearance.colors.colSurfaceContainerHigh
     implicitWidth: rowLayout.implicitWidth + (compact ? 16 : 24)
     implicitHeight: rowLayout.implicitHeight + (compact ? 14 : 20)
@@ -15,10 +15,10 @@ Rectangle {
 
     property alias title: title.text
     property alias value: value.text
-    property alias symbol: symbol.text
+    property string symbol: ""
     property string shapeString: "Slanted"
     property color accentColor: Appearance.colors.colPrimaryContainer
-    property color onAccentColor: Appearance.colors.colOnPrimaryContainer
+    property color symbolColor: Appearance.colors.colOnPrimaryContainer
     property bool compact: false
 
     RowLayout {
@@ -32,11 +32,12 @@ Rectangle {
             color: root.accentColor
 
             MaterialSymbol {
-                id: symbol
+                id: symbolIcon
                 anchors.centerIn: parent
+                text: root.symbol
                 fill: 0
                 iconSize: Appearance.font.pixelSize.normal
-                color: root.onAccentColor
+                color: root.symbolColor
             }
         }
 

@@ -47,6 +47,7 @@ StyledPopup {
         anchors.centerIn: parent
         spacing: 12
 
+        // Hero card — uses icon, title, subtitle
         HeroCard {
             id: clockHero
             icon: "schedule"
@@ -58,6 +59,7 @@ StyledPopup {
             Layout.fillWidth: true
             spacing: 12
 
+            // Uptime pill — uses shapeContent for CustomIcon (non-MaterialSymbol)
             InfoPill {
                 text: root.formattedUptime
 
@@ -71,40 +73,29 @@ StyledPopup {
                 }
             }
 
-            // Timer Pill
+            // Timer pill — uses icon property instead of shapeContent
             InfoPill {
                 text: TimerService.pomodoroRunning ? root.formatTimerDisplay(TimerService.pomodoroSecondsLeft) : (TimerService.stopwatchRunning ? root.formatTimerDisplay(TimerService.stopwatchTime) : Translation.tr("Timer Off"))
                 containerColor: TimerService.pomodoroBreak ? Appearance.colors.colTertiaryContainer : (TimerService.pomodoroRunning || TimerService.stopwatchRunning ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSecondaryContainer)
                 color: containerColor
                 shapeColor: TimerService.pomodoroBreak ? Appearance.colors.colTertiary : (TimerService.pomodoroRunning || TimerService.stopwatchRunning ? Appearance.colors.colPrimary : Appearance.colors.colSecondary)
+                symbolColor: TimerService.pomodoroBreak ? Appearance.colors.colOnTertiary : (TimerService.pomodoroRunning || TimerService.stopwatchRunning ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondary)
                 textColor: TimerService.pomodoroBreak ? Appearance.colors.colOnTertiaryContainer : (TimerService.pomodoroRunning || TimerService.stopwatchRunning ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSecondaryContainer)
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: TimerService.pomodoroBreak ? "coffee" : "timer"
-                    iconSize: Appearance.font.pixelSize.large
-                    color: TimerService.pomodoroBreak ? Appearance.colors.colOnTertiary : (TimerService.pomodoroRunning || TimerService.stopwatchRunning ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondary)
-                }
+                icon: TimerService.pomodoroBreak ? "coffee" : "timer"
             }
         }
 
+        // To-Do section — uses icon, title, subtitle
         SectionCard {
             title: Translation.tr("To-Do Tasks")
             icon: "checklist"
             subtitle: root.todosSection
 
-            Item {
-                Layout.fillWidth: true
+            LoadingPlaceholder {
                 Layout.preferredHeight: 120
                 visible: root.todosEmpty
-
-                StyledText {
-                    Layout.alignment: Qt.AlignHCenter
-                    anchors.centerIn: parent
-                    text: Translation.tr("No pending tasks")
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colOnSurfaceVariant
-                }
+                loading: false
+                emptyText: Translation.tr("No pending tasks")
             }
         }
     }

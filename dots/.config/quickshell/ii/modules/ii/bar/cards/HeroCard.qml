@@ -18,10 +18,10 @@ Rectangle {
     property int margins: 24
     property int iconSize: 110
     property real iconFontSize: 48
-    
+
     property string shapeString: "Cookie9Sided"
     property string icon: ""
-    
+
     property string title: ""
     property string subtitle: ""
 
@@ -65,9 +65,9 @@ Rectangle {
             id: contentColumn
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             Layout.fillWidth: true
-            
+
             Rectangle {
-                visible: heroCardRoot.city !== "" && heroCardRoot.pillIcon !== ""
+                visible: heroCardRoot.pillText !== "" && heroCardRoot.pillIcon !== ""
                 Layout.alignment: Qt.AlignRight
                 implicitHeight: cityRow.implicitHeight + 12
                 implicitWidth: cityRow.implicitWidth + 20

@@ -24,6 +24,7 @@ Rectangle {
     property color shapeColor: Appearance.colors.colTertiaryContainer
     property color symbolColor: Appearance.colors.colOnTertiaryContainer
     property bool showDivider: true
+    property string headerExtraText: ""
 
     default property alias content: contentColumn.data
     property alias shapeContent: shapeItem.data
@@ -68,6 +69,13 @@ Rectangle {
             RowLayout {
                 id: headerExtraContainer
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+                StyledText {
+                    visible: root.headerExtraText !== ""
+                    text: root.headerExtraText
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colOnSurfaceVariant
+                }
             }
         }
 
@@ -86,7 +94,7 @@ Rectangle {
 
             StyledText {
                 id: subtitleText
-                visible: !root.todosEmpty
+                visible: subtitleText.text !== ""
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignLeft
                 wrapMode: Text.Wrap
