@@ -82,7 +82,7 @@
         {
         "type": "command",
             "key": "{$2}{#32}󰖂 VPN      ",
-            "text": "if ! nmcli -t -f NAME,TYPE,STATE con show --active | grep -q '^throne-tun:'; then echo 'In-active'; exit 0; fi; ts=$(nmcli -g connection.timestamp con show throne-tun 2>/dev/null); if [ -z \"$ts\" ] || ! expr \"$ts\" : '[0-9][0-9]*$' >/dev/null; then echo 'Active (time unknown)'; else age=$(( $(date +%s) - ts )); d=$((age/86400)); h=$(( (age%86400)/3600 )); m=$(( (age%3600)/60 )); s=$((age%60)); out=''; [ $d -gt 0 ] && out=\"${out}${d}d \"; [ $h -gt 0 ] && out=\"${out}${h}h \"; [ $m -gt 0 ] && out=\"${out}${m}m \"; [ $s -gt 0 ] || [ -z \"$out\" ] && out=\"${out}${s}s\"; echo \"Active (${out})\"; fi"
+            "text": "if ! nmcli -t -f NAME,TYPE,STATE con show --active | grep -q '^happ-tun:'; then echo 'In-active'; exit 0; fi; ts=$(nmcli -g connection.timestamp con show happ-tun 2>/dev/null); if [ -z \"$ts\" ] || ! expr \"$ts\" : '[0-9][0-9]*$' >/dev/null; then echo 'Active (time unknown)'; else age=$(( $(date +%s) - ts )); d=$((age/86400)); h=$(( (age%86400)/3600 )); m=$(( (age%3600)/60 )); s=$((age%60)); out=''; [ $d -gt 0 ] && out=\"${out}${d}d \"; [ $h -gt 0 ] && out=\"${out}${h}h \"; [ $m -gt 0 ] && out=\"${out}${m}m \"; [ $s -gt 0 ] || [ -z \"$out\" ] && out=\"${out}${s}s\"; echo \"Active (${out})\"; fi"
         },
         {
             "format": "{#1}{#keys}├{$1}┤",
