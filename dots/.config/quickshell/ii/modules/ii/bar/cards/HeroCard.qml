@@ -64,7 +64,7 @@ Rectangle {
         implicitHeight: cityRow.implicitHeight + 12
         implicitWidth: cityRow.implicitWidth + 20
         radius: Appearance.rounding.full
-        color: Appearance.colors.colSecondaryContainer
+        color: Appearance.colors.colOnPrimary
         anchors {
             right: parent.right
             top: parent.top
@@ -102,7 +102,6 @@ Rectangle {
         font.weight: Font.Black
         color: heroCardRoot.textColor
         horizontalAlignment: Text.AlignRight
-        elide: Text.ElideRight
         anchors {
             verticalCenter: parent.verticalCenter
             verticalCenterOffset: 4
