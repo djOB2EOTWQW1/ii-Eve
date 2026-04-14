@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+############################################################### ENGLISH https://github.com/djOB2EOTWQW1/fish-functions ###############################################################
 
 function dlvideo -d "Download video using yt-dlp with random filename"
     # Настройки
