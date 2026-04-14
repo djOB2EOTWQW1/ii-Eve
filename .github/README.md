@@ -67,7 +67,7 @@ This dots contains my tweaks to original illogical-impulse dots. It's mostly up 
 1. Clone this repository like this:
 
 ```
-git clone https://github.com/djOB2EOTWQW1/ii-Eve.git --recurse-submodules
+git clone -b user https://github.com/djOB2EOTWQW1/ii-Eve.git --recurse-submodules
 ```
 
 2. Run the setup script and follow the instructions:
