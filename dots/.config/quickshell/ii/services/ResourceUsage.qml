@@ -27,6 +27,13 @@ Singleton {
     property string cpuModel: "Unknown CPU"
     property string cpuFreq: "-- MHz"
     property string cpuTemp: "--°C"
+    property real gpuUsage: 0
+    property string gpuTemp: "--°C"
+    property string gpuModel: "Unknown GPU"
+
+    property real netRxBytesPerSec: 0
+    property real netTxBytesPerSec: 0
+    property var previousNetStats: null
 
     property string maxAvailableMemoryString: kbToGbString(ResourceUsage.memoryTotal)
     property string maxAvailableSwapString: kbToGbString(ResourceUsage.swapTotal)
@@ -40,7 +47,13 @@ Singleton {
     function kbToGbString(kb) {
         return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }
-
+    function formatNetSpeed(bytesPerSec) {
+        if (bytesPerSec >= 1024 * 1024)
+            return (bytesPerSec / (1024 * 1024)).toFixed(1) + " MB/s"
+            if (bytesPerSec >= 1024)
+                return (bytesPerSec / 1024).toFixed(0) + " KB/s"
+                return bytesPerSec.toFixed(0) + " B/s"
+    }
     function updateMemoryUsageHistory() {
         memoryUsageHistory = [...memoryUsageHistory, memoryUsedPercentage]
         if (memoryUsageHistory.length > historyLength) {
@@ -111,6 +124,7 @@ Singleton {
                     .replace(/@\s*[\d.]+\s*GHz/i, "")     // @ 2.60GHz
                     .replace(/\b\d+-Core\b/gi, "")        // 6-Core
                     .replace(/\b\d+\s*Cores?\b/gi, "")    // 6 Cores
+                    .replace(/\b\d+th\s+Gen\b/gi, "")     // Xth Gen
                     .replace(/\bCPU\b/gi, "")
                     .replace(/\bProcessor\b/gi, "")
                     .replace(/\s+/g, " ")
@@ -120,12 +134,31 @@ Singleton {
             if (freqMatch) root.cpuFreq = parseInt(freqMatch[1]) + " MHz"
 
             root.updateHistories()
+
+            fileNetDev.reload()
+            const textNetDev = fileNetDev.text()
+            let totalRx = 0, totalTx = 0
+            const lines = textNetDev.split("\n")
+            for (const line of lines) {
+                const m = line.trim().match(/^(\w+):\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/)
+                if (m && m[1] !== "lo") {
+                    totalRx += parseInt(m[2])
+                    totalTx += parseInt(m[3])
+                }
+            }
+            const intervalSec = (Config.options?.resources?.updateInterval ?? 3000) / 1000
+            if (root.previousNetStats) {
+                root.netRxBytesPerSec = Math.max(0, (totalRx - root.previousNetStats.rx) / intervalSec)
+                root.netTxBytesPerSec = Math.max(0, (totalTx - root.previousNetStats.tx) / intervalSec)
+            }
+            root.previousNetStats = { rx: totalRx, tx: totalTx }
         }
 	}
 
 	FileView { id: fileMeminfo; path: "/proc/meminfo" }
     FileView { id: fileStat; path: "/proc/stat" }
     FileView { id: fileCpuInfo; path: "/proc/cpuinfo" }
+    FileView { id: fileNetDev; path: "/proc/net/dev" }
 
     Process {
         id: findCpuMaxFreqProc
@@ -185,8 +218,31 @@ Singleton {
         onTriggered: tempProc.running = true
     }
 
+    Process {
+        id: gpuProc
+        command: ["bash", "-c", "if command -v nvidia-smi &>/dev/null; then nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,name --format=csv,noheader,nounits 2>/dev/null | head -1; elif [ -f /sys/class/drm/card0/device/gpu_busy_percent ]; then u=$(cat /sys/class/drm/card0/device/gpu_busy_percent); t=$(sensors 2>/dev/null | awk '/junction:/{print $2}' | tr -d '+' | cut -d. -f1 | head -1); [ -z \"$t\" ] && t=\"--\"; n=$(cat /sys/class/drm/card0/device/product_name 2>/dev/null || echo 'AMD GPU'); echo \"$u, $t, $n\"; fi"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.trim().split(/,\s*/)
+                if (parts.length >= 3) {
+                    root.gpuUsage = parseFloat(parts[0]) / 100
+                    root.gpuTemp = parts[1].trim() + "°C"
+                    root.gpuModel = parts.slice(2).join(", ").trim()
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 3000
+        running: true
+        repeat: true
+        onTriggered: gpuProc.running = true
+    }
+
     Component.onCompleted: {
         diskProc.running = true
         tempProc.running = true
+        gpuProc.running = true
     }
 }
