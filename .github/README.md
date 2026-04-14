@@ -101,7 +101,7 @@ eve update
 
 Use the update button:
   
-<img width="354" height="78" alt="image" src="https://github.com/user-attachments/assets/77d9d962-00b3-48a4-b9d5-1d3d0c053e86" />
+<img width="351" height="81" alt="image" src="https://github.com/user-attachments/assets/44fe7c99-99e9-47ce-b922-2e7cea2758f4" />
 
 
 <div align="center">
