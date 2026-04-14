@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-
+############## https://github.com/djOB2EOTWQW1/fish-functions ===on English=== ##############
 #------------------------------------------------#
 # Вставить директории для игр через "\" Пример:  #
 #   "$HOME/.NSFW/Games/HaremHotel" \             #
@@ -8,58 +8,8 @@
 
 set -g GAME_DIRS \
     #Native
-    "$HOME/.NSFW/Games Linux/RenPy/AttackOnSurveyCorps" \
-    "$HOME/.NSFW/Games Linux/RenPy/CosyCafe" \
-    "$HOME/.NSFW/Games Linux/RenPy/CrimsonHigh" \
-    "$HOME/.NSFW/Games Linux/RenPy/DeepVault" \
-    "$HOME/.NSFW/Games Linux/RenPy/Doomination" \
-    "$HOME/.NSFW/Games Linux/RenPy/ElectricSheep" \
-    "$HOME/.NSFW/Games Linux/RenPy/FakeFather" \
-    "$HOME/.NSFW/Games Linux/RenPy/FourElementsTrainer" \
-    "$HOME/.NSFW/Games Linux/RenPy/FromTheSin" \
-    "$HOME/.NSFW/Games Linux/RenPy/HappySummer" \
-    "$HOME/.NSFW/Games Linux/RenPy/HaremHotel" \
-    "$HOME/.NSFW/Games Linux/RenPy/HoneyKingdom" \
-    "$HOME/.NSFW/Games Linux/RenPy/Hornycraft" \
-    "$HOME/.NSFW/Games Linux/RenPy/LessonsInLove" \
-    "$HOME/.NSFW/Games Linux/RenPy/LifesPayback" \
-    "$HOME/.NSFW/Games Linux/RenPy/MagicalMishaps" \
-    "$HOME/.NSFW/Games Linux/RenPy/MIST" \
-    "$HOME/.NSFW/Games Linux/RenPy/MonsterCollege" \
-    "$HOME/.NSFW/Games Linux/RenPy/NekoParadise" \
-    "$HOME/.NSFW/Games Linux/RenPy/NorikasCase" \
-    "$HOME/.NSFW/Games Linux/RenPy/PhotoHunt" \
-    "$HOME/.NSFW/Games Linux/RenPy/ProjektPassion" \
-    "$HOME/.NSFW/Games Linux/RenPy/RSSU" \
-    "$HOME/.NSFW/Games Linux/RenPy/SexvillePortal" \
-    "$HOME/.NSFW/Games Linux/RenPy/RickAndMorty" \
-    "$HOME/.NSFW/Games Linux/RenPy/TabooStories" \
-    "$HOME/.NSFW/Games Linux/RenPy/TakeOver" \
-    "$HOME/.NSFW/Games Linux/RenPy/TakeisJourney" \
-    "$HOME/.NSFW/Games Linux/RenPy/TheHeadmaster" \
-    "$HOME/.NSFW/Games Linux/RenPy/TheShopkeeper" \
-    "$HOME/.NSFW/Games Linux/RenPy/WelcomeToErosland" \
-    "$HOME/.NSFW/Games Linux/RenPy/WitchHunter" \
-    "$HOME/.NSFW/Games Linux/RenPy/WTS" \
-    "$HOME/.NSFW/Games Linux/RenPy/YesIamAFurry" \
-    "$HOME/.NSFW/Games Linux/RenPy/inquisitorTrainer" \
-    "$HOME/.NSFW/Games Linux/Unity/IN HEAT" \
-    "$HOME/.NSFW/Games Linux/Unity/MyDystopianRobotGirlfriend" \
-    "$HOME/.NSFW/Games Linux/Unity/PonyWaifuSim" \
+
     #PortProton (NOT NATIVE)
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Adulttale (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Daily Lives (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Imouto Life (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Living With SIster (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/LonaRPG/usr/bin/LonaRPG (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Other/Succum Brewery (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Elenastory (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoApp V1 (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/HypnoApp V2 (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Loop Train (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Lovely Craft (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/Price For Freedom (PP)" \
-    "$HOME/.NSFW/Games Windows(PortProton)/Unity/ReSister (PP)"
 
 #-------------------------------------------------------------------------------------------------------------#
 # Если у вас нет интегрированной графики, то удалите переменные оставив set -g GAME_NV_ENV                    #
