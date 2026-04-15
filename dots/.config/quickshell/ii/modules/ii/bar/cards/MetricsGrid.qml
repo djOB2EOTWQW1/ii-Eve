@@ -8,20 +8,18 @@ import qs.modules.common.widgets
 GridLayout {
 
     MetricCard {
-        title: Translation.tr("UV Index")
-        symbol: "wb_sunny"
-        value: Weather.data.uv
+        title: Translation.tr("Sunrise")
+        symbol: "wb_twilight"
+        value: Weather.data.sunrise
         accentColor: Appearance.colors.colTertiaryContainer
         symbolColor: Appearance.colors.colOnTertiaryContainer
-        compact: root.compactMode
     }
     MetricCard {
-        title: Translation.tr("Wind")
-        symbol: "air"
-        value: `(${Weather.data.windDir}) ${Weather.data.wind}`
+        title: Translation.tr("Sunset")
+        symbol: "bedtime"
+        value: Weather.data.sunset
         accentColor: Appearance.colors.colSecondaryContainer
         symbolColor: Appearance.colors.colOnSecondaryContainer
-        compact: root.compactMode
     }
     MetricCard {
         title: Translation.tr("Precipitation")
@@ -29,7 +27,6 @@ GridLayout {
         value: Weather.data.precip
         accentColor: Appearance.colors.colPrimaryContainer
         symbolColor: Appearance.colors.colOnPrimaryContainer
-        compact: root.compactMode
     }
     MetricCard {
         title: Translation.tr("Humidity")
@@ -37,6 +34,5 @@ GridLayout {
         value: Weather.data.humidity
         accentColor: Appearance.colors.colTertiaryContainer
         symbolColor: Appearance.colors.colOnTertiaryContainer
-        compact: root.compactMode
     }
 }

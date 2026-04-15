@@ -42,6 +42,13 @@ StyledPopup {
         return m + ":" + (s < 10 ? "0" : "") + s;
     }
 
+    function getDayProgressPercent(hour, minute) {
+
+        const secondsPassed = hour * 3600 + minute * 60 
+        const totalSeconds = 24 * 3600
+        return Math.floor((secondsPassed / totalSeconds) * 100)
+    }
+
     ColumnLayout {
         id: columnLayout
         anchors.centerIn: parent
@@ -50,8 +57,12 @@ StyledPopup {
         HeroCard {
             id: clockHero
             icon: "schedule"
+
             title: root.formattedTime
             subtitle: root.formattedDate
+
+            pillText: getDayProgressPercent(DateTime.time.substring(0, 2), DateTime.time.substring(3, 5)) + "%"
+            pillIcon: "clock_loader_60"
         }
 
         ColumnLayout {

@@ -355,7 +355,7 @@ Singleton {
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
                     property bool useWorkspaceMap: true
                     property list<var> workspaceMap: [0, 10]
-                    property int maxWindowCount: 5 // Maximum windows to show in one workspace
+                    property int maxWindowCount: 1 // Maximum windows to show in one workspace
                     property bool useNerdFont: false
                     property int activeIndicatorOpacity: 100 // 0-100
                     property bool dynamicWorkspaces: false
@@ -399,6 +399,15 @@ Singleton {
                         }
                     ]
                     property list<var> right: [
+                        {
+                            id: "screen_share_indicator"
+                        },
+                        {
+                            id: "record_indicator"
+                        },
+                        {
+                            id: "weather"
+                        },
                         {
                             id: "clock"
                         },

@@ -9,8 +9,8 @@ Rectangle {
 
     radius: Appearance.rounding.normal
     color: Appearance.colors.colSurfaceContainerHigh
-    implicitWidth: rowLayout.implicitWidth + (compact ? 16 : 24)
-    implicitHeight: rowLayout.implicitHeight + (compact ? 14 : 20)
+    implicitWidth: rowLayout.implicitWidth + 24
+    implicitHeight: rowLayout.implicitHeight + 20
     Layout.fillWidth: true
 
     property alias title: title.text
@@ -18,17 +18,20 @@ Rectangle {
     property string symbol: ""
     property string shapeString: "Slanted"
     property color accentColor: Appearance.colors.colPrimaryContainer
-    property color symbolColor: Appearance.colors.colOnPrimaryContainer
-    property bool compact: false
+    property color symbolColor: Appearance.colors.colOnPrimaryContainer    
 
     RowLayout {
         id: rowLayout
-        anchors.centerIn: parent
-        spacing: compact ? 8 : 12
+        spacing: 12
+        anchors {
+            left: parent.left
+            verticalCenter: parent.verticalCenter
+            leftMargin: 12
+        }
 
         MaterialShape {
             shapeString: root.shapeString
-            implicitSize: compact ? 30 : 36
+            implicitSize: 36
             color: root.accentColor
 
             MaterialSymbol {
@@ -43,18 +46,21 @@ Rectangle {
 
         ColumnLayout {
             spacing: -2
+
             StyledText {
                 id: title
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: Appearance.colors.colOnSurfaceVariant
                 font.weight: Font.DemiBold
             }
+
             StyledText {
                 id: value
                 font.pixelSize: Appearance.font.pixelSize.small
                 color: Appearance.colors.colOnSurface
                 font.weight: Font.Bold
             }
+            
             Item {
                 Layout.fillWidth: true
             }

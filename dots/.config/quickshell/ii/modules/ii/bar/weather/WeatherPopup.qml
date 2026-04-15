@@ -44,9 +44,16 @@ StyledPopup {
         return futureHours.slice(0, maxHourlyBars);
     }
 
+    readonly property string city: Config.options.bar.weather.city
+    onCityChanged: {
+        if (Config.options.bar.weather.city)
+            root.fetchForecast();
+    }
+
     function fetchForecast() {
         forecastLoading = true;
         let city = Config.options.bar.weather.city || "auto";
+        //console.log(`[WeatherPopup] Fetching forecast for city: ${city}`);
         city = city.trim().split(/\s+/).join('+');
         forecastFetcher.command[2] = `curl -s "wttr.in/${city}?format=j1" | jq '{daily: [.weather[] | {date: .date, maxC: .maxtempC, minC: .mintempC, maxF: .maxtempF, minF: .mintempF, code: .hourly[4].weatherCode}], hourly: [.weather[0].hourly[], .weather[1].hourly[] | {time: .time, tempC: .tempC, tempF: .tempF, code: .weatherCode}]}'`;
         forecastFetcher.running = true;
