@@ -130,6 +130,20 @@ StyledPopup {
                     resourceValueText: `${ResourceUsage.formatNetSpeed(ResourceUsage.netRxBytesPerSec)} / ${ResourceUsage.formatNetSpeed(ResourceUsage.netTxBytesPerSec)}`
                     resourcePercentage: -1
                     highlightColor: Appearance.colors.colPrimary
+
+                    StyledPopupValueRow {
+                        icon: "arrow_downward"
+                        label: Translation.tr("Download")
+                        graphValues: ResourceUsage.netRxHistory
+                        graphColor: Appearance.colors.colPrimary
+                    }
+
+                    StyledPopupValueRow {
+                        icon: "arrow_upward"
+                        label: Translation.tr("Upload")
+                        graphValues: ResourceUsage.netTxHistory
+                        graphColor: Appearance.colors.colTertiary
+                    }
                 }
             }
         }
