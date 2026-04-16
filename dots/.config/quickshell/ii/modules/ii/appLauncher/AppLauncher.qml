@@ -36,6 +36,7 @@ Scope {
         propagateComposedEvents: true
         onPressed: event => {
             if (event.button === Qt.RightButton) {
+                contextMenu.selectedAppIndex = -1;
                 contextMenu.x = event.x - contextMenu.width / 2;
                 contextMenu.y = event.y;
                 contextMenu.openAt();
@@ -45,72 +46,91 @@ Scope {
             }
         }
 
-        PagePlaceholder {
-            visible: appGrid.count === 0
-            icon: "apps"
-            title: "AppLauncher"
-        }
-
-        GridView {
-            id: appGrid
+        Rectangle {
+            id: innerLayer
             anchors.fill: parent
-            anchors.margins: 24
-            visible: count > 0
-            cellWidth: 140
-            cellHeight: 140
-            clip: true
-            interactive: true
-            boundsBehavior: Flickable.StopAtBounds
-            ScrollBar.vertical: StyledScrollBar {}
+            anchors.margins: 10
+            radius: Appearance.rounding.normal
+            color: Appearance.colors.colLayer1
 
-            model: CustomApps.entries
-            delegate: Item {
-                required property var modelData
-                required property int index
-                width: appGrid.cellWidth
-                height: appGrid.cellHeight
+            PagePlaceholder {
+                visible: appGrid.count === 0
+                icon: "apps"
+                title: "AppLauncher"
+            }
 
-                MouseArea {
-                    id: itemArea
-                    anchors.fill: parent
-                    anchors.margins: 6
-                    hoverEnabled: true
-                    acceptedButtons: Qt.LeftButton
-                    onClicked: CustomApps.launch(modelData)
+            GridView {
+                id: appGrid
+                anchors.fill: parent
+                anchors.margins: 14
+                visible: count > 0
+                cellWidth: 140
+                cellHeight: 140
+                clip: true
+                interactive: true
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: StyledScrollBar {}
 
-                    Rectangle {
+                model: CustomApps.entries
+                delegate: Item {
+                    id: delegateRoot
+                    required property var modelData
+                    required property int index
+                    width: appGrid.cellWidth
+                    height: appGrid.cellHeight
+
+                    MouseArea {
+                        id: itemArea
                         anchors.fill: parent
-                        radius: Appearance.rounding.normal
-                        color: itemArea.containsMouse
-                            ? Appearance.colors.colLayer1Hover
-                            : "transparent"
-
-                        Behavior on color {
-                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        anchors.margins: 6
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: (mouse) => {
+                            if (mouse.button === Qt.RightButton) {
+                                const pos = itemArea.mapToItem(contentRoot, mouse.x, mouse.y);
+                                contextMenu.selectedAppIndex = delegateRoot.index;
+                                contextMenu.x = pos.x - contextMenu.width / 2;
+                                contextMenu.y = pos.y;
+                                contextMenu.openAt();
+                            } else {
+                                CustomApps.launch(delegateRoot.modelData);
+                            }
                         }
 
-                        ColumnLayout {
+                        Rectangle {
                             anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 6
+                            radius: Appearance.rounding.normal
+                            color: itemArea.containsMouse
+                                ? Appearance.colors.colLayer1Hover
+                                : "transparent"
 
-                            Image {
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.preferredWidth: 64
-                                Layout.preferredHeight: 64
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                source: Quickshell.iconPath(modelData.icon, "application-x-executable")
+                            Behavior on color {
+                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
                             }
 
-                            StyledText {
-                                Layout.fillWidth: true
-                                horizontalAlignment: Text.AlignHCenter
-                                elide: Text.ElideRight
-                                maximumLineCount: 2
-                                wrapMode: Text.Wrap
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                text: modelData.name
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 6
+
+                                Image {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: 64
+                                    Layout.preferredHeight: 64
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    source: Quickshell.iconPath(delegateRoot.modelData.icon, "application-x-executable")
+                                }
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    elide: Text.ElideRight
+                                    maximumLineCount: 2
+                                    wrapMode: Text.Wrap
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    text: delegateRoot.modelData.name
+                                }
                             }
                         }
                     }
@@ -118,12 +138,13 @@ Scope {
             }
         }
 
-        // Context menu (right-click in empty area)
+        // Context menu (right-click)
         Rectangle {
             id: contextMenu
             z: 10
             visible: false
-            implicitWidth: 200
+            property int selectedAppIndex: -1
+            implicitWidth: 220
             implicitHeight: menuColumn.implicitHeight + 12
             color: Appearance.m3colors.m3surfaceContainer
             radius: Appearance.rounding.normal
@@ -153,10 +174,21 @@ Scope {
 
                 MenuButton {
                     Layout.fillWidth: true
+                    visible: contextMenu.selectedAppIndex >= 0
+                    buttonText: Translation.tr("Remove from launcher")
+                    onClicked: {
+                        const idx = contextMenu.selectedAppIndex;
+                        contextMenu.hide();
+                        CustomApps.removeAppAt(idx);
+                    }
+                }
+
+                MenuButton {
+                    Layout.fillWidth: true
+                    visible: contextMenu.selectedAppIndex < 0
                     buttonText: Translation.tr("Add application")
                     onClicked: {
                         contextMenu.hide();
-                        GlobalStates.appLauncherOpen = false;
                         GlobalStates.binarySelectorOpen = true;
                     }
                 }
@@ -292,10 +324,6 @@ Scope {
                 LauncherContent {}
 
                 Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_Escape) {
-                        GlobalStates.appLauncherOpen = false;
-                        return;
-                    }
                     if (event.modifiers === Qt.ControlModifier) {
                         if (event.key === Qt.Key_D) {
                             root.toggleDetach();

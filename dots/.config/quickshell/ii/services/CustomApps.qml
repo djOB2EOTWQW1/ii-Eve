@@ -19,12 +19,19 @@ Singleton {
 
     property string filePath: Directories.customAppsPath
     property alias entries: customAppsAdapter.entries
+    property alias dirs: customAppsAdapter.dirs
     property bool ready: false
 
     property bool winePresent: false
     property bool portprotonPresent: false
 
+    readonly property var binaryExtensions: [
+        "appimage", "exe", "sh", "bash", "zsh", "fish",
+        "bin", "run", "py", "pl", "rb", "lua", "js"
+    ]
+
     signal changed()
+    signal addRejected(string reason)
 
     Process {
         running: true
@@ -50,10 +57,26 @@ Singleton {
         return -1
     }
 
+    function isLikelyBinary(path) {
+        if (!path) return false
+        const basename = String(path).split('/').pop()
+        if (basename.length === 0) return false
+        const dot = basename.lastIndexOf('.')
+        if (dot < 0) return true
+        if (dot === 0) return false
+        const ext = basename.substring(dot + 1).toLowerCase()
+        return root.binaryExtensions.indexOf(ext) >= 0
+    }
+
     function addApp(filePath) {
         const path = FileUtils.trimFileProtocol(filePath)
         if (!path || path.length === 0) return false
         if (root.indexOfPath(path) !== -1) return false
+        if (!root.isLikelyBinary(path)) {
+            console.warn("[CustomApps] rejected non-binary:", path)
+            root.addRejected(path)
+            return false
+        }
 
         const basename = path.split('/').pop()
         const name = basename.replace(/\.(AppImage|appimage|exe)$/i, '')
@@ -61,6 +84,41 @@ Singleton {
 
         const next = Array.from(root.entries)
         next.push({ name: name, path: path, icon: icon })
+        customAppsAdapter.entries = next
+        root.changed()
+        return true
+    }
+
+    function indexOfDir(dirPath) {
+        const trimmed = FileUtils.trimFileProtocol(dirPath)
+        for (let i = 0; i < root.dirs.length; i++) {
+            if (root.dirs[i] === trimmed) return i
+        }
+        return -1
+    }
+
+    function addDir(dirPath) {
+        const path = FileUtils.trimFileProtocol(dirPath)
+        if (!path || path.length === 0) return false
+        if (root.indexOfDir(path) !== -1) return false
+        const next = Array.from(root.dirs)
+        next.push(path)
+        customAppsAdapter.dirs = next
+        return true
+    }
+
+    function removeDirAt(index) {
+        if (index < 0 || index >= root.dirs.length) return false
+        const next = Array.from(root.dirs)
+        next.splice(index, 1)
+        customAppsAdapter.dirs = next
+        return true
+    }
+
+    function removeAppAt(index) {
+        if (index < 0 || index >= root.entries.length) return false
+        const next = Array.from(root.entries)
+        next.splice(index, 1)
         customAppsAdapter.entries = next
         root.changed()
         return true
@@ -123,6 +181,7 @@ Singleton {
         adapter: JsonAdapter {
             id: customAppsAdapter
             property list<var> entries: []
+            property list<string> dirs: []
         }
     }
 }

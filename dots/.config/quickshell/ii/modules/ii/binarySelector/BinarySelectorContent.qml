@@ -17,6 +17,30 @@ MouseArea {
     property int columns: 5
     property real cellAspectRatio: 1.0
     property string filterText: ""
+    property var visibleFiles: []
+
+    function refreshVisibleFiles() {
+        const items = [];
+        for (let i = 0; i < folderModel.count; i++) {
+            const fileIsDir = folderModel.get(i, "fileIsDir");
+            const filePath = folderModel.get(i, "filePath");
+            if (fileIsDir || CustomApps.isLikelyBinary(filePath)) {
+                items.push({
+                    fileName: folderModel.get(i, "fileName"),
+                    filePath: filePath,
+                    fileIsDir: fileIsDir
+                });
+            }
+        }
+        rootArea.visibleFiles = items;
+    }
+
+    Timer {
+        id: refreshFilesTimer
+        interval: 30
+        repeat: false
+        onTriggered: rootArea.refreshVisibleFiles()
+    }
 
     focus: true
     hoverEnabled: true
@@ -65,6 +89,10 @@ MouseArea {
         showOnlyReadable: true
         sortField: FolderListModel.Name
         sortReversed: false
+
+        onCountChanged: refreshFilesTimer.restart()
+        onStatusChanged: refreshFilesTimer.restart()
+        onFolderChanged: refreshFilesTimer.restart()
     }
 
     function selectFile(filePath, isDir) {
@@ -145,7 +173,7 @@ MouseArea {
                                     const current = FileUtils.trimFileProtocol(folderModel.folder.toString());
                                     for (let i = 0; i < model.length; i++) {
                                         const item = model[i];
-                                        if (!item.path || item.path === "INVALID") continue;
+                                        if (!item.path || item.kind === "separator" || item.kind === "add") continue;
                                         const resolved = FileUtils.trimFileProtocol(Qt.resolvedUrl(item.path).toString());
                                         if (resolved === current) return i;
                                     }
@@ -154,30 +182,72 @@ MouseArea {
 
                                 Repeater {
                                     id: sideRepeater
-                                    model: [
-                                        { icon: "home", name: Translation.tr("Home"), path: Directories.home },
-                                        { icon: "download", name: Translation.tr("Downloads"), path: Directories.downloads },
-                                        { icon: "desktop_windows", name: Translation.tr("Desktop"), path: `${Directories.home}/Desktop` },
-                                        { icon: "folder", name: "Applications", path: `${Directories.home}/Applications` },
-                                        { icon: "", name: "---", path: "INVALID" },
-                                        { icon: "deployed_code", name: "/usr/bin", path: "file:///usr/bin" },
-                                        { icon: "deployed_code", name: "/usr/local/bin", path: "file:///usr/local/bin" },
-                                        { icon: "deployed_code", name: "/opt", path: "file:///opt" },
-                                    ]
-                                    delegate: NavigationRailButton {
+                                    model: {
+                                        const arr = [
+                                            { icon: "home", name: Translation.tr("Home"), path: Directories.home, kind: "nav" },
+                                            { icon: "download", name: Translation.tr("Downloads"), path: Directories.downloads, kind: "nav" },
+                                            { icon: "desktop_windows", name: Translation.tr("Desktop"), path: `${Directories.home}/Desktop`, kind: "nav" },
+                                            { icon: "folder", name: "Applications", path: `${Directories.home}/Applications`, kind: "nav" },
+                                            { icon: "", name: "---", path: "", kind: "separator" },
+                                            { icon: "deployed_code", name: "/usr/bin", path: "file:///usr/bin", kind: "nav" },
+                                            { icon: "deployed_code", name: "/usr/local/bin", path: "file:///usr/local/bin", kind: "nav" },
+                                            { icon: "deployed_code", name: "/opt", path: "file:///opt", kind: "nav" },
+                                        ];
+                                        const userDirs = CustomApps.dirs;
+                                        for (let i = 0; i < userDirs.length; i++) {
+                                            const p = userDirs[i];
+                                            const parts = p.split('/').filter(s => s.length > 0);
+                                            const label = parts.length > 0 ? parts[parts.length - 1] : p;
+                                            arr.push({ icon: "folder_special", name: label, path: p, kind: "custom", dirIndex: i });
+                                        }
+                                        arr.push({ icon: "", name: "---", path: "", kind: "separator" });
+                                        arr.push({ icon: "create_new_folder", name: Translation.tr("Add dir"), path: "", kind: "add" });
+                                        return arr;
+                                    }
+                                    delegate: Item {
+                                        id: railEntry
                                         required property var modelData
                                         required property int index
-                                        baseSize: 40
-                                        baseHighlightHeight: 32
-                                        iconSize: 18
-                                        buttonIcon: modelData.icon
-                                        buttonText: modelData.name
-                                        expanded: true
-                                        toggled: sideRail.currentIndex === index
-                                        showToggledHighlight: false
-                                        enabled: modelData.icon.length > 0
-                                        onClicked: {
-                                            folderModel.folder = Qt.resolvedUrl(modelData.path);
+
+                                        property real baseSize: 40
+                                        property real baseHighlightHeight: 32
+                                        readonly property real visualWidth: navBtn.visualWidth
+
+                                        Layout.fillWidth: true
+                                        implicitHeight: navBtn.implicitHeight
+
+                                        NavigationRailButton {
+                                            id: navBtn
+                                            anchors.fill: parent
+                                            baseSize: 40
+                                            baseHighlightHeight: 32
+                                            iconSize: 18
+                                            buttonIcon: railEntry.modelData.icon
+                                            buttonText: railEntry.modelData.name
+                                            expanded: true
+                                            toggled: sideRail.currentIndex === railEntry.index
+                                            showToggledHighlight: false
+                                            enabled: railEntry.modelData.kind !== "separator"
+                                            onClicked: {
+                                                const md = railEntry.modelData;
+                                                if (md.kind === "add") {
+                                                    const cur = FileUtils.trimFileProtocol(folderModel.folder.toString());
+                                                    CustomApps.addDir(cur);
+                                                } else if (md.kind === "nav" || md.kind === "custom") {
+                                                    folderModel.folder = Qt.resolvedUrl(md.path);
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            acceptedButtons: Qt.RightButton
+                                            enabled: railEntry.modelData.kind === "custom"
+                                            onClicked: mouse => {
+                                                if (mouse.button === Qt.RightButton) {
+                                                    CustomApps.removeDirAt(railEntry.modelData.dirIndex);
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -228,7 +298,7 @@ MouseArea {
                         boundsBehavior: Flickable.StopAtBounds
                         bottomMargin: filterBar.visible ? filterBar.implicitHeight + 16 : 0
                         ScrollBar.vertical: StyledScrollBar {}
-                        model: folderModel
+                        model: rootArea.visibleFiles
 
                         delegate: BinaryFileItem {
                             required property var modelData
