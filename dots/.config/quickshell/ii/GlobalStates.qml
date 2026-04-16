@@ -13,6 +13,7 @@ Singleton {
     property alias sidebarLeftOpen: root.policiesPanelOpen // Until all sidebars naming is fixed
     property alias sidebarRightOpen: root.dashboardPanelOpen // Until all sidebars naming is fixed
 
+    property bool appLauncherOpen: false
     property bool barOpen: true
     property bool crosshairOpen: false
     property bool mediaControlsOpen: false
