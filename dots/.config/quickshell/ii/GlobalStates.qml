@@ -14,6 +14,7 @@ Singleton {
     property alias sidebarRightOpen: root.dashboardPanelOpen // Until all sidebars naming is fixed
 
     property bool appLauncherOpen: false
+    property bool binarySelectorOpen: false
     property bool barOpen: true
     property bool crosshairOpen: false
     property bool mediaControlsOpen: false
