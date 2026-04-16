@@ -91,6 +91,11 @@ Scope {
                     rightMargin: Appearance.sizes.hyprlandGapsOut
                 }
 
+                PagePlaceholder {
+                    icon: "apps"
+                    title: "AppLauncher"
+                }
+
                 Keys.onPressed: (event) => {
                     if (event.key === Qt.Key_Escape) {
                         panelWindow.hide();
@@ -133,6 +138,11 @@ Scope {
                 border.width: 1
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+
+                PagePlaceholder {
+                    icon: "apps"
+                    title: "AppLauncher"
+                }
 
                 Keys.onPressed: (event) => {
                     if (event.key === Qt.Key_Escape) {
