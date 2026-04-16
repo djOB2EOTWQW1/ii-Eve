@@ -10,69 +10,141 @@ import Quickshell.Hyprland
 
 Scope {
     id: root
+    property bool detach: false
 
-    PanelWindow {
-        id: panelWindow
-        visible: GlobalStates.appLauncherOpen
+    function toggleDetach() {
+        root.detach = !root.detach;
+    }
 
-        function hide() {
-            GlobalStates.appLauncherOpen = false;
+    onDetachChanged: {
+        if (root.detach) {
+            GlobalFocusGrab.removeDismissable(launcherLoader.item);
+            launcherLoader.active = false;
+            detachedLoader.active = true;
+        } else {
+            detachedLoader.active = false;
+            launcherLoader.active = true;
         }
+    }
 
-        exclusionMode: ExclusionMode.Normal
-        WlrLayershell.namespace: "quickshell:appLauncher"
-        WlrLayershell.keyboardFocus: GlobalStates.appLauncherOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-        color: "transparent"
+    Loader {
+        id: launcherLoader
+        active: true
 
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
-        }
+        sourceComponent: PanelWindow {
+            id: panelWindow
+            visible: GlobalStates.appLauncherOpen
 
-        mask: Region {
-            item: launcherBackground
-        }
-
-        onVisibleChanged: {
-            if (visible) {
-                GlobalFocusGrab.addDismissable(panelWindow);
-            } else {
-                GlobalFocusGrab.removeDismissable(panelWindow);
+            function hide() {
+                GlobalStates.appLauncherOpen = false;
             }
-        }
 
-        Connections {
-            target: GlobalFocusGrab
-            function onDismissed() {
-                panelWindow.hide();
-            }
-        }
-
-        StyledRectangularShadow {
-            target: launcherBackground
-            radius: launcherBackground.radius
-        }
-
-        Rectangle {
-            id: launcherBackground
-            color: Appearance.colors.colLayer0
-            border.width: 1
-            border.color: Appearance.colors.colLayer0Border
-            radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+            exclusionMode: ExclusionMode.Normal
+            WlrLayershell.namespace: "quickshell:appLauncher"
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            color: "transparent"
 
             anchors {
-                fill: parent
-                topMargin: Appearance.sizes.hyprlandGapsOut
-                bottomMargin: Appearance.sizes.hyprlandGapsOut
-                leftMargin: Appearance.sizes.hyprlandGapsOut
-                rightMargin: Appearance.sizes.hyprlandGapsOut
+                top: true
+                bottom: true
+                left: true
+                right: true
             }
 
-            Keys.onPressed: (event) => {
-                if (event.key === Qt.Key_Escape) {
+            mask: Region {
+                item: launcherBackground
+            }
+
+            onVisibleChanged: {
+                if (visible) {
+                    GlobalFocusGrab.addDismissable(panelWindow);
+                } else {
+                    GlobalFocusGrab.removeDismissable(panelWindow);
+                }
+            }
+
+            Connections {
+                target: GlobalFocusGrab
+                function onDismissed() {
                     panelWindow.hide();
+                }
+            }
+
+            StyledRectangularShadow {
+                target: launcherBackground
+                radius: launcherBackground.radius
+            }
+
+            Rectangle {
+                id: launcherBackground
+                focus: true
+                color: Appearance.colors.colLayer0
+                border.width: 1
+                border.color: Appearance.colors.colLayer0Border
+                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+
+                anchors {
+                    fill: parent
+                    topMargin: Appearance.sizes.hyprlandGapsOut
+                    bottomMargin: Appearance.sizes.hyprlandGapsOut
+                    leftMargin: Appearance.sizes.hyprlandGapsOut
+                    rightMargin: Appearance.sizes.hyprlandGapsOut
+                }
+
+                Keys.onPressed: (event) => {
+                    if (event.key === Qt.Key_Escape) {
+                        panelWindow.hide();
+                        return;
+                    }
+                    if (event.modifiers === Qt.ControlModifier) {
+                        if (event.key === Qt.Key_D) {
+                            root.toggleDetach();
+                        }
+                        event.accepted = true;
+                    }
+                }
+            }
+        }
+    }
+
+    Loader {
+        id: detachedLoader
+        active: false
+
+        sourceComponent: FloatingWindow {
+            id: detachedRoot
+            color: "transparent"
+
+            // FloatingWindow — обычное окно Hyprland, не layer shell.
+            // Намеренно НЕ добавляем в GlobalFocusGrab (он работает только с layer shell).
+            // Hyprland управляет фокусом и видимостью сам.
+            visible: GlobalStates.appLauncherOpen
+
+            StyledRectangularShadow {
+                target: detachedBackground
+                radius: detachedBackground.radius
+            }
+
+            Rectangle {
+                id: detachedBackground
+                focus: true
+                anchors.fill: parent
+                color: Appearance.colors.colLayer0
+                border.width: 1
+                border.color: Appearance.colors.colLayer0Border
+                radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+
+                Keys.onPressed: (event) => {
+                    if (event.key === Qt.Key_Escape) {
+                        GlobalStates.appLauncherOpen = false;
+                        return;
+                    }
+                    if (event.modifiers === Qt.ControlModifier) {
+                        if (event.key === Qt.Key_D) {
+                            root.toggleDetach();
+                        }
+                        event.accepted = true;
+                    }
                 }
             }
         }
@@ -100,6 +172,15 @@ Scope {
 
         onPressed: {
             GlobalStates.appLauncherOpen = !GlobalStates.appLauncherOpen;
+        }
+    }
+
+    GlobalShortcut {
+        name: "appLauncherToggleDetach"
+        description: "Detach app launcher into a window / attach it back"
+
+        onPressed: {
+            root.toggleDetach();
         }
     }
 }
