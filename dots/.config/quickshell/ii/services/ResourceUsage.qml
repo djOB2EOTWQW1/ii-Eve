@@ -34,6 +34,8 @@ Singleton {
     property real netRxBytesPerSec: 0
     property real netTxBytesPerSec: 0
     property var previousNetStats: null
+    property list<real> netRxHistory: []
+    property list<real> netTxHistory: []
 
     property string maxAvailableMemoryString: kbToGbString(ResourceUsage.memoryTotal)
     property string maxAvailableSwapString: kbToGbString(ResourceUsage.swapTotal)
@@ -71,6 +73,12 @@ Singleton {
         if (cpuUsageHistory.length > historyLength) {
             cpuUsageHistory.shift()
         }
+    }
+    function updateNetHistory() {
+        netRxHistory = [...netRxHistory, netRxBytesPerSec]
+        if (netRxHistory.length > historyLength) netRxHistory.shift()
+        netTxHistory = [...netTxHistory, netTxBytesPerSec]
+        if (netTxHistory.length > historyLength) netTxHistory.shift()
     }
     function updateHistories() {
         updateMemoryUsageHistory()
@@ -152,6 +160,7 @@ Singleton {
                 root.netTxBytesPerSec = Math.max(0, (totalTx - root.previousNetStats.tx) / intervalSec)
             }
             root.previousNetStats = { rx: totalRx, tx: totalTx }
+            root.updateNetHistory()
         }
 	}
 

@@ -7,7 +7,9 @@ RowLayout {
     id: root
     required property string icon
     required property string label
-    required property string value
+    property string value: ""
+    property list<real> graphValues: []
+    property color graphColor: Appearance.colors.colPrimary
     spacing: 4
 
     MaterialSymbol {
@@ -19,11 +21,36 @@ RowLayout {
         text: root.label
         color: Appearance.colors.colOnSurfaceVariant
     }
-    StyledText {
+    Item {
         Layout.fillWidth: true
-        horizontalAlignment: Text.AlignRight
-        visible: root.value !== ""
-        color: Appearance.colors.colOnSurfaceVariant
-        text: root.value
+        implicitHeight: root.graphValues.length >= 2 ? 28 : valueText.implicitHeight
+
+        StyledText {
+            id: valueText
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.graphValues.length < 2
+            color: Appearance.colors.colOnSurfaceVariant
+            text: root.value
+        }
+
+        Rectangle {
+            visible: root.graphValues.length >= 2
+            anchors.fill: parent
+            radius: Appearance.rounding.small
+            color: Appearance.colors.colSecondaryContainer
+
+            Graph {
+                anchors.fill: parent
+                values: {
+                    if (root.graphValues.length < 2) return []
+                    const maxV = root.graphValues.reduce((a, b) => Math.max(a, b), 1)
+                    return root.graphValues.map(v => v / maxV)
+                }
+                alignment: Graph.Alignment.Right
+                color: root.graphColor
+                fillOpacity: 0.3
+            }
+        }
     }
 }
