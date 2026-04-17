@@ -37,6 +37,7 @@ Scope {
         onPressed: event => {
             if (event.button === Qt.RightButton) {
                 contextMenu.selectedAppIndex = -1;
+                contextMenu.selectedFolderId = "";
                 contextMenu.x = event.x - contextMenu.width / 2;
                 contextMenu.y = event.y;
                 contextMenu.openAt();
@@ -47,6 +48,11 @@ Scope {
         }
 
         readonly property int iconSize: Persistent.states.appLauncher?.iconSize ?? 64
+
+        // Tracks which folder tile the current drag is hovering over.
+        // Cleared on drop/release. Uses folder id to survive model updates.
+        property string hoverFolderId: ""
+        property int draggedEntryIndex: -1
 
         readonly property var gridModel: {
             const folders = (CustomApps.folders || []).map(f => ({
@@ -97,40 +103,120 @@ Scope {
 
                     readonly property bool isFolder: !!delegateRoot.modelData?._isFolder
                     readonly property int entryIndex: delegateRoot.modelData?._originalIndex ?? -1
+                    readonly property string folderId: delegateRoot.modelData?.id ?? ""
 
-                    Rectangle {
-                        id: folderRect
+                    // Android 16 style folder tile: rounded-square preview
+                    // container with up to 4 mini app icons in a 2x2 grid.
+                    Item {
+                        id: folderTileItem
                         anchors.fill: parent
                         anchors.margins: 6
                         visible: delegateRoot.isFolder
-                        radius: Appearance.rounding.normal
-                        color: folderDropArea.containsDrag
-                            ? Appearance.colors.colPrimaryContainer
-                            : (folderHoverArea.containsMouse
-                                ? Appearance.colors.colLayer1Hover
-                                : "transparent")
-                        border.width: (folderHoverArea.containsMouse || folderDropArea.containsDrag) ? 2 : 0
-                        border.color: Appearance.colors.colPrimary
-
-                        Behavior on color {
-                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                        }
-                        Behavior on border.color {
-                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                        }
 
                         ColumnLayout {
                             anchors.fill: parent
-                            anchors.margins: 10
+                            anchors.margins: 4
                             spacing: 6
 
-                            MaterialSymbol {
+                            Rectangle {
+                                id: folderSquircle
                                 Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: contentRoot.iconSize
                                 Layout.preferredHeight: contentRoot.iconSize
-                                verticalAlignment: Text.AlignVCenter
-                                text: "folder_open"
-                                iconSize: contentRoot.iconSize
-                                color: Appearance.colors.colOnLayer1
+                                radius: contentRoot.iconSize * 0.28
+                                color: contentRoot.hoverFolderId === delegateRoot.folderId && contentRoot.draggedEntryIndex >= 0
+                                    ? Appearance.colors.colPrimaryContainer
+                                    : folderHoverArea.containsMouse
+                                        ? Appearance.colors.colLayer1Hover
+                                        : Appearance.m3colors.m3surfaceContainerHigh
+                                border.width: contentRoot.hoverFolderId === delegateRoot.folderId && contentRoot.draggedEntryIndex >= 0 ? 2 : 0
+                                border.color: Appearance.colors.colPrimary
+
+                                Behavior on color {
+                                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                                }
+                                Behavior on border.color {
+                                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                                }
+
+                                GridLayout {
+                                    id: previewGrid
+                                    anchors.centerIn: parent
+                                    width: parent.width * 0.72
+                                    height: parent.height * 0.72
+                                    columns: 2
+                                    rowSpacing: Math.max(2, parent.width * 0.04)
+                                    columnSpacing: Math.max(2, parent.width * 0.04)
+
+                                    readonly property var icons: delegateRoot.isFolder
+                                        ? CustomApps.folderPreviewIcons(delegateRoot.modelData, 4)
+                                        : []
+
+                                    Repeater {
+                                        model: previewGrid.icons
+
+                                        delegate: Item {
+                                            required property string modelData
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 1
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: false
+                                                source: {
+                                                    const icon = parent.modelData || ""
+                                                    if (icon.startsWith("/")) return "file://" + icon
+                                                    return Quickshell.iconPath(icon, "application-x-executable")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MaterialSymbol {
+                                    visible: (delegateRoot.modelData?.appIndices?.length ?? 0) === 0
+                                    anchors.centerIn: parent
+                                    text: "folder"
+                                    iconSize: Math.round(contentRoot.iconSize * 0.5)
+                                    color: Appearance.colors.colOnLayer1
+                                }
+
+                                MouseArea {
+                                    id: folderHoverArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    onClicked: (mouse) => {
+                                        if (mouse.button === Qt.RightButton) {
+                                            const pos = folderHoverArea.mapToItem(contentRoot, mouse.x, mouse.y);
+                                            contextMenu.selectedFolderId = delegateRoot.folderId;
+                                            contextMenu.selectedAppIndex = -1;
+                                            contextMenu.x = pos.x - contextMenu.width / 2;
+                                            contextMenu.y = pos.y;
+                                            contextMenu.openAt();
+                                            return
+                                        }
+                                        folderViewer.open(delegateRoot.modelData)
+                                    }
+                                }
+
+                                DropArea {
+                                    id: folderDropArea
+                                    anchors.fill: parent
+                                    onEntered: (drag) => {
+                                        if (contentRoot.draggedEntryIndex < 0) return
+                                        contentRoot.hoverFolderId = delegateRoot.folderId
+                                        drag.accept(Qt.MoveAction)
+                                    }
+                                    onExited: {
+                                        if (contentRoot.hoverFolderId === delegateRoot.folderId) {
+                                            contentRoot.hoverFolderId = ""
+                                        }
+                                    }
+                                }
                             }
 
                             StyledText {
@@ -141,46 +227,6 @@ Scope {
                                 wrapMode: Text.Wrap
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 text: delegateRoot.modelData?.name ?? ""
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.top: parent.top
-                            anchors.right: parent.right
-                            anchors.margins: 6
-                            implicitWidth: Math.max(20, countBadgeText.implicitWidth + 12)
-                            implicitHeight: 20
-                            radius: Appearance.rounding.full
-                            color: Appearance.colors.colPrimary
-                            visible: (delegateRoot.modelData?.appIndices?.length ?? 0) > 0
-
-                            StyledText {
-                                id: countBadgeText
-                                anchors.centerIn: parent
-                                text: delegateRoot.modelData?.appIndices?.length ?? 0
-                                color: Appearance.colors.colOnPrimary
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                            }
-                        }
-
-                        MouseArea {
-                            id: folderHoverArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            acceptedButtons: Qt.LeftButton
-                            onClicked: folderViewer.open(delegateRoot.modelData)
-                        }
-
-                        DropArea {
-                            id: folderDropArea
-                            anchors.fill: parent
-                            onDropped: (drop) => {
-                                const data = drop.getDataAsString("text/plain")
-                                const idx = parseInt(data)
-                                if (!isNaN(idx)) {
-                                    CustomApps.addAppToFolder(delegateRoot.modelData.id, idx)
-                                    drop.accept(Qt.MoveAction)
-                                }
                             }
                         }
                     }
@@ -198,9 +244,9 @@ Scope {
                         border.color: Appearance.colors.colPrimary
 
                         Drag.active: itemArea.drag.active
+                        Drag.source: itemArea
                         Drag.hotSpot.x: width / 2
                         Drag.hotSpot.y: height / 2
-                        Drag.mimeData: ({ "text/plain": String(delegateRoot.entryIndex) })
                         Drag.supportedActions: Qt.MoveAction
 
                         Behavior on color {
@@ -258,15 +304,25 @@ Scope {
 
                         MouseArea {
                             id: itemArea
+                            // Exposed so DropArea sees it via drag.source during drag.
+                            property int entryIndex: delegateRoot.entryIndex
                             anchors.fill: parent
                             hoverEnabled: true
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             drag.target: appTile
                             drag.threshold: 8
+                            preventStealing: true
+
+                            onPressed: (mouse) => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    contentRoot.draggedEntryIndex = delegateRoot.entryIndex
+                                }
+                            }
                             onClicked: (mouse) => {
                                 if (mouse.button === Qt.RightButton) {
                                     const pos = itemArea.mapToItem(contentRoot, mouse.x, mouse.y);
                                     contextMenu.selectedAppIndex = delegateRoot.entryIndex;
+                                    contextMenu.selectedFolderId = "";
                                     contextMenu.x = pos.x - contextMenu.width / 2;
                                     contextMenu.y = pos.y;
                                     contextMenu.openAt();
@@ -277,7 +333,17 @@ Scope {
                                 }
                             }
                             onReleased: {
-                                if (appTile.Drag.active) appTile.Drag.drop()
+                                const targetFolder = contentRoot.hoverFolderId
+                                const idx = delegateRoot.entryIndex
+                                contentRoot.hoverFolderId = ""
+                                contentRoot.draggedEntryIndex = -1
+                                if (targetFolder.length > 0 && idx >= 0) {
+                                    CustomApps.addAppToFolder(targetFolder, idx)
+                                }
+                            }
+                            onCanceled: {
+                                contentRoot.hoverFolderId = ""
+                                contentRoot.draggedEntryIndex = -1
                             }
                         }
                     }
@@ -319,6 +385,7 @@ Scope {
                 }
             }
 
+            // Android 16 style expanded folder: dimmed backdrop + centered panel.
             Loader {
                 id: folderViewer
                 anchors.fill: parent
@@ -336,129 +403,202 @@ Scope {
                     folderViewer.folder = null
                 }
 
-                sourceComponent: Rectangle {
-                    color: Appearance.m3colors.m3surfaceContainer
-                    radius: Appearance.rounding.normal
-                    border.width: 1
-                    border.color: Appearance.colors.colLayer0Border
+                sourceComponent: Item {
+                    anchors.fill: parent
 
-                    ColumnLayout {
+                    Rectangle {
+                        id: backdrop
                         anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 10
+                        color: "#000000"
+                        opacity: 0.45
+                        radius: Appearance.rounding.normal
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 10
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: folderViewer.close()
+                        }
+                    }
 
-                            MaterialSymbol {
-                                text: "folder_open"
-                                iconSize: 28
-                                color: Appearance.colors.colOnLayer1
+                    Rectangle {
+                        id: folderPanel
+                        anchors.centerIn: parent
+                        width: Math.min(parent.width - 40, 560)
+                        height: Math.min(parent.height - 40, 520)
+                        color: Appearance.m3colors.m3surfaceContainer
+                        radius: Appearance.rounding.large
+                        border.width: 1
+                        border.color: Appearance.colors.colLayer0Border
+
+                        // Prevent backdrop click from closing when clicking inside.
+                        MouseArea {
+                            anchors.fill: parent
+                            onPressed: (mouse) => mouse.accepted = true
+                        }
+
+                        transform: Scale {
+                            id: openScale
+                            origin.x: folderPanel.width / 2
+                            origin.y: folderPanel.height / 2
+                            xScale: 0.92
+                            yScale: 0.92
+                        }
+                        opacity: 0
+
+                        NumberAnimation on opacity {
+                            from: 0
+                            to: 1
+                            duration: 160
+                            easing.type: Easing.OutCubic
+                            running: true
+                        }
+                        NumberAnimation {
+                            target: openScale
+                            property: "xScale"
+                            from: 0.92
+                            to: 1
+                            duration: 200
+                            easing.type: Easing.OutBack
+                            easing.overshoot: 0.8
+                            running: true
+                        }
+                        NumberAnimation {
+                            target: openScale
+                            property: "yScale"
+                            from: 0.92
+                            to: 1
+                            duration: 200
+                            easing.type: Easing.OutBack
+                            easing.overshoot: 0.8
+                            running: true
+                        }
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            spacing: 12
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                MaterialSymbol {
+                                    text: "folder_open"
+                                    iconSize: 28
+                                    color: Appearance.colors.colOnLayer1
+                                }
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: folderViewer.folder?.name ?? ""
+                                    color: Appearance.colors.colOnLayer1
+                                    font.pixelSize: Appearance.font.pixelSize.large
+                                    elide: Text.ElideRight
+                                }
+
+                                RippleButton {
+                                    buttonRadius: Appearance.rounding.full
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    onClicked: folderViewer.close()
+                                    contentItem: MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: "close"
+                                        iconSize: 20
+                                    }
+                                }
+                            }
+
+                            GridView {
+                                id: folderAppsGrid
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                cellWidth: contentRoot.iconSize + 40
+                                cellHeight: contentRoot.iconSize + 50
+                                clip: true
+                                boundsBehavior: Flickable.StopAtBounds
+                                ScrollBar.vertical: StyledScrollBar {}
+
+                                model: folderViewer.folder ? CustomApps.appsInFolder(folderViewer.folder.id) : []
+
+                                delegate: Item {
+                                    id: folderAppDelegate
+                                    required property var modelData
+                                    required property int index
+                                    width: folderAppsGrid.cellWidth
+                                    height: folderAppsGrid.cellHeight
+
+                                    MouseArea {
+                                        id: folderAppArea
+                                        anchors.fill: parent
+                                        anchors.margins: 4
+                                        hoverEnabled: true
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                        onClicked: (mouse) => {
+                                            if (mouse.button === Qt.RightButton) {
+                                                CustomApps.removeAppFromFolder(folderViewer.folder.id, folderAppDelegate.modelData._originalIndex)
+                                                return
+                                            }
+                                            CustomApps.launch(folderAppDelegate.modelData)
+                                            folderViewer.close()
+                                        }
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: Appearance.rounding.normal
+                                            color: folderAppArea.containsMouse
+                                                ? Appearance.colors.colLayer1Hover
+                                                : "transparent"
+                                            border.width: folderAppArea.containsMouse ? 2 : 0
+                                            border.color: Appearance.colors.colPrimary
+
+                                            Behavior on color {
+                                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                                            }
+                                            Behavior on border.color {
+                                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                                            }
+
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 8
+                                                spacing: 4
+
+                                                Image {
+                                                    Layout.alignment: Qt.AlignHCenter
+                                                    Layout.preferredWidth: contentRoot.iconSize
+                                                    Layout.preferredHeight: contentRoot.iconSize
+                                                    fillMode: Image.PreserveAspectFit
+                                                    asynchronous: true
+                                                    cache: false
+                                                    source: {
+                                                        const icon = folderAppDelegate.modelData.icon || ""
+                                                        if (icon.startsWith("/")) return "file://" + icon
+                                                        return Quickshell.iconPath(icon, "application-x-executable")
+                                                    }
+                                                }
+
+                                                StyledText {
+                                                    Layout.fillWidth: true
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    elide: Text.ElideRight
+                                                    maximumLineCount: 2
+                                                    wrapMode: Text.Wrap
+                                                    font.pixelSize: Appearance.font.pixelSize.small
+                                                    text: folderAppDelegate.modelData.name
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
 
                             StyledText {
-                                Layout.fillWidth: true
-                                text: folderViewer.folder?.name ?? ""
-                                color: Appearance.colors.colOnLayer1
-                                font.pixelSize: Appearance.font.pixelSize.large
-                                elide: Text.ElideRight
-                            }
-
-                            RippleButton {
-                                buttonRadius: Appearance.rounding.full
-                                implicitWidth: 36
-                                implicitHeight: 36
-                                onClicked: folderViewer.close()
-                                contentItem: MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    horizontalAlignment: Text.AlignHCenter
-                                    text: "close"
-                                    iconSize: 20
-                                }
-                            }
-                        }
-
-                        GridView {
-                            id: folderAppsGrid
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            cellWidth: contentRoot.iconSize + 76
-                            cellHeight: contentRoot.iconSize + 76
-                            clip: true
-                            boundsBehavior: Flickable.StopAtBounds
-                            ScrollBar.vertical: StyledScrollBar {}
-
-                            model: folderViewer.folder ? CustomApps.appsInFolder(folderViewer.folder.id) : []
-
-                            delegate: Item {
-                                id: folderAppDelegate
-                                required property var modelData
-                                required property int index
-                                width: folderAppsGrid.cellWidth
-                                height: folderAppsGrid.cellHeight
-
-                                MouseArea {
-                                    id: folderAppArea
-                                    anchors.fill: parent
-                                    anchors.margins: 6
-                                    hoverEnabled: true
-                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                    onClicked: (mouse) => {
-                                        if (mouse.button === Qt.RightButton) {
-                                            CustomApps.removeAppFromFolder(folderViewer.folder.id, folderAppDelegate.modelData._originalIndex)
-                                            return
-                                        }
-                                        CustomApps.launch(folderAppDelegate.modelData)
-                                    }
-
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: Appearance.rounding.normal
-                                        color: folderAppArea.containsMouse
-                                            ? Appearance.colors.colLayer1Hover
-                                            : "transparent"
-                                        border.width: folderAppArea.containsMouse ? 2 : 0
-                                        border.color: Appearance.colors.colPrimary
-
-                                        Behavior on color {
-                                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                                        }
-                                        Behavior on border.color {
-                                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                                        }
-
-                                        ColumnLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: 10
-                                            spacing: 6
-
-                                            Image {
-                                                Layout.alignment: Qt.AlignHCenter
-                                                Layout.preferredWidth: contentRoot.iconSize
-                                                Layout.preferredHeight: contentRoot.iconSize
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                cache: false
-                                                source: {
-                                                    const icon = folderAppDelegate.modelData.icon || ""
-                                                    if (icon.startsWith("/")) return "file://" + icon
-                                                    return Quickshell.iconPath(icon, "application-x-executable")
-                                                }
-                                            }
-
-                                            StyledText {
-                                                Layout.fillWidth: true
-                                                horizontalAlignment: Text.AlignHCenter
-                                                elide: Text.ElideRight
-                                                maximumLineCount: 2
-                                                wrapMode: Text.Wrap
-                                                font.pixelSize: Appearance.font.pixelSize.small
-                                                text: folderAppDelegate.modelData.name
-                                            }
-                                        }
-                                    }
-                                }
+                                Layout.alignment: Qt.AlignHCenter
+                                visible: folderAppsGrid.count === 0
+                                text: Translation.tr("Drag apps onto this folder to add them.")
+                                color: Appearance.colors.colSubtext
+                                font.pixelSize: Appearance.font.pixelSize.small
                             }
                         }
                     }
@@ -471,6 +611,10 @@ Scope {
             z: 10
             visible: false
             property int selectedAppIndex: -1
+            property string selectedFolderId: ""
+            readonly property bool isFolderContext: selectedFolderId.length > 0
+            readonly property bool isAppContext: selectedAppIndex >= 0
+            readonly property bool isEmptyContext: !isFolderContext && !isAppContext
             implicitWidth: 220
             implicitHeight: menuColumn.implicitHeight + 12
             color: Appearance.m3colors.m3surfaceContainer
@@ -501,7 +645,7 @@ Scope {
 
                 MenuButton {
                     Layout.fillWidth: true
-                    visible: contextMenu.selectedAppIndex >= 0
+                    visible: contextMenu.isAppContext
                     buttonText: Translation.tr("Remove from launcher")
                     onClicked: {
                         const idx = contextMenu.selectedAppIndex;
@@ -512,7 +656,35 @@ Scope {
 
                 MenuButton {
                     Layout.fillWidth: true
-                    visible: contextMenu.selectedAppIndex < 0
+                    visible: contextMenu.isFolderContext
+                    buttonText: Translation.tr("Open folder")
+                    onClicked: {
+                        const fid = contextMenu.selectedFolderId;
+                        contextMenu.hide();
+                        const f = CustomApps.folderById(fid);
+                        if (f) folderViewer.open(f);
+                    }
+                }
+
+                MenuButton {
+                    Layout.fillWidth: true
+                    visible: contextMenu.isFolderContext
+                    buttonText: Translation.tr("Delete folder")
+                    onClicked: {
+                        const fid = contextMenu.selectedFolderId;
+                        contextMenu.hide();
+                        for (let i = 0; i < CustomApps.folders.length; i++) {
+                            if (CustomApps.folders[i].id === fid) {
+                                CustomApps.removeFolderAt(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                MenuButton {
+                    Layout.fillWidth: true
+                    visible: contextMenu.isEmptyContext
                     buttonText: Translation.tr("Add application")
                     onClicked: {
                         contextMenu.hide();

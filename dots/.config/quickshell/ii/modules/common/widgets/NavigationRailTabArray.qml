@@ -7,17 +7,28 @@ Item {
     id: root
     property int currentIndex: 0
     property bool expanded: false
-    default property alias data: tabBarColumn.data  
+    default property alias data: tabBarColumn.data
     property bool _isInitialized: false
     Component.onCompleted: _isInitialized = true
+
+    readonly property var _tabButtons: {
+        const out = []
+        const all = tabBarColumn.children
+        for (let i = 0; i < all.length; i++) {
+            const c = all[i]
+            if (c && c.baseSize !== undefined && c.visualWidth !== undefined) out.push(c)
+        }
+        return out
+    }
+    readonly property var _currentButton: _tabButtons[root.currentIndex] ?? _tabButtons[0] ?? null
 
     implicitHeight: tabBarColumn.implicitHeight
     implicitWidth: tabBarColumn.implicitWidth
     Layout.topMargin: 25
 
     Rectangle {
-        property real itemHeight: tabBarColumn.children[0]?.baseSize ?? 56
-        property real baseHighlightHeight: tabBarColumn.children[0]?.baseHighlightHeight ?? 56
+        property real itemHeight: root._tabButtons[0]?.baseSize ?? 56
+        property real baseHighlightHeight: root._tabButtons[0]?.baseHighlightHeight ?? 32
         anchors {
             top: tabBarColumn.top
             left: tabBarColumn.left
@@ -26,7 +37,7 @@ Item {
         radius: Appearance.rounding.full
         color: Appearance.colors.colSecondaryContainer
         implicitHeight: root.expanded ? itemHeight : baseHighlightHeight
-        implicitWidth: tabBarColumn?.children[root.currentIndex]?.visualWidth ?? 130
+        implicitWidth: root._currentButton?.visualWidth ?? (root.expanded ? 130 : itemHeight)
 
         Behavior on implicitWidth {
             enabled: root._isInitialized

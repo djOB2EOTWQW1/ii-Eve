@@ -240,6 +240,11 @@ Singleton {
         return -1
     }
 
+    function folderById(id) {
+        const i = root._folderIndexOfId(id)
+        return i >= 0 ? root.folders[i] : null
+    }
+
     function createFolder(name) {
         const trimmed = String(name || "").trim()
         if (trimmed.length === 0) return ""
@@ -350,6 +355,19 @@ Singleton {
                 _originalIndex: idx,
                 _isFolder: false
             })
+        }
+        return out
+    }
+
+    function folderPreviewIcons(folder, maxCount) {
+        if (!folder) return []
+        const indices = folder.appIndices || []
+        const out = []
+        const limit = Math.min(maxCount ?? 4, indices.length)
+        for (let i = 0; i < limit; i++) {
+            const idx = indices[i]
+            if (idx < 0 || idx >= root.entries.length) continue
+            out.push(root.entries[idx].icon || "")
         }
         return out
     }
