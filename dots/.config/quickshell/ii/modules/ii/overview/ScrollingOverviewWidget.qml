@@ -184,91 +184,153 @@ Item {
 
 
     Item {
-        id: windowContainer
-        anchors.centerIn: parent
+        id: layoutContainer
+        anchors.fill: parent
 
-        property var targetPositions: {
-            let pos = [];
-            let currentX = 0;
-            let spacing = 120 * root.scaleRatio;
-            const vals = windowScriptModel.values;
-            if (!vals) return [];
-            
-            const activeAddr = root.activeWindow?.address;
-            let activeIdx = -1;
-            
-            for (let i = 0; i < vals.length; i++) {
-                const win = windowByAddress[vals[i]];
-                if (!win) { pos.push(currentX); continue; }
-                const w = win.size[0] * root.scaleRatio;
-                pos.push(currentX + w / 2);
-                currentX += w + spacing;
-                if (vals[i] === activeAddr) activeIdx = i;
-            }
-            
-            const shiftX = (activeIdx !== -1) ? pos[activeIdx] : (currentX - spacing) / 2;
-            return pos.map(p => p - shiftX);
+        // Vertical scroll offset logic: how much we shift all rows to center the active one
+        readonly property real rowSpacing: 180 * root.scaleRatio
+        readonly property real rowHeight: workspaceImplicitHeight + rowSpacing
+        
+        // Target vertical center for any workspace wsId
+        function getRowCenterY(wsId) {
+            let activeWsId = monitor.activeWorkspace?.id ?? 0;
+            return (monitor.height / 2) + (wsId - activeWsId) * rowHeight;
         }
 
-        ScriptModel {
-            id: windowScriptModel
-            values: {
-                return ToplevelManager.toplevels.values
-                    .filter((toplevel) => {
-                        const address = `0x${toplevel.HyprlandToplevel?.address}`
-                        const win = windowByAddress[address]
-                        return win && win.workspace?.id === monitor.activeWorkspace?.id
-                    })
-                    .sort((a, b) => {
-                        const wa = windowByAddress[`0x${a.HyprlandToplevel.address}`]
-                        const wb = windowByAddress[`0x${b.HyprlandToplevel.address}`]
-                        return wa.at[0] - wb.at[0] 
-                    })
-                    .map(t => `0x${t.HyprlandToplevel.address}`)
+        // Pre-calculate window positions for each workspace
+        // We use a property that reacts to window/workspace changes
+        property var workspaceStripOffset: {
+            let map = {};
+            const vals = ToplevelManager.toplevels.values;
+            const startWs = root.workspaceOffset + 1;
+            const endWs = root.workspaceOffset + root.workspacesShown;
+
+            for (let wsId = startWs; wsId <= endWs; wsId++) {
+                const wsWindows = vals.filter(t => {
+                    const win = windowByAddress[`0x${t.HyprlandToplevel?.address}`];
+                    return win && win.workspace?.id === wsId;
+                }).sort((a, b) => {
+                    const wa = windowByAddress[`0x${a.HyprlandToplevel.address}`];
+                    const wb = windowByAddress[`0x${b.HyprlandToplevel.address}`];
+                    return wa.at[0] - wb.at[0];
+                });
+
+                let pos = [];
+                let currentTotalX = 0;
+                let spacing = 120 * root.scaleRatio;
+                
+                // Find the window with the lowest focusHistoryID in THIS workspace
+                let bestIdx = -1;
+                let minHistory = 999999;
+
+                for (let i = 0; i < wsWindows.length; i++) {
+                    const addr = `0x${wsWindows[i].HyprlandToplevel.address}`;
+                    const win = windowByAddress[addr];
+                    const w = (win?.size[0] ?? 0) * root.scaleRatio;
+                    pos.push({ addr: addr, cx: currentTotalX + w / 2, w: w });
+                    currentTotalX += w + spacing;
+                    
+                    if (win && win.focusHistoryID < minHistory) {
+                        minHistory = win.focusHistoryID;
+                        bestIdx = i;
+                    }
+                }
+
+                // Center on the best matching window (most recently used in this workspace)
+                const shiftX = (bestIdx !== -1) ? pos[bestIdx].cx : (currentTotalX - spacing) / 2;
+                map[wsId] = pos.map(p => ({ addr: p.addr, x: p.cx - shiftX }));
+            }
+            return map;
+        }
+
+        // Workspace labels
+        Repeater {
+            model: root.workspacesShown
+            delegate: Text {
+                id: wsLabel
+                required property int index
+                property int wsId: index + 1 + root.workspaceOffset
+                text: wsId
+                
+                readonly property real targetY: layoutContainer.getRowCenterY(wsId) - workspaceImplicitHeight / 2 - 20
+                
+                x: monitor.width / 2 - width / 2
+                y: targetY - height
+                
+                color: Appearance.colors.colOnSurface
+                font.pixelSize: 32
+                font.bold: true
+                opacity: (GlobalStates.overviewOpen && wsId === monitor.activeWorkspace?.id) ? 0.8 : 0.3
+                
+                Behavior on y { NumberAnimation { duration: 1500; easing.type: Easing.OutQuint } }
+                Behavior on opacity { NumberAnimation { duration: 1000 } }
             }
         }
 
-        Repeater { 
+        // All windows across all workspaces in this group
+        Repeater {
             id: windowRepeater
-            model: windowScriptModel
+            model: ScriptModel {
+                values: {
+                    return ToplevelManager.toplevels.values.filter(t => {
+                        const win = windowByAddress[`0x${t.HyprlandToplevel?.address}`];
+                        return win && win.workspace?.id > root.workspaceOffset && win.workspace?.id <= root.workspaceOffset + root.workspacesShown;
+                    })
+                }
+            }
+
             delegate: Item {
                 id: windowDelegate
-                required property string modelData
-                required property int index
-
-                property string address: modelData
-                property var toplevel: {
-                    const allToplevels = ToplevelManager.toplevels.values;
-                    for (let i = 0; i < allToplevels.length; i++) {
-                        if (`0x${allToplevels[i].HyprlandToplevel.address}` === address) return allToplevels[i];
-                    }
-                    return null;
-                }
+                required property var modelData
+                
+                property var toplevel: modelData
+                property string address: `0x${toplevel.HyprlandToplevel.address}`
                 property var windowData: windowByAddress[address]
+                property int wsId: windowData?.workspace?.id ?? 0
                 
                 readonly property bool isActive: address === root.activeWindow?.address
+                // Check if this window belongs to the workspace we are currently on
+                readonly property bool isFromActiveWs: wsId === (monitor.activeWorkspace?.id ?? 0) || (wsId === 0 && monitor.activeWorkspace?.id === 1)
 
                 // State control for animation
                 property bool initialized: false
                 Component.onCompleted: Qt.callLater(() => initialized = true)
                 readonly property bool showOverview: GlobalStates.overviewOpen && initialized
 
-                property int animDuration: 500
+                property int animDuration: panelWindow.overviewAnimDuration
+
+                // Find my offset in the strip from the pre-calculated map
+                readonly property real stripOffset: {
+                    const strip = layoutContainer.workspaceStripOffset[wsId] || [];
+                    for (let i = 0; i < strip.length; i++) {
+                        if (strip[i].addr === address) return strip[i].x;
+                    }
+                    return 0;
+                }
 
                 // Target state (Overview)
                 readonly property real targetWidth: (windowData?.size[0] ?? 0) * root.scaleRatio
                 readonly property real targetHeight: (windowData?.size[1] ?? 0) * root.scaleRatio
-                readonly property real overviewX: (windowContainer.targetPositions[index] ?? 0) - targetWidth / 2
-                readonly property real overviewY: -targetHeight / 2
+                readonly property real overviewX: (monitor.width / 2) + stripOffset - targetWidth / 2
+                readonly property real overviewY: layoutContainer.getRowCenterY(wsId) - targetHeight / 2
 
-                // Entry state (Real screen position relative to center)
-                readonly property real entryX: ((windowData?.at[0] ?? 0) - monitor.x) - monitor.width / 2
-                readonly property real entryY: ((windowData?.at[1] ?? 0) - monitor.y) - monitor.height / 2
+                // Entry state (Fly-in effect for other workspaces, shrink for active)
+                readonly property real entryWidth: isFromActiveWs ? (windowData?.size[0] ?? 0) : targetWidth * 0.2
+                readonly property real entryHeight: isFromActiveWs ? (windowData?.size[1] ?? 0) : targetHeight * 0.2
+                
+                readonly property real entryX: isFromActiveWs ? ((windowData?.at[0] ?? 0) - monitor.x) : overviewX
+                readonly property real entryY: {
+                    if (isFromActiveWs) return (windowData?.at[1] ?? 0) - monitor.y;
+                    // Fly in from top/bottom depending on wsId distance
+                    let diff = wsId - (monitor.activeWorkspace?.id ?? 0);
+                    return layoutContainer.getRowCenterY(wsId) + (diff > 0 ? 500 : -500); 
+                }
 
-                width: showOverview ? targetWidth : (windowData?.size[0] ?? 0)
-                height: showOverview ? targetHeight : (windowData?.size[1] ?? 0)
+                width: showOverview ? targetWidth : entryWidth
+                height: showOverview ? targetHeight : entryHeight
                 x: showOverview ? overviewX : entryX
                 y: showOverview ? overviewY : entryY
+                opacity: 1.0
 
                 Behavior on x { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
                 Behavior on y { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
@@ -303,11 +365,8 @@ Item {
                     anchors.fill: parent
                     color: "transparent"
                     radius: root.windowRounding * 0.8
-                    border.width: isActive ? 2 : 1
+                    border.width: isActive ? 4 : 1
                     border.color: isActive ? Appearance.colors.colSecondary : ColorUtils.transparentize(Appearance.colors.colOutline, 0.3)
-                    
-                    Behavior on border.width { NumberAnimation { duration: 200 } }
-                    Behavior on border.color { ColorAnimation { duration: 200 } }
                 }
 
                 layer.enabled: true

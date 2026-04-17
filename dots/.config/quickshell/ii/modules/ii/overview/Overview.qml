@@ -39,6 +39,7 @@ Scope {
 
                 readonly property bool isScrollingLayout: Persistent.states.hyprland.layout === "scrolling"
                 property string searchingText: ""
+                property int overviewAnimDuration: 500
 
                 WlrLayershell.namespace: "quickshell:overview"
                 WlrLayershell.layer: WlrLayer.Top
@@ -86,7 +87,7 @@ Scope {
 
                 Behavior on scaleAnimated {
                     NumberAnimation {
-                        duration: 500
+                        duration: root.overviewAnimDuration
                         easing.type: Easing.OutCubic
                     }
                 }
@@ -99,12 +100,12 @@ Scope {
                 }
                 property int barSize: Config.options.bar.vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
                 property int margin: isZoomInStyle ? barSize : barSize * 2
-                margins {
+                /* margins {
                     top: -margin * 2
                     bottom: -margin * 2
                     left: -margin * 2
                     right: -margin * 2
-                }
+                } */
 
                 HyprlandFocusGrab {
                     id: grab
