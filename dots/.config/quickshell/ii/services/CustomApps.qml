@@ -22,6 +22,7 @@ Singleton {
     property string exeIconScript: FileUtils.trimFileProtocol(`${Directories.scriptPath}/icons/extract-exe-icon-venv.sh`)
     property alias entries: customAppsAdapter.entries
     property alias dirs: customAppsAdapter.dirs
+    property alias folders: customAppsAdapter.folders
     property bool ready: false
 
     property bool winePresent: false
@@ -212,8 +213,145 @@ Singleton {
         const next = Array.from(root.entries)
         next.splice(index, 1)
         customAppsAdapter.entries = next
+
+        const nextFolders = Array.from(root.folders)
+        for (let i = 0; i < nextFolders.length; i++) {
+            const f = Object.assign({}, nextFolders[i])
+            const appIndices = Array.from(f.appIndices || [])
+            const patched = []
+            for (let j = 0; j < appIndices.length; j++) {
+                const v = appIndices[j]
+                if (v === index) continue
+                patched.push(v > index ? v - 1 : v)
+            }
+            f.appIndices = patched
+            nextFolders[i] = f
+        }
+        customAppsAdapter.folders = nextFolders
+
         root.changed()
         return true
+    }
+
+    function _folderIndexOfId(id) {
+        for (let i = 0; i < root.folders.length; i++) {
+            if (root.folders[i].id === id) return i
+        }
+        return -1
+    }
+
+    function createFolder(name) {
+        const trimmed = String(name || "").trim()
+        if (trimmed.length === 0) return ""
+        const id = "folder_" + Date.now() + "_" + Math.floor(Math.random() * 10000)
+        const next = Array.from(root.folders)
+        next.push({ id: id, name: trimmed, icon: "folder", appIndices: [] })
+        customAppsAdapter.folders = next
+        root.changed()
+        return id
+    }
+
+    function removeFolderAt(index) {
+        if (index < 0 || index >= root.folders.length) return false
+        const next = Array.from(root.folders)
+        next.splice(index, 1)
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function addAppToFolder(folderId, entryIndex) {
+        if (entryIndex < 0 || entryIndex >= root.entries.length) return false
+        const next = Array.from(root.folders)
+        let changed = false
+        for (let i = 0; i < next.length; i++) {
+            const f = Object.assign({}, next[i])
+            const appIndices = Array.from(f.appIndices || [])
+            const pos = appIndices.indexOf(entryIndex)
+            if (f.id === folderId) {
+                if (pos < 0) {
+                    appIndices.push(entryIndex)
+                    changed = true
+                }
+            } else if (pos >= 0) {
+                appIndices.splice(pos, 1)
+                changed = true
+            }
+            f.appIndices = appIndices
+            next[i] = f
+        }
+        if (!changed) return false
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function removeAppFromFolder(folderId, entryIndex) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return false
+        const next = Array.from(root.folders)
+        const f = Object.assign({}, next[fi])
+        const appIndices = Array.from(f.appIndices || [])
+        const pos = appIndices.indexOf(entryIndex)
+        if (pos < 0) return false
+        appIndices.splice(pos, 1)
+        f.appIndices = appIndices
+        next[fi] = f
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function _isEntryInAnyFolder(entryIndex) {
+        for (let i = 0; i < root.folders.length; i++) {
+            const appIndices = root.folders[i].appIndices || []
+            for (let j = 0; j < appIndices.length; j++) {
+                if (appIndices[j] === entryIndex) return true
+            }
+        }
+        return false
+    }
+
+    function rootEntriesList() {
+        const out = []
+        for (let i = 0; i < root.entries.length; i++) {
+            if (root._isEntryInAnyFolder(i)) continue
+            const e = root.entries[i]
+            out.push({
+                name: e.name,
+                path: e.path,
+                icon: e.icon,
+                _originalIndex: i,
+                _isFolder: false
+            })
+        }
+        return out
+    }
+
+    readonly property var rootEntries: {
+        root.entries
+        root.folders
+        return rootEntriesList()
+    }
+
+    function appsInFolder(folderId) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return []
+        const appIndices = root.folders[fi].appIndices || []
+        const out = []
+        for (let i = 0; i < appIndices.length; i++) {
+            const idx = appIndices[i]
+            if (idx < 0 || idx >= root.entries.length) continue
+            const e = root.entries[idx]
+            out.push({
+                name: e.name,
+                path: e.path,
+                icon: e.icon,
+                _originalIndex: idx,
+                _isFolder: false
+            })
+        }
+        return out
     }
 
     function guessIconFor(path) {
@@ -274,6 +412,7 @@ Singleton {
             id: customAppsAdapter
             property list<var> entries: []
             property list<string> dirs: []
+            property list<var> folders: []
         }
     }
 }
