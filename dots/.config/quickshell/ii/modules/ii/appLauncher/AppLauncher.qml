@@ -73,17 +73,76 @@ Scope {
             radius: Appearance.rounding.normal
             color: Appearance.colors.colLayer1
 
+            Item {
+                id: headerBar
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                implicitHeight: 58
+
+                ColumnLayout {
+                    anchors.left: parent.left
+                    anchors.right: settingsButton.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.leftMargin: 20
+                    anchors.topMargin: 10
+                    anchors.bottomMargin: 6
+                    spacing: 0
+
+                    StyledText {
+                        text: Translation.tr("Apps")
+                        color: Appearance.colors.colOnLayer1
+                        font {
+                            family: Appearance.font.family.title
+                            pixelSize: Appearance.font.pixelSize.larger
+                            variableAxes: Appearance.font.variableAxes.title
+                        }
+                    }
+
+                    StyledText {
+                        topPadding: -1
+                        text: appGrid.count === 0
+                            ? Translation.tr("Right-click to add an application")
+                            : Translation.tr("%1 items · drag onto a folder to group").arg(appGrid.count)
+                        color: Appearance.colors.colSubtext
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                    }
+                }
+
+                RippleButton {
+                    id: settingsButton
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.rightMargin: 12
+                    anchors.topMargin: 10
+                    buttonRadius: Appearance.rounding.full
+                    implicitWidth: 36
+                    implicitHeight: 36
+                    visible: !settingsOverlay.shown
+                    onClicked: settingsOverlay.shown = true
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "settings"
+                        iconSize: 20
+                    }
+                }
+            }
+
             PagePlaceholder {
                 visible: appGrid.count === 0
                 icon: "apps"
-                title: "AppLauncher"
+                title: Translation.tr("No applications yet")
+                description: Translation.tr("Right-click anywhere to add one")
+                descriptionHorizontalAlignment: Text.AlignHCenter
             }
 
             GridView {
                 id: appGrid
                 anchors.fill: parent
                 anchors.margins: 14
-                anchors.topMargin: 54
+                anchors.topMargin: headerBar.height + 4
                 visible: count > 0
                 cellWidth: contentRoot.iconSize + 76
                 cellHeight: contentRoot.iconSize + 76
@@ -237,11 +296,11 @@ Scope {
                         anchors.margins: 6
                         visible: !delegateRoot.isFolder
                         radius: Appearance.rounding.normal
-                        color: itemArea.containsMouse
-                            ? Appearance.colors.colLayer1Hover
-                            : "transparent"
-                        border.width: itemArea.containsMouse ? 2 : 0
-                        border.color: Appearance.colors.colPrimary
+                        color: itemArea.pressed
+                            ? Appearance.colors.colLayer1Active
+                            : itemArea.containsMouse
+                                ? Appearance.colors.colLayer1Hover
+                                : "transparent"
 
                         Drag.active: itemArea.drag.active
                         Drag.source: itemArea
@@ -252,9 +311,6 @@ Scope {
                         Behavior on color {
                             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
                         }
-                        Behavior on border.color {
-                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                        }
 
                         states: State {
                             name: "dragging"
@@ -263,13 +319,18 @@ Scope {
                                 target: appTile
                                 anchors.fill: undefined
                                 anchors.margins: 0
-                                opacity: 0.85
+                                opacity: 0.88
+                                scale: 1.04
                                 z: 50
                             }
                             ParentChange {
                                 target: appTile
                                 parent: innerLayer
                             }
+                        }
+
+                        Behavior on scale {
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
 
                         ColumnLayout {
@@ -350,25 +411,6 @@ Scope {
                 }
             }
 
-            RippleButton {
-                id: settingsButton
-                z: 5
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: 12
-                buttonRadius: Appearance.rounding.full
-                implicitWidth: 36
-                implicitHeight: 36
-                visible: !settingsOverlay.shown
-                onClicked: settingsOverlay.shown = true
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "settings"
-                    iconSize: 20
-                }
-            }
-
             FadeLoader {
                 id: settingsOverlay
                 anchors.fill: parent
@@ -409,8 +451,7 @@ Scope {
                     Rectangle {
                         id: backdrop
                         anchors.fill: parent
-                        color: "#000000"
-                        opacity: 0.45
+                        color: Appearance.colors.colScrim
                         radius: Appearance.rounding.normal
 
                         MouseArea {
@@ -479,23 +520,53 @@ Scope {
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 10
+                                spacing: 12
 
-                                MaterialSymbol {
-                                    text: "folder_open"
-                                    iconSize: 28
-                                    color: Appearance.colors.colOnLayer1
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    implicitWidth: 40
+                                    implicitHeight: 40
+                                    radius: width * 0.28
+                                    color: Appearance.m3colors.m3primaryContainer
+
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "folder_open"
+                                        iconSize: 22
+                                        color: Appearance.colors.colOnPrimaryContainer
+                                    }
                                 }
 
-                                StyledText {
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    text: folderViewer.folder?.name ?? ""
-                                    color: Appearance.colors.colOnLayer1
-                                    font.pixelSize: Appearance.font.pixelSize.large
-                                    elide: Text.ElideRight
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: -1
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: folderViewer.folder?.name ?? ""
+                                        color: Appearance.colors.colOnLayer1
+                                        font {
+                                            family: Appearance.font.family.title
+                                            pixelSize: Appearance.font.pixelSize.larger
+                                            variableAxes: Appearance.font.variableAxes.title
+                                        }
+                                        elide: Text.ElideRight
+                                    }
+
+                                    StyledText {
+                                        text: folderAppsGrid.count === 0
+                                            ? Translation.tr("Empty")
+                                            : folderAppsGrid.count === 1
+                                                ? Translation.tr("1 app")
+                                                : Translation.tr("%1 apps").arg(folderAppsGrid.count)
+                                        color: Appearance.colors.colSubtext
+                                        font.pixelSize: Appearance.font.pixelSize.smaller
+                                    }
                                 }
 
                                 RippleButton {
+                                    Layout.alignment: Qt.AlignVCenter
                                     buttonRadius: Appearance.rounding.full
                                     implicitWidth: 36
                                     implicitHeight: 36
@@ -546,16 +617,13 @@ Scope {
                                         Rectangle {
                                             anchors.fill: parent
                                             radius: Appearance.rounding.normal
-                                            color: folderAppArea.containsMouse
-                                                ? Appearance.colors.colLayer1Hover
-                                                : "transparent"
-                                            border.width: folderAppArea.containsMouse ? 2 : 0
-                                            border.color: Appearance.colors.colPrimary
+                                            color: folderAppArea.pressed
+                                                ? Appearance.colors.colLayer2Active
+                                                : folderAppArea.containsMouse
+                                                    ? Appearance.colors.colLayer2Hover
+                                                    : "transparent"
 
                                             Behavior on color {
-                                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                                            }
-                                            Behavior on border.color {
                                                 animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
                                             }
 
@@ -593,12 +661,26 @@ Scope {
                                 }
                             }
 
-                            StyledText {
+                            ColumnLayout {
                                 Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true
+                                Layout.bottomMargin: 12
                                 visible: folderAppsGrid.count === 0
-                                text: Translation.tr("Drag apps onto this folder to add them.")
-                                color: Appearance.colors.colSubtext
-                                font.pixelSize: Appearance.font.pixelSize.small
+                                spacing: 4
+
+                                MaterialSymbol {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: "drag_pan"
+                                    iconSize: 36
+                                    color: Appearance.colors.colSubtext
+                                }
+
+                                StyledText {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: Translation.tr("Drag apps here to add them")
+                                    color: Appearance.colors.colSubtext
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                }
                             }
                         }
                     }
