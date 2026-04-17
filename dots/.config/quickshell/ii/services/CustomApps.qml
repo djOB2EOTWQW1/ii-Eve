@@ -29,7 +29,14 @@ Singleton {
 
     readonly property var binaryExtensions: [
         "appimage", "exe", "sh", "bash", "zsh", "fish",
-        "bin", "run", "py", "pl", "rb", "lua", "js"
+        "bin", "run", "py", "pl", "rb", "lua", "js",
+        "x86_64", "x86_32", "x86", "arm64", "aarch64",
+        "love", "jar"
+    ]
+
+    readonly property var binaryDirPrefixes: [
+        "/usr/bin/", "/usr/local/bin/", "/usr/sbin/",
+        "/bin/", "/sbin/", "/opt/"
     ]
 
     signal changed()
@@ -134,11 +141,17 @@ Singleton {
 
     function isLikelyBinary(path) {
         if (!path) return false
-        const basename = String(path).split('/').pop()
+        const s = String(path)
+        const basename = s.split('/').pop()
         if (basename.length === 0) return false
         const dot = basename.lastIndexOf('.')
-        if (dot < 0) return true
         if (dot === 0) return false
+        if (dot < 0) {
+            for (let i = 0; i < root.binaryDirPrefixes.length; i++) {
+                if (s.startsWith(root.binaryDirPrefixes[i])) return true
+            }
+            return false
+        }
         const ext = basename.substring(dot + 1).toLowerCase()
         return root.binaryExtensions.indexOf(ext) >= 0
     }
