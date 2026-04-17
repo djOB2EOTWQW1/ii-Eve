@@ -17,6 +17,8 @@ import qs.modules.ii.regionSelector
 import qs.modules.ii.screenCorners
 import qs.modules.ii.screenTranslator
 import qs.modules.ii.sessionScreen
+import qs.modules.ii.appLauncher
+import qs.modules.ii.binarySelector
 import qs.modules.ii.sidebarPolicies
 import qs.modules.ii.sidebarDashboard
 import qs.modules.ii.overlay
@@ -58,6 +60,8 @@ Scope {
     PanelLoader { component: ScreenCorners {} }
     PanelLoader { component: ScreenTranslator {} }
     PanelLoader { component: SessionScreen {} }
+    PanelLoader { component: AppLauncher {} }
+    PanelLoader { component: BinarySelector {} }
     PanelLoader { component: SidebarPolicies {} }
     PanelLoader { component: SidebarDashboard {} }
     PanelLoader { extraCondition: Config.options.bar.vertical && barExtraCondition; component: VerticalBar {} }

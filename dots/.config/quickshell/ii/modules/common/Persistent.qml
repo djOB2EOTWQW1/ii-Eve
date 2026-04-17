@@ -58,6 +58,10 @@ Singleton {
 
             property string hyprlandInstanceSignature: ""
 
+            property JsonObject appLauncher: JsonObject {
+                property int iconSize: 64
+            }
+
             property JsonObject ai: JsonObject {
                 property string provider: "google" // AI providers such as google, open router, mistral
                 property string model: "gemini-2.5-flash" // The model of the ai such as 2.5-flash

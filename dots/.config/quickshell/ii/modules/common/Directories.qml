@@ -44,6 +44,7 @@ Singleton {
     property string shellConfig: FileUtils.trimFileProtocol(`${Directories.config}/illogical-impulse`)
     property string shellConfigName: "config.json"
     property string shellConfigPath: `${Directories.shellConfig}/${Directories.shellConfigName}`
+	property string customAppsPath: FileUtils.trimFileProtocol(`${Directories.state}/user/customApps.json`)
 	property string todoPath: FileUtils.trimFileProtocol(`${Directories.state}/user/todo.json`)
 	property string notesPath: FileUtils.trimFileProtocol(`${Directories.state}/user/notes.json`)
 	property string conflictCachePath: FileUtils.trimFileProtocol(`${Directories.cache}/conflict-killer`)
@@ -79,6 +80,7 @@ Singleton {
         Quickshell.execDetached(["bash", "-c", `rm -rf '${latexOutput}'; mkdir -p '${latexOutput}'`])
         Quickshell.execDetached(["bash", "-c", `rm -rf '${cliphistDecode}'; mkdir -p '${cliphistDecode}'`])
         Quickshell.execDetached(["mkdir", "-p", `${aiChats}`])
+        Quickshell.execDetached(["mkdir", "-p", `${FileUtils.trimFileProtocol(Directories.state)}/user`])
         Quickshell.execDetached(["mkdir", "-p", `${userActions}`])
         Quickshell.execDetached(["rm", "-rf", `${tempImages}`])
     }
