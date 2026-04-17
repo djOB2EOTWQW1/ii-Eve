@@ -53,6 +53,8 @@ Scope {
         // Cleared on drop/release. Uses folder id to survive model updates.
         property string hoverFolderId: ""
         property int draggedEntryIndex: -1
+        // True while an external file-manager drag (source === null) hovers over the launcher.
+        property bool externalDragHover: false
 
         readonly property var gridModel: {
             const folders = (CustomApps.folders || []).map(f => ({
@@ -427,6 +429,49 @@ Scope {
                 }
             }
 
+            // Overlay shown while an external binary is dragged over the launcher (detach mode).
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 4
+                radius: parent.radius
+                visible: contentRoot.externalDragHover
+                z: 8
+                color: "transparent"
+                border.width: 2
+                border.color: Appearance.colors.colPrimary
+
+                Behavior on border.color {
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: Appearance.colors.colPrimaryContainer
+                    opacity: 0.12
+                }
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "add_circle"
+                        iconSize: 48
+                        color: Appearance.colors.colPrimary
+                        opacity: 0.9
+                    }
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: Translation.tr("Drop to add application")
+                        color: Appearance.colors.colPrimary
+                        font.pixelSize: Appearance.font.pixelSize.normal
+                    }
+                }
+            }
+
             // Android 16 style expanded folder: dimmed backdrop + centered panel.
             Loader {
                 id: folderViewer
@@ -791,6 +836,32 @@ Scope {
                 } else {
                     event.accepted = false;
                 }
+            }
+        }
+
+        // Receives file drops from external apps (file managers) in detach mode.
+        // Ignores internal QML drags (drag.source !== null) so folder drop targets remain functional.
+        DropArea {
+            anchors.fill: parent
+            keys: ["text/uri-list"]
+
+            onEntered: (drag) => {
+                if (drag.source !== null) return
+                contentRoot.externalDragHover = true
+                drag.accept(Qt.CopyAction)
+            }
+            onExited: {
+                contentRoot.externalDragHover = false
+            }
+            onDropped: (drop) => {
+                contentRoot.externalDragHover = false
+                const raw = drop.getDataAsString("text/uri-list")
+                if (!raw) return
+                const urls = raw.split(/\r?\n/).filter(u => u.trim().length > 0)
+                for (let i = 0; i < urls.length; i++) {
+                    CustomApps.addApp(urls[i].trim())
+                }
+                drop.accept(Qt.CopyAction)
             }
         }
     }
