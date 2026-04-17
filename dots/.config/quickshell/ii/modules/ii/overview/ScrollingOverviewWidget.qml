@@ -183,126 +183,143 @@ Item {
     }
 
 
-    RowLayout {
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: -root.activeWindow.size[0]
-        // assuming double numbered windows are open:
-        // if the window is on the left: we have to use a positive value on the horizontalcenteroffset and use a filler item in the right
-        // if the window is on the right: we have to use a negative value on the horizontalcenteroffset and use a filler item in the left
-        // i have no idea about the other cases for now
-        spacing: 0
+    Item {
+        id: windowContainer
+        anchors.centerIn: parent
 
-        Item {
-            Layout.preferredWidth: 0
-
-            Component.onCompleted: {
-                Layout.preferredWidth = root.activeWindow.size[0]
+        property var targetPositions: {
+            let pos = [];
+            let currentX = 0;
+            let spacing = 120 * root.scaleRatio;
+            const vals = windowScriptModel.values;
+            if (!vals) return [];
+            
+            const activeAddr = root.activeWindow?.address;
+            let activeIdx = -1;
+            
+            for (let i = 0; i < vals.length; i++) {
+                const win = windowByAddress[vals[i]];
+                if (!win) { pos.push(currentX); continue; }
+                const w = win.size[0] * root.scaleRatio;
+                pos.push(currentX + w / 2);
+                currentX += w + spacing;
+                if (vals[i] === activeAddr) activeIdx = i;
             }
             
-            Behavior on Layout.preferredWidth {
-                NumberAnimation {
-                    duration: Appearance.animation.elementMove.duration * 5
-                    easing.type: Appearance.animation.elementMove.type
-                    easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                }
+            const shiftX = (activeIdx !== -1) ? pos[activeIdx] : (currentX - spacing) / 2;
+            return pos.map(p => p - shiftX);
+        }
+
+        ScriptModel {
+            id: windowScriptModel
+            values: {
+                return ToplevelManager.toplevels.values
+                    .filter((toplevel) => {
+                        const address = `0x${toplevel.HyprlandToplevel?.address}`
+                        const win = windowByAddress[address]
+                        return win && win.workspace?.id === monitor.activeWorkspace?.id
+                    })
+                    .sort((a, b) => {
+                        const wa = windowByAddress[`0x${a.HyprlandToplevel.address}`]
+                        const wb = windowByAddress[`0x${b.HyprlandToplevel.address}`]
+                        return wa.at[0] - wb.at[0] 
+                    })
+                    .map(t => `0x${t.HyprlandToplevel.address}`)
             }
         }
 
         Repeater { 
             id: windowRepeater
-            model: ScriptModel {
-                values: {
-                    return ToplevelManager.toplevels.values
-                        .map((toplevel) => {
-                            const address = `0x${toplevel.HyprlandToplevel?.address}`
-                            const win = windowByAddress[address]
-                            return { toplevel, win }
-                        })
-                        .filter(({ win }) => {
-                            return win && win.workspace?.id === monitor.activeWorkspace?.id
-                        })
-                        .sort((a, b) => {
-                            return a.win.at[0] - b.win.at[0] 
-                        })
-                        .map(({ toplevel }) => toplevel)
-                }
-            }
-            delegate: ScreencopyView {
-                required property var modelData
+            model: windowScriptModel
+            delegate: Item {
+                id: windowDelegate
+                required property string modelData
                 required property int index
 
-                property string address: `0x${modelData.HyprlandToplevel.address}`
-                property var window: windowByAddress[address]
-
-                Layout.preferredWidth: window.size[0]
-                Layout.preferredHeight: window.size[1]
-                width: Layout.preferredWidth
-                height: Layout.preferredHeight
-
-                captureSource: modelData
-
-                Component.onCompleted: {
-                    Layout.preferredWidth = window.size[0] / 2
-                    Layout.preferredHeight = window.size[1] / 2
-                    //console.log(JSON.stringify(window, null, 2))
+                property string address: modelData
+                property var toplevel: {
+                    const allToplevels = ToplevelManager.toplevels.values;
+                    for (let i = 0; i < allToplevels.length; i++) {
+                        if (`0x${allToplevels[i].HyprlandToplevel.address}` === address) return allToplevels[i];
+                    }
+                    return null;
                 }
+                property var windowData: windowByAddress[address]
+                
+                readonly property bool isActive: address === root.activeWindow?.address
 
-                Rectangle { 
-                    z: -10
+                // State control for animation
+                property bool initialized: false
+                Component.onCompleted: Qt.callLater(() => initialized = true)
+                readonly property bool showOverview: GlobalStates.overviewOpen && initialized
+
+                property int animDuration: 500
+
+                // Target state (Overview)
+                readonly property real targetWidth: (windowData?.size[0] ?? 0) * root.scaleRatio
+                readonly property real targetHeight: (windowData?.size[1] ?? 0) * root.scaleRatio
+                readonly property real overviewX: (windowContainer.targetPositions[index] ?? 0) - targetWidth / 2
+                readonly property real overviewY: -targetHeight / 2
+
+                // Entry state (Real screen position relative to center)
+                readonly property real entryX: ((windowData?.at[0] ?? 0) - monitor.x) - monitor.width / 2
+                readonly property real entryY: ((windowData?.at[1] ?? 0) - monitor.y) - monitor.height / 2
+
+                width: showOverview ? targetWidth : (windowData?.size[0] ?? 0)
+                height: showOverview ? targetHeight : (windowData?.size[1] ?? 0)
+                x: showOverview ? overviewX : entryX
+                y: showOverview ? overviewY : entryY
+
+                Behavior on x { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+                Behavior on y { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+                Behavior on width { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+                Behavior on height { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+
+                ScreencopyView {
+                    id: preview
                     anchors.fill: parent
-                    color: "blue"
-                    opacity: 0.1
+                    captureSource: windowDelegate.toplevel
+                    live: true
+                    
+                    layer.enabled: true
+                    layer.effect: OpacityMask {
+                        maskSource: Rectangle {
+                            width: preview.width
+                            height: preview.height
+                            radius: root.windowRounding * 0.8
+                        }
+                    }
+
+                    Rectangle { 
+                        z: -1
+                        anchors.fill: parent
+                        color: Appearance.colors.colLayer2
+                        radius: root.windowRounding * 0.8
+                        opacity: 0.5
+                    }
                 }
 
-                Behavior on width {
-                    NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 5
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
+                Rectangle {
+                    anchors.fill: parent
+                    color: "transparent"
+                    radius: root.windowRounding * 0.8
+                    border.width: isActive ? 2 : 1
+                    border.color: isActive ? Appearance.colors.colSecondary : ColorUtils.transparentize(Appearance.colors.colOutline, 0.3)
+                    
+                    Behavior on border.width { NumberAnimation { duration: 200 } }
+                    Behavior on border.color { ColorAnimation { duration: 200 } }
                 }
-                Behavior on height {
-                    NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 5
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
-                }
-                Behavior on Layout.preferredWidth {
-                    NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 5
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
-                }
-                Behavior on Layout.preferredHeight {
-                    NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 5
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
+
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    transparentBorder: true
+                    color: Qt.rgba(0,0,0,0.4)
+                    radius: isActive ? 20 : 6
+                    samples: 16
+                    verticalOffset: isActive ? 8 : 2
                 }
             }
         }
-
-        Item {
-            Layout.preferredWidth: 0
-
-            Component.onCompleted: {
-                //Layout.preferredWidth = root.activeWindow.size[0]
-            }
-            
-            Behavior on Layout.preferredWidth {
-                NumberAnimation {
-                    duration: Appearance.animation.elementMove.duration * 5
-                    easing.type: Appearance.animation.elementMove.type
-                    easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                }
-            }
-        }
-
-
     }
 
     /* Rectangle { // Background
