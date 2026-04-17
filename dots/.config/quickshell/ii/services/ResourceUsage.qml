@@ -66,7 +66,7 @@ Singleton {
     }
 
 	Timer {
-		interval: 1
+		interval: Config.options?.resources?.updateInterval ?? 3000
         running: true 
         repeat: true
 		onTriggered: {
@@ -120,7 +120,6 @@ Singleton {
             if (freqMatch) root.cpuFreq = parseInt(freqMatch[1]) + " MHz"
 
             root.updateHistories()
-            interval = Config.options?.resources?.updateInterval ?? 3000
         }
 	}
 

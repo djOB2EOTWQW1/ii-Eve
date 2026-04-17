@@ -10,11 +10,14 @@ Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: implicitHeight
     Layout.preferredWidth: implicitWidth
-    implicitWidth: 380  // fixed sizes to keep consistency
-    implicitHeight: 180
+    implicitWidth: adaptiveWidth ? Math.max(Math.max(220 + titleMetrics.width, 180 + subtitleMetrics.width), 380) : 380  // fixed sizes to keep consistency
+    implicitHeight: compactMode ? 150 : 180
 
     radius: Appearance.rounding.normal
     color: Appearance.colors.colPrimaryContainer
+
+    property bool compactMode: false
+    property bool adaptiveWidth: false
 
     property int margins: 24
     property int iconSize: 110
@@ -25,8 +28,8 @@ Rectangle {
 
     property string title: ""
     property string subtitle: ""
-    property int titleSize: Appearance.font.pixelSize.hugeass * 2.5
-    property int subtitleSize: Appearance.font.pixelSize.hugeass
+    property int titleSize: compactMode ? Appearance.font.pixelSize.huge : Appearance.font.pixelSize.hugeass * 2.5
+    property int subtitleSize: compactMode ? Appearance.font.pixelSize.large : Appearance.font.pixelSize.hugeass
 
     property string pillText: ""
     property string pillIcon: ""
@@ -37,6 +40,18 @@ Rectangle {
 
     property alias shapeContent: shapeItem.data
     property int spacing: 16
+
+    TextMetrics {
+        id: titleMetrics
+        text: heroCardRoot.title
+        font.pixelSize: heroCardRoot.titleSize
+    }
+
+    TextMetrics {
+        id: subtitleMetrics
+        text: heroCardRoot.subtitle
+        font.pixelSize: heroCardRoot.subtitleSize
+    }
 
     MaterialShape {
         id: shapeItem
@@ -64,7 +79,7 @@ Rectangle {
         implicitHeight: cityRow.implicitHeight + 12
         implicitWidth: cityRow.implicitWidth + 20
         radius: Appearance.rounding.full
-        color: Appearance.colors.colSecondaryContainer
+        color: Appearance.colors.colOnPrimary
         anchors {
             right: parent.right
             top: parent.top
@@ -80,6 +95,7 @@ Rectangle {
                 text: heroCardRoot.pillIcon
                 iconSize: Appearance.font.pixelSize.small
                 color: Appearance.colors.colOnSecondaryContainer
+                Layout.bottomMargin: 1
             }
             StyledText {
                 text: heroCardRoot.pillText
@@ -102,14 +118,13 @@ Rectangle {
         font.weight: Font.Black
         color: heroCardRoot.textColor
         horizontalAlignment: Text.AlignRight
-        elide: Text.ElideRight
         anchors {
             verticalCenter: parent.verticalCenter
             verticalCenterOffset: 4
             right: parent.right
             margins: heroCardRoot.margins
         }
-        width: 150
+        width: 200
     }
 
     StyledText {
@@ -127,6 +142,6 @@ Rectangle {
         color: heroCardRoot.textColor
         horizontalAlignment: Text.AlignRight
         elide: Text.ElideRight
-        width: 200
+        width: adaptiveWidth ? heroCardRoot.width : 200
     }
 }
