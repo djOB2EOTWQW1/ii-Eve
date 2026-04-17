@@ -164,7 +164,7 @@ Variants {
             id: wallpaperItem
             anchors.fill: parent
             clip: true
-            scale: showOpeningAnimation && overviewOpen && bgRoot.isScrollingLayout ? zoomedRatio : defaultRatio
+            //scale: showOpeningAnimation && overviewOpen && bgRoot.isScrollingLayout ? zoomedRatio : defaultRatio
             opacity: mediaModeOpen ? 0 : 1
             
             Behavior on opacity {

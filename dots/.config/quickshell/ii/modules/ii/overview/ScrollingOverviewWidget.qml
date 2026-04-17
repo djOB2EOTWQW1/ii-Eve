@@ -18,6 +18,8 @@ Item {
 
     readonly property bool hyprscrollingEnabled: true //FIXME
     readonly property list<int> workspaceMap: Config.options.overview.workspaceMap
+
+    property int animDuration: panelWindow.overviewAnimDuration
     readonly property string backgroundStyle: Config.options.overview.scrollingStyle.backgroundStyle
 
     property int workspaceOffset: root.extendWorkspaceMap(workspaceMap)[root.monitorIndex]
@@ -183,18 +185,148 @@ Item {
     }
 
 
+    // Global blurred background
+    Item {
+        id: globalBg
+        z: -10
+        anchors.fill: parent
+        visible: showOpeningAnimation
+        
+        readonly property bool isOpen: GlobalStates.overviewOpen
+        opacity: globalBg.isOpen ? 1.0 : 0.0
+        
+        Behavior on opacity {
+            SequentialAnimation {
+                PauseAnimation { duration: globalBg.isOpen ? 0 : animDuration * 0.7 }
+                NumberAnimation { 
+                    duration: globalBg.isOpen ? animDuration : animDuration * 0.3
+                    easing.type: Easing.OutCubic 
+                }
+            }
+        }
+
+        Image {
+            id: globalBgImage
+            anchors.fill: parent
+            source: "file://" + Config.options.background.wallpaperPath
+            fillMode: Image.PreserveAspectCrop
+            visible: false
+        }
+
+        GaussianBlur {
+            anchors.fill: globalBgImage
+            source: globalBgImage
+            radius: globalBg.isOpen ? 50 : 5
+            samples: 24
+            Behavior on radius { NumberAnimation { duration: animDuration; easing.type: Easing.OutCubic } }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "black"
+            opacity: globalBg.isOpen ? 0.5 : 0.0
+            Behavior on opacity { NumberAnimation { duration: animDuration; easing.type: Easing.OutCubic } }
+        }
+        
+        scale: panelWindow.scaleAnimated
+    }
+
     Item {
         id: layoutContainer
         anchors.fill: parent
 
-        // Vertical scroll offset logic: how much we shift all rows to center the active one
+        // Vertical scroll offset logic
         readonly property real rowSpacing: 180 * root.scaleRatio
         readonly property real rowHeight: workspaceImplicitHeight + rowSpacing
         
-        // Target vertical center for any workspace wsId
         function getRowCenterY(wsId) {
             let activeWsId = monitor.activeWorkspace?.id ?? 0;
             return (monitor.height / 2) + (wsId - activeWsId) * rowHeight;
+        }
+
+        // Workspace background cards (the "desktops")
+        Repeater {
+            model: root.workspacesShown
+            delegate: Item {
+                id: wsCardDelegate
+                required property int index
+                property int wsId: index + 1 + root.workspaceOffset
+                width: monitor.width * root.scaleRatio
+                height: workspaceImplicitHeight
+                
+                x: monitor.width / 2 - width / 2
+                y: layoutContainer.getRowCenterY(wsId) - height / 2
+
+                property bool initialized: false
+                Component.onCompleted: Qt.callLater(() => initialized = true)
+                readonly property bool showCard: GlobalStates.overviewOpen && initialized
+
+                Behavior on y { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+
+                // Shadow (Separated to fix radius glitches)
+                Rectangle {
+                    anchors.fill: cardBody
+                    radius: cardBody.radius
+                    color: Appearance.colors.colLayer1
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        transparentBorder: true
+                        color: Qt.rgba(0,0,0,0.5)
+                        radius: 15
+                        samples: 16
+                        verticalOffset: 5
+                    }
+                }
+
+                Item {
+                    id: cardBody
+                    anchors.fill: parent
+                    readonly property int radius: root.windowRounding * 0.6
+
+                    Rectangle {
+                        id: maskRect
+                        anchors.fill: parent
+                        radius: cardBody.radius
+                        visible: false
+                    }
+
+                    Image {
+                        id: cardImg
+                        anchors.fill: parent
+                        source: "file://" + Config.options.background.wallpaperPath
+                        fillMode: Image.PreserveAspectCrop
+                        opacity: 0.4
+                        visible: false
+                    }
+
+                    OpacityMask {
+                        anchors.fill: parent
+                        source: cardImg
+                        maskSource: maskRect
+                        
+                        Rectangle { // Background fallback
+                            z: -1
+                            anchors.fill: parent
+                            color: Appearance.colors.colLayer1
+                            radius: cardBody.radius
+                        }
+                    }
+                    
+                    Rectangle { 
+                        anchors.fill: parent
+                        color: "transparent"
+                        radius: cardBody.radius
+                        border.width: 1
+                        border.color: (wsCardDelegate.wsId === monitor.activeWorkspace?.id) ? Appearance.colors.colSecondary : ColorUtils.transparentize(Appearance.colors.colOutline, 0.2)
+                    }
+                }
+                
+                scale: showCard ? 1.0 : 0.8
+                opacity: showCard ? (wsCardDelegate.wsId === monitor.activeWorkspace?.id ? 1.0 : 0.4) : 0.0
+                
+                Behavior on scale { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+                Behavior on opacity { NumberAnimation { duration: animDuration; easing.type: Easing.OutQuint } }
+            }
         }
 
         // Pre-calculate window positions for each workspace
@@ -243,29 +375,7 @@ Item {
             return map;
         }
 
-        // Workspace labels
-        Repeater {
-            model: root.workspacesShown
-            delegate: Text {
-                id: wsLabel
-                required property int index
-                property int wsId: index + 1 + root.workspaceOffset
-                text: wsId
-                
-                readonly property real targetY: layoutContainer.getRowCenterY(wsId) - workspaceImplicitHeight / 2 - 20
-                
-                x: monitor.width / 2 - width / 2
-                y: targetY - height
-                
-                color: Appearance.colors.colOnSurface
-                font.pixelSize: 32
-                font.bold: true
-                opacity: (GlobalStates.overviewOpen && wsId === monitor.activeWorkspace?.id) ? 0.8 : 0.3
-                
-                Behavior on y { NumberAnimation { duration: 1500; easing.type: Easing.OutQuint } }
-                Behavior on opacity { NumberAnimation { duration: 1000 } }
-            }
-        }
+
 
         // All windows across all workspaces in this group
         Repeater {
@@ -296,8 +406,6 @@ Item {
                 property bool initialized: false
                 Component.onCompleted: Qt.callLater(() => initialized = true)
                 readonly property bool showOverview: GlobalStates.overviewOpen && initialized
-
-                property int animDuration: panelWindow.overviewAnimDuration
 
                 // Find my offset in the strip from the pre-calculated map
                 readonly property real stripOffset: {
@@ -365,8 +473,8 @@ Item {
                     anchors.fill: parent
                     color: "transparent"
                     radius: root.windowRounding * 0.8
-                    border.width: isActive ? 4 : 1
-                    border.color: isActive ? Appearance.colors.colSecondary : ColorUtils.transparentize(Appearance.colors.colOutline, 0.3)
+                    border.width: 1 // Fixed at 1, no active highlight
+                    border.color: ColorUtils.transparentize(Appearance.colors.colOutline, 0.3)
                 }
 
                 layer.enabled: true
