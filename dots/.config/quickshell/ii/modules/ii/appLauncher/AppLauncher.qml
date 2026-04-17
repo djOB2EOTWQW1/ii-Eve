@@ -119,7 +119,12 @@ Scope {
                                     Layout.preferredHeight: 64
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
-                                    source: Quickshell.iconPath(delegateRoot.modelData.icon, "application-x-executable")
+                                    cache: false
+                                    source: {
+                                        const icon = delegateRoot.modelData.icon || ""
+                                        if (icon.startsWith("/")) return "file://" + icon
+                                        return Quickshell.iconPath(icon, "application-x-executable")
+                                    }
                                 }
 
                                 StyledText {

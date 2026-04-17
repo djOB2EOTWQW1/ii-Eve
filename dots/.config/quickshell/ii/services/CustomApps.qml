@@ -18,6 +18,8 @@ Singleton {
     id: root
 
     property string filePath: Directories.customAppsPath
+    property string iconCacheDir: FileUtils.trimFileProtocol(`${Directories.cache}/customApps/icons`)
+    property string exeIconScript: FileUtils.trimFileProtocol(`${Directories.scriptPath}/icons/extract-exe-icon-venv.sh`)
     property alias entries: customAppsAdapter.entries
     property alias dirs: customAppsAdapter.dirs
     property bool ready: false
@@ -48,6 +50,79 @@ Singleton {
             root.portprotonPresent = (exitCode === 0)
         }
     }
+
+    Process {
+        running: true
+        command: ["mkdir", "-p", root.iconCacheDir]
+    }
+
+    property var _iconQueue: []
+    property var _currentIconTask: null
+
+    Process {
+        id: iconExtractor
+        stdout: StdioCollector {
+            id: iconExtractorOut
+        }
+        onExited: (exitCode, exitStatus) => {
+            const task = root._currentIconTask
+            root._currentIconTask = null
+            if (task && exitCode === 0) {
+                root._applyExtractedIcon(task.exePath, task.outPath)
+            }
+            root._processIconQueue()
+        }
+    }
+
+    function _hashPath(path) {
+        let h = 5381
+        const s = String(path)
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) + h + s.charCodeAt(i)) | 0
+        }
+        return (h >>> 0).toString(16)
+    }
+
+    function _exeIconCachePath(exePath) {
+        return `${root.iconCacheDir}/${root._hashPath(exePath)}.png`
+    }
+
+    function _processIconQueue() {
+        if (root._currentIconTask) return
+        if (root._iconQueue.length === 0) return
+        const task = root._iconQueue.shift()
+        root._currentIconTask = task
+        iconExtractor.command = ["bash", root.exeIconScript, task.exePath, task.outPath]
+        iconExtractor.running = true
+    }
+
+    function _enqueueExeIcon(exePath, outPath) {
+        root._iconQueue.push({ exePath: exePath, outPath: outPath })
+        root._processIconQueue()
+    }
+
+    function _applyExtractedIcon(exePath, iconPath) {
+        const idx = root.indexOfPath(exePath)
+        if (idx < 0) return
+        const next = Array.from(root.entries)
+        const updated = Object.assign({}, next[idx])
+        updated.icon = iconPath
+        next[idx] = updated
+        customAppsAdapter.entries = next
+        root.changed()
+    }
+
+    function _upgradeExeIcons() {
+        for (let i = 0; i < root.entries.length; i++) {
+            const e = root.entries[i]
+            if (!e || !e.path) continue
+            if (!String(e.path).toLowerCase().endsWith('.exe')) continue
+            if (e.icon && String(e.icon).startsWith('/')) continue
+            root._enqueueExeIcon(e.path, root._exeIconCachePath(e.path))
+        }
+    }
+
+    onReadyChanged: if (root.ready) root._upgradeExeIcons()
 
     function indexOfPath(path) {
         const trimmed = FileUtils.trimFileProtocol(path)
@@ -86,6 +161,10 @@ Singleton {
         next.push({ name: name, path: path, icon: icon })
         customAppsAdapter.entries = next
         root.changed()
+
+        if (path.toLowerCase().endsWith('.exe')) {
+            root._enqueueExeIcon(path, root._exeIconCachePath(path))
+        }
         return true
     }
 
