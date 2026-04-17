@@ -186,8 +186,28 @@ Item {
     RowLayout {
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: 1920
+        anchors.horizontalCenterOffset: -root.activeWindow.size[0]
+        // assuming double numbered windows are open:
+        // if the window is on the left: we have to use a positive value on the horizontalcenteroffset and use a filler item in the right
+        // if the window is on the right: we have to use a negative value on the horizontalcenteroffset and use a filler item in the left
+        // i have no idea about the other cases for now
         spacing: 0
+
+        Item {
+            Layout.preferredWidth: 0
+
+            Component.onCompleted: {
+                Layout.preferredWidth = root.activeWindow.size[0]
+            }
+            
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Appearance.animation.elementMove.duration * 5
+                    easing.type: Appearance.animation.elementMove.type
+                    easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
+                }
+            }
+        }
 
         Repeater { 
             id: windowRepeater
@@ -225,6 +245,7 @@ Item {
                 Component.onCompleted: {
                     Layout.preferredWidth = window.size[0] / 2
                     Layout.preferredHeight = window.size[1] / 2
+                    //console.log(JSON.stringify(window, null, 2))
                 }
 
                 Rectangle { 
@@ -236,28 +257,28 @@ Item {
 
                 Behavior on width {
                     NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 3
+                        duration: Appearance.animation.elementMove.duration * 5
                         easing.type: Appearance.animation.elementMove.type
                         easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
                     }
                 }
                 Behavior on height {
                     NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 3
+                        duration: Appearance.animation.elementMove.duration * 5
                         easing.type: Appearance.animation.elementMove.type
                         easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
                     }
                 }
                 Behavior on Layout.preferredWidth {
                     NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 3
+                        duration: Appearance.animation.elementMove.duration * 5
                         easing.type: Appearance.animation.elementMove.type
                         easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
                     }
                 }
                 Behavior on Layout.preferredHeight {
                     NumberAnimation {
-                        duration: Appearance.animation.elementMove.duration * 3
+                        duration: Appearance.animation.elementMove.duration * 5
                         easing.type: Appearance.animation.elementMove.type
                         easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
                     }
@@ -269,12 +290,12 @@ Item {
             Layout.preferredWidth: 0
 
             Component.onCompleted: {
-                Layout.preferredWidth = 1920
+                //Layout.preferredWidth = root.activeWindow.size[0]
             }
             
             Behavior on Layout.preferredWidth {
                 NumberAnimation {
-                    duration: Appearance.animation.elementMove.duration * 3
+                    duration: Appearance.animation.elementMove.duration * 5
                     easing.type: Appearance.animation.elementMove.type
                     easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
                 }
