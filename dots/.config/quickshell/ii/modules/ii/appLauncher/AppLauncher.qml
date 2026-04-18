@@ -35,6 +35,10 @@ Scope {
         acceptedButtons: Qt.RightButton
         propagateComposedEvents: true
         onPressed: event => {
+            if (settingsOverlay.shown) {
+                event.accepted = false;
+                return;
+            }
             if (event.button === Qt.RightButton) {
                 contextMenu.selectedAppIndex = -1;
                 contextMenu.selectedFolderId = "";
@@ -402,6 +406,11 @@ Scope {
                 sourceComponent: Rectangle {
                     color: Appearance.m3colors.m3surfaceContainerLow
                     radius: Appearance.rounding.normal
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.AllButtons
+                    }
 
                     AppLauncherSettings {
                         anchors.fill: parent
