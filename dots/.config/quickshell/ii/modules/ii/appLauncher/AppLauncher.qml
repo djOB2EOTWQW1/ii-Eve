@@ -499,6 +499,7 @@ Scope {
 
             onEntered: (drag) => {
                 if (drag.source !== null) return
+                if (settingsOverlay.shown) return
                 contentRoot.externalDragHover = true
                 drag.accept(Qt.CopyAction)
             }
@@ -507,6 +508,7 @@ Scope {
             }
             onDropped: (drop) => {
                 contentRoot.externalDragHover = false
+                if (settingsOverlay.shown) return
                 const raw = drop.getDataAsString("text/uri-list")
                 if (!raw) return
                 const urls = raw.split(/\r?\n/).filter(u => u.trim().length > 0)
