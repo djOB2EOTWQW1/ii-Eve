@@ -60,6 +60,7 @@ Singleton {
 
             property JsonObject appLauncher: JsonObject {
                 property int iconSize: 64
+                property string windowSize: "settings"
             }
 
             property JsonObject ai: JsonObject {

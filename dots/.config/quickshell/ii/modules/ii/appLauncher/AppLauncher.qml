@@ -35,6 +35,10 @@ Scope {
         acceptedButtons: Qt.RightButton
         propagateComposedEvents: true
         onPressed: event => {
+            if (settingsOverlay.shown) {
+                event.accepted = false;
+                return;
+            }
             if (event.button === Qt.RightButton) {
                 contextMenu.selectedAppIndex = -1;
                 contextMenu.selectedFolderId = "";
@@ -67,6 +71,92 @@ Scope {
             }))
             const roots = CustomApps.rootEntries || []
             return folders.concat(roots)
+        }
+
+        property bool vimiumActive: false
+        property string vimiumTyped: ""
+        property bool settingsVimiumActive: false
+        property string settingsVimiumTyped: ""
+
+        readonly property bool inSettings: settingsOverlay.shown
+        readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !folderViewer.active
+
+        readonly property var vimiumHints: {
+            const count = 1 + gridModel.length
+            return _generateHints(count)
+        }
+
+        readonly property var settingsVimiumHints: {
+            const foldersLen = CustomApps.folders ? CustomApps.folders.length : 0
+            return _generateHints(2 + foldersLen)
+        }
+
+        function _generateHints(count) {
+            const chars = "ASDFGHJKLQWERTYUIOP"
+            const n = chars.length
+            const hints = []
+            for (let i = 0; i < count; i++) {
+                if (i < n) hints.push(chars[i])
+                else {
+                    const j = i - n
+                    hints.push(chars[Math.floor(j / n)] + chars[j % n])
+                }
+            }
+            return hints
+        }
+
+        onVimiumTypedChanged: {
+            if (!vimiumActive || vimiumTyped.length === 0) return
+            const hints = vimiumHints
+            let foundExact = false
+            let hasPrefix = false
+            for (let i = 0; i < hints.length; i++) {
+                if (hints[i] === vimiumTyped) {
+                    foundExact = true
+                    vimiumActive = false
+                    vimiumTyped = ""
+                    if (i === 0) {
+                        settingsOverlay.shown = true
+                    } else {
+                        const gm = gridModel[i - 1]
+                        if (gm && gm._isFolder) folderViewer.open(gm)
+                        else if (gm) CustomApps.launch(gm)
+                    }
+                    break
+                }
+                if (hints[i].startsWith(vimiumTyped)) hasPrefix = true
+            }
+            if (!foundExact && !hasPrefix) vimiumTyped = ""
+        }
+
+        onSettingsVimiumActiveChanged: {
+            if (settingsOverlay.item) settingsOverlay.item.vimiumActive = settingsVimiumActive
+        }
+
+        onSettingsVimiumTypedChanged: {
+            if (settingsOverlay.item) settingsOverlay.item.vimiumTyped = settingsVimiumTyped
+            if (!settingsVimiumActive || settingsVimiumTyped.length === 0) return
+            const hints = settingsVimiumHints
+            let foundExact = false
+            let hasPrefix = false
+            for (let i = 0; i < hints.length; i++) {
+                if (hints[i] === settingsVimiumTyped) {
+                    foundExact = true
+                    settingsVimiumActive = false
+                    settingsVimiumTyped = ""
+                    if (i === 0) {
+                        settingsOverlay.shown = false
+                    } else if (i === 1) {
+                        if (settingsOverlay.item && settingsOverlay.item.settingsRef)
+                            settingsOverlay.item.settingsRef.currentPage = 0
+                    } else {
+                        CustomApps.removeFolderAt(i - 2)
+                    }
+                    break
+                }
+                if (hints[i].startsWith(settingsVimiumTyped)) hasPrefix = true
+            }
+            if (!foundExact && !hasPrefix) settingsVimiumTyped = ""
         }
 
         Rectangle {
@@ -130,6 +220,16 @@ Scope {
                         text: "settings"
                         iconSize: 20
                     }
+
+                    VimiumHintLabel {
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -5
+                        anchors.topMargin: -5
+                        hintText: contentRoot.vimiumHints[0] ?? ""
+                        typedText: contentRoot.vimiumTyped
+                        vimiumActive: contentRoot.vimiumActive
+                    }
                 }
             }
 
@@ -166,6 +266,14 @@ Scope {
                     readonly property bool isFolder: !!delegateRoot.modelData?._isFolder
                     readonly property int entryIndex: delegateRoot.modelData?._originalIndex ?? -1
                     readonly property string folderId: delegateRoot.modelData?.id ?? ""
+
+                    VimiumHintLabel {
+                        x: 12
+                        y: 12
+                        hintText: contentRoot.vimiumHints[delegateRoot.index + 1] ?? ""
+                        typedText: contentRoot.vimiumTyped
+                        vimiumActive: contentRoot.vimiumActive
+                    }
 
                     // Android 16 style folder tile: rounded-square preview
                     // container with up to 4 mini app icons in a 2x2 grid.
@@ -400,11 +508,27 @@ Scope {
                 z: 15
                 shown: false
                 sourceComponent: Rectangle {
+                    id: settingsRect
                     color: Appearance.m3colors.m3surfaceContainerLow
                     radius: Appearance.rounding.normal
 
-                    AppLauncherSettings {
+                    property var settingsRef: null
+                    property bool vimiumActive: contentRoot.settingsVimiumActive
+                    property string vimiumTyped: contentRoot.settingsVimiumTyped
+
+                    Component.onCompleted: settingsRect.settingsRef = launcherSettings
+
+                    MouseArea {
                         anchors.fill: parent
+                        acceptedButtons: Qt.AllButtons
+                    }
+
+                    AppLauncherSettings {
+                        id: launcherSettings
+                        anchors.fill: parent
+                        vimiumActive: settingsRect.vimiumActive
+                        vimiumTyped: settingsRect.vimiumTyped
+                        vimiumHints: contentRoot.settingsVimiumHints
                         onClosed: settingsOverlay.shown = false
                     }
                 }
@@ -601,21 +725,93 @@ Scope {
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
-                anchors {
-                    fill: parent
-                    topMargin: Appearance.sizes.hyprlandGapsOut
-                    bottomMargin: Appearance.sizes.hyprlandGapsOut
-                    leftMargin: Appearance.sizes.hyprlandGapsOut
-                    rightMargin: Appearance.sizes.hyprlandGapsOut
+                readonly property bool fixedSize: (Persistent.states.appLauncher?.windowSize ?? "settings") === "settings"
+                anchors.centerIn: parent
+                width: fixedSize ? 900 : (parent.width - 2 * Appearance.sizes.hyprlandGapsOut)
+                height: fixedSize ? 750 : (parent.height - 2 * Appearance.sizes.hyprlandGapsOut)
+
+                Behavior on width {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                }
+                Behavior on height {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
 
-                LauncherContent {}
+                LauncherContent {
+                    id: launcherContent
+                }
 
                 Keys.onPressed: (event) => {
+                    const inSettings = launcherContent.inSettings;
+
                     if (event.key === Qt.Key_Escape) {
-                        panelWindow.hide();
+                        if (!inSettings && launcherContent.vimiumActive) {
+                            launcherContent.vimiumActive = false;
+                            launcherContent.vimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        if (inSettings && launcherContent.settingsVimiumActive) {
+                            launcherContent.settingsVimiumActive = false;
+                            launcherContent.settingsVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        if (!inSettings) {
+                            panelWindow.hide();
+                            return;
+                        }
                         return;
                     }
+
+                    if (event.key === Qt.Key_F && !event.modifiers) {
+                        if (!launcherContent.canActivateVimium) return;
+
+                        if (inSettings) {
+                            if (!launcherContent.settingsVimiumActive) {
+                                launcherContent.settingsVimiumActive = true;
+                                launcherContent.settingsVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
+                        } else {
+                            if (!launcherContent.vimiumActive) {
+                                launcherContent.vimiumActive = true;
+                                launcherContent.vimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
+                        }
+                    }
+
+                    if (!inSettings && launcherContent.vimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.vimiumTyped.length > 0) {
+                            launcherContent.vimiumTyped = launcherContent.vimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.vimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
+                    }
+
+                    if (inSettings && launcherContent.settingsVimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.settingsVimiumTyped.length > 0) {
+                            launcherContent.settingsVimiumTyped = launcherContent.settingsVimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.settingsVimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
+                    }
+
                     if (event.modifiers === Qt.ControlModifier) {
                         if (event.key === Qt.Key_D) {
                             root.toggleDetach();
@@ -634,8 +830,11 @@ Scope {
         sourceComponent: FloatingWindow {
             id: detachedRoot
             color: "transparent"
-
             visible: GlobalStates.appLauncherOpen
+
+            readonly property bool fixedSize: (Persistent.states.appLauncher?.windowSize ?? "settings") === "settings"
+            width: fixedSize ? 900 : implicitWidth
+            height: fixedSize ? 750 : implicitHeight
 
             StyledRectangularShadow {
                 target: detachedBackground
@@ -651,9 +850,77 @@ Scope {
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
-                LauncherContent {}
+                LauncherContent {
+                    id: launcherContent
+                }
 
                 Keys.onPressed: (event) => {
+                    const inSettings = launcherContent.inSettings;
+
+                    if (event.key === Qt.Key_Escape) {
+                        if (!inSettings && launcherContent.vimiumActive) {
+                            launcherContent.vimiumActive = false;
+                            launcherContent.vimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        if (inSettings && launcherContent.settingsVimiumActive) {
+                            launcherContent.settingsVimiumActive = false;
+                            launcherContent.settingsVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        return;
+                    }
+
+                    if (event.key === Qt.Key_F && !event.modifiers) {
+                        if (!launcherContent.canActivateVimium) return;
+
+                        if (inSettings) {
+                            if (!launcherContent.settingsVimiumActive) {
+                                launcherContent.settingsVimiumActive = true;
+                                launcherContent.settingsVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
+                        } else {
+                            if (!launcherContent.vimiumActive) {
+                                launcherContent.vimiumActive = true;
+                                launcherContent.vimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
+                        }
+                    }
+
+                    if (!inSettings && launcherContent.vimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.vimiumTyped.length > 0) {
+                            launcherContent.vimiumTyped = launcherContent.vimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.vimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
+                    }
+
+                    if (inSettings && launcherContent.settingsVimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.settingsVimiumTyped.length > 0) {
+                            launcherContent.settingsVimiumTyped = launcherContent.settingsVimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.settingsVimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
+                    }
+
                     if (event.modifiers === Qt.ControlModifier) {
                         if (event.key === Qt.Key_D) {
                             root.toggleDetach();
