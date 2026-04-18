@@ -12,7 +12,10 @@ Singleton {
     function trimFileProtocol(str) {
         let s = str;
         if (typeof s !== "string") s = str.toString(); // Convert to string if it's an url or whatever
-        return s.startsWith("file://") ? s.slice(7) : s;
+        if (s.startsWith("file://")) {
+            try { return decodeURIComponent(s.slice(7)); } catch (e) { return s.slice(7); }
+        }
+        return s;
     }
 
     /**
