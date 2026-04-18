@@ -168,7 +168,8 @@ Singleton {
         }
 
         const basename = path.split('/').pop()
-        const name = basename.replace(/\.(AppImage|appimage|exe)$/i, '')
+        const _dot = basename.lastIndexOf('.')
+        const name = (_dot > 0) ? basename.substring(0, _dot) : basename
         const icon = root.guessIconFor(path)
 
         const next = Array.from(root.entries)
@@ -374,7 +375,8 @@ Singleton {
 
     function guessIconFor(path) {
         const basename = path.split('/').pop()
-        const stem = basename.replace(/\.(AppImage|appimage|exe|sh|bin|run)$/i, '')
+        const _d = basename.lastIndexOf('.')
+        const stem = (_d > 0) ? basename.substring(0, _d) : basename
         if (basename.toLowerCase().endsWith('.exe')) {
             if (AppSearch.iconExists(stem)) return stem
             const lower = stem.toLowerCase()
