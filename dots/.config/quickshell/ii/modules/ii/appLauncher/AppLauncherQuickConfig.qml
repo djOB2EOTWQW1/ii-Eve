@@ -5,7 +5,6 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
 
 ContentPage {
     id: page
@@ -161,37 +160,12 @@ ContentPage {
                             radius: width * 0.28
                             color: Appearance.m3colors.m3surfaceContainerHigh
 
-                            GridLayout {
+                            FolderPreviewGrid {
                                 anchors.centerIn: parent
                                 width: parent.width * 0.72
                                 height: parent.height * 0.72
-                                columns: 2
-                                rowSpacing: 2
-                                columnSpacing: 2
                                 visible: folderRow.appCount > 0
-
-                                Repeater {
-                                    model: folderRow.previewIcons
-
-                                    delegate: Item {
-                                        required property string modelData
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-
-                                        Image {
-                                            anchors.fill: parent
-                                            anchors.margins: 1
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            cache: false
-                                            source: {
-                                                const icon = parent.modelData || ""
-                                                if (icon.startsWith("/")) return "file://" + icon
-                                                return Quickshell.iconPath(icon, "application-x-executable")
-                                            }
-                                        }
-                                    }
-                                }
+                                icons: folderRow.previewIcons
                             }
 
                             MaterialSymbol {
