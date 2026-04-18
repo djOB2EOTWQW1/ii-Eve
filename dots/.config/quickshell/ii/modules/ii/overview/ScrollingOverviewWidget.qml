@@ -194,6 +194,7 @@ Item {
         
         readonly property bool isOpen: GlobalStates.overviewOpen
         opacity: globalBg.isOpen ? 1.0 : 0.0
+        scale: Config.options.background.parallax.workspaceZoom
         
         Behavior on opacity {
             SequentialAnimation {
@@ -227,8 +228,6 @@ Item {
             opacity: globalBg.isOpen ? 0.5 : 0.0
             Behavior on opacity { NumberAnimation { duration: animDuration; easing.type: Easing.OutCubic } }
         }
-        
-        scale: panelWindow.scaleAnimated
     }
 
     Item {
@@ -286,7 +285,6 @@ Item {
                     Rectangle {
                         id: maskRect
                         anchors.fill: parent
-                        radius: cardBody.radius
                         visible: false
                     }
 
@@ -316,8 +314,6 @@ Item {
                         anchors.fill: parent
                         color: "transparent"
                         radius: cardBody.radius
-                        border.width: 1
-                        border.color: (wsCardDelegate.wsId === monitor.activeWorkspace?.id) ? Appearance.colors.colSecondary : ColorUtils.transparentize(Appearance.colors.colOutline, 0.2)
                     }
                 }
                 
@@ -449,7 +445,11 @@ Item {
                     id: preview
                     anchors.fill: parent
                     captureSource: windowDelegate.toplevel
-                    live: true
+                    live: GlobalStates.overviewOpen
+                    
+                    // PERFORMANCE FIX: Only use full resolution for windows in the active workspace
+                    // significantly reduces GPU/RAM load when initializing many windows across workspaces.
+                    constraintSize: isFromActiveWs ? Qt.size(monitor.width, monitor.height) : Qt.size(400, 225)
                     
                     layer.enabled: true
                     layer.effect: OpacityMask {
