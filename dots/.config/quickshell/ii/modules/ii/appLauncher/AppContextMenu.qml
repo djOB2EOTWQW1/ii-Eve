@@ -50,6 +50,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isAppContext
+            symbolName: "drive_file_rename_outline"
             buttonText: Translation.tr("Rename")
             onClicked: {
                 const idx = root.selectedAppIndex;
@@ -62,6 +63,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isAppContext
+            symbolName: "delete"
             buttonText: Translation.tr("Remove from launcher")
             onClicked: {
                 const idx = root.selectedAppIndex;
@@ -73,6 +75,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isFolderContext
+            symbolName: "folder_open"
             buttonText: Translation.tr("Open folder")
             onClicked: {
                 const fid = root.selectedFolderId;
@@ -85,6 +88,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isFolderContext
+            symbolName: "drive_file_rename_outline"
             buttonText: Translation.tr("Rename")
             onClicked: {
                 const fid = root.selectedFolderId;
@@ -97,6 +101,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isFolderContext
+            symbolName: "folder_delete"
             buttonText: Translation.tr("Delete folder")
             onClicked: {
                 const fid = root.selectedFolderId;
@@ -113,6 +118,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isEmptyContext
+            symbolName: "add_circle"
             buttonText: Translation.tr("Add application")
             onClicked: {
                 root.hide();
@@ -124,6 +130,7 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isEmptyContext
+            symbolName: "create_new_folder"
             buttonText: Translation.tr("Add folder")
             onClicked: {
                 root.hide();
