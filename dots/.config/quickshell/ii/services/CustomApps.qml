@@ -282,6 +282,33 @@ Singleton {
         return true
     }
 
+    function renameFolder(folderId, newName) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return false
+        const trimmed = String(newName || "").trim()
+        if (trimmed.length === 0) return false
+        const next = Array.from(root.folders)
+        const f = Object.assign({}, next[fi])
+        f.name = trimmed
+        next[fi] = f
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function renameAppAt(index, newName) {
+        if (index < 0 || index >= root.entries.length) return false
+        const trimmed = String(newName || "").trim()
+        if (trimmed.length === 0) return false
+        const next = Array.from(root.entries)
+        const e = Object.assign({}, next[index])
+        e.name = trimmed
+        next[index] = e
+        customAppsAdapter.entries = next
+        root.changed()
+        return true
+    }
+
     function addAppToFolder(folderId, entryIndex) {
         if (entryIndex < 0 || entryIndex >= root.entries.length) return false
         const next = Array.from(root.folders)

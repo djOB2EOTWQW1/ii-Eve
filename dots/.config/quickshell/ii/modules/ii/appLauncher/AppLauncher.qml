@@ -475,6 +475,7 @@ Scope {
                     folder: folderViewer.folder
                     iconSize: contentRoot.iconSize
                     onClosed: folderViewer.close()
+                    onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
                 }
             }
         }
@@ -482,6 +483,13 @@ Scope {
         AppContextMenu {
             id: contextMenu
             onFolderOpenRequested: (folder) => folderViewer.open(folder)
+            onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
+            onRenameFolderRequested: (folderId, currentName) => renameDialog.openForFolder(folderId, currentName)
+        }
+
+        RenameDialog {
+            id: renameDialog
+            anchors.fill: parent
         }
 
         MouseArea {

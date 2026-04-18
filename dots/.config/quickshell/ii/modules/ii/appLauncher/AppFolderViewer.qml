@@ -13,6 +13,7 @@ Item {
     property var folder: null
     property int iconSize: 64
     signal closed()
+    signal renameAppRequested(int appIndex, string currentName)
 
     Rectangle {
         anchors.fill: parent
@@ -164,7 +165,11 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: StyledScrollBar {}
 
-                model: root.folder ? CustomApps.appsInFolder(root.folder.id) : []
+                model: {
+                    const _e = CustomApps.entries
+                    const _f = CustomApps.folders
+                    return root.folder ? CustomApps.appsInFolder(root.folder.id) : []
+                }
 
                 delegate: Item {
                     id: folderAppDelegate
@@ -181,7 +186,10 @@ Item {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onClicked: (mouse) => {
                             if (mouse.button === Qt.RightButton) {
-                                CustomApps.removeAppFromFolder(root.folder.id, folderAppDelegate.modelData._originalIndex)
+                                const pos = folderAppArea.mapToItem(folderPanel, mouse.x, mouse.y)
+                                folderItemMenu.targetAppIndex = folderAppDelegate.modelData._originalIndex
+                                folderItemMenu.targetAppName = folderAppDelegate.modelData.name
+                                folderItemMenu.openAt(pos.x, pos.y)
                                 return
                             }
                             CustomApps.launch(folderAppDelegate.modelData)
@@ -254,6 +262,81 @@ Item {
                     text: Translation.tr("Drag apps here to add them")
                     color: Appearance.colors.colSubtext
                     font.pixelSize: Appearance.font.pixelSize.small
+                }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            z: 8
+            visible: folderItemMenu.visible
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onPressed: event => {
+                const inMenu = (event.x >= folderItemMenu.x && event.x <= folderItemMenu.x + folderItemMenu.width
+                    && event.y >= folderItemMenu.y && event.y <= folderItemMenu.y + folderItemMenu.height)
+                if (!inMenu) {
+                    folderItemMenu.hide()
+                    event.accepted = true
+                } else {
+                    event.accepted = false
+                }
+            }
+        }
+
+        Rectangle {
+            id: folderItemMenu
+            z: 9
+            visible: false
+            implicitWidth: 200
+            implicitHeight: folderItemMenuColumn.implicitHeight + 12
+            color: Appearance.m3colors.m3surfaceContainer
+            radius: Appearance.rounding.normal
+            border.width: 1
+            border.color: Appearance.colors.colLayer0Border
+
+            property int targetAppIndex: -1
+            property string targetAppName: ""
+
+            function openAt(cx, cy) {
+                const maxX = folderPanel.width - folderItemMenu.width - 4
+                const maxY = folderPanel.height - folderItemMenu.height - 4
+                folderItemMenu.x = Math.max(4, Math.min(cx - folderItemMenu.width / 2, maxX))
+                folderItemMenu.y = Math.max(4, Math.min(cy, maxY))
+                folderItemMenu.visible = true
+            }
+
+            function hide() { folderItemMenu.visible = false }
+
+            StyledRectangularShadow {
+                target: folderItemMenu
+                visible: folderItemMenu.visible
+            }
+
+            ColumnLayout {
+                id: folderItemMenuColumn
+                anchors.fill: parent
+                anchors.margins: 6
+                spacing: 0
+
+                MenuButton {
+                    Layout.fillWidth: true
+                    buttonText: Translation.tr("Rename")
+                    onClicked: {
+                        const idx = folderItemMenu.targetAppIndex
+                        const name = folderItemMenu.targetAppName
+                        folderItemMenu.hide()
+                        root.renameAppRequested(idx, name)
+                    }
+                }
+
+                MenuButton {
+                    Layout.fillWidth: true
+                    buttonText: Translation.tr("Remove from folder")
+                    onClicked: {
+                        const idx = folderItemMenu.targetAppIndex
+                        folderItemMenu.hide()
+                        CustomApps.removeAppFromFolder(root.folder.id, idx)
+                    }
                 }
             }
         }

@@ -23,6 +23,8 @@ Rectangle {
     border.color: Appearance.colors.colLayer0Border
 
     signal folderOpenRequested(var folder)
+    signal renameAppRequested(int appIndex, string currentName)
+    signal renameFolderRequested(string folderId, string currentName)
 
     function openAt() {
         const maxX = parent.width - root.width - 8;
@@ -48,6 +50,18 @@ Rectangle {
         MenuButton {
             Layout.fillWidth: true
             visible: root.isAppContext
+            buttonText: Translation.tr("Rename")
+            onClicked: {
+                const idx = root.selectedAppIndex;
+                const name = CustomApps.entries[idx]?.name ?? "";
+                root.hide();
+                root.renameAppRequested(idx, name);
+            }
+        }
+
+        MenuButton {
+            Layout.fillWidth: true
+            visible: root.isAppContext
             buttonText: Translation.tr("Remove from launcher")
             onClicked: {
                 const idx = root.selectedAppIndex;
@@ -65,6 +79,18 @@ Rectangle {
                 root.hide();
                 const f = CustomApps.folderById(fid);
                 if (f) root.folderOpenRequested(f);
+            }
+        }
+
+        MenuButton {
+            Layout.fillWidth: true
+            visible: root.isFolderContext
+            buttonText: Translation.tr("Rename")
+            onClicked: {
+                const fid = root.selectedFolderId;
+                const f = CustomApps.folderById(fid);
+                root.hide();
+                root.renameFolderRequested(fid, f?.name ?? "");
             }
         }
 
