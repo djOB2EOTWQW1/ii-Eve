@@ -127,6 +127,23 @@ Item {
                     buttonRadius: Appearance.rounding.full
                     implicitWidth: 36
                     implicitHeight: 36
+                    onClicked: {
+                        GlobalStates.binarySelectorTargetFolderId = root.folder?.id ?? ""
+                        GlobalStates.binarySelectorOpen = true
+                    }
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "add"
+                        iconSize: 20
+                    }
+                }
+
+                RippleButton {
+                    Layout.alignment: Qt.AlignVCenter
+                    buttonRadius: Appearance.rounding.full
+                    implicitWidth: 36
+                    implicitHeight: 36
                     onClicked: root.closed()
                     contentItem: MaterialSymbol {
                         anchors.centerIn: parent

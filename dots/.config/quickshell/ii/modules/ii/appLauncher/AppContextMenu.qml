@@ -11,6 +11,7 @@ Rectangle {
     visible: false
     property int selectedAppIndex: -1
     property string selectedFolderId: ""
+    property string openFolderId: ""
     readonly property bool isFolderContext: selectedFolderId.length > 0
     readonly property bool isAppContext: selectedAppIndex >= 0
     readonly property bool isEmptyContext: !isFolderContext && !isAppContext
@@ -89,6 +90,7 @@ Rectangle {
             buttonText: Translation.tr("Add application")
             onClicked: {
                 root.hide();
+                GlobalStates.binarySelectorTargetFolderId = root.openFolderId;
                 GlobalStates.binarySelectorOpen = true;
             }
         }

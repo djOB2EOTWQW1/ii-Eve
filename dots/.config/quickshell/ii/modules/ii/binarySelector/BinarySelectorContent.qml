@@ -100,8 +100,14 @@ MouseArea {
             folderModel.folder = Qt.resolvedUrl(filePath);
             return;
         }
-        CustomApps.addApp(filePath);
+        const targetFolder = GlobalStates.binarySelectorTargetFolderId
+        CustomApps.addApp(filePath)
+        if (targetFolder.length > 0) {
+            const idx = CustomApps.indexOfPath(filePath)
+            if (idx >= 0) CustomApps.addAppToFolder(targetFolder, idx)
+        }
         rootArea.filterText = "";
+        GlobalStates.binarySelectorTargetFolderId = ""
         GlobalStates.binarySelectorOpen = false;
     }
 
@@ -365,6 +371,8 @@ MouseArea {
             if (GlobalStates.binarySelectorOpen) {
                 rootArea.filterText = "";
                 rootArea.forceActiveFocus();
+            } else {
+                GlobalStates.binarySelectorTargetFolderId = ""
             }
         }
     }

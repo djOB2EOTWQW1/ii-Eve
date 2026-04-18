@@ -38,6 +38,7 @@ Scope {
             if (event.button === Qt.RightButton) {
                 contextMenu.selectedAppIndex = -1;
                 contextMenu.selectedFolderId = "";
+                contextMenu.openFolderId = folderViewer.active ? (folderViewer.folder?.id ?? "") : "";
                 contextMenu.x = event.x - contextMenu.width / 2;
                 contextMenu.y = event.y;
                 contextMenu.openAt();
@@ -522,8 +523,14 @@ Scope {
                 const raw = drop.getDataAsString("text/uri-list")
                 if (!raw) return
                 const urls = raw.split(/\r?\n/).filter(u => u.trim().length > 0)
+                const targetFolderId = folderViewer.active ? (folderViewer.folder?.id ?? "") : ""
                 for (let i = 0; i < urls.length; i++) {
-                    CustomApps.addApp(urls[i].trim())
+                    const filePath = urls[i].trim()
+                    CustomApps.addApp(filePath)
+                    if (targetFolderId.length > 0) {
+                        const idx = CustomApps.indexOfPath(filePath)
+                        if (idx >= 0) CustomApps.addAppToFolder(targetFolderId, idx)
+                    }
                 }
                 drop.accept(Qt.CopyAction)
             }
