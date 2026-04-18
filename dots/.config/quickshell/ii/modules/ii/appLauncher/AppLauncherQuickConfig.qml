@@ -13,6 +13,10 @@ ContentPage {
     forceWidth: true
     interactive: false
 
+    property bool vimiumActive: false
+    property string vimiumTyped: ""
+    property var vimiumHints: []
+
     ContentSection {
         icon: "straighten"
         title: Translation.tr("Appearance")
@@ -101,6 +105,46 @@ ContentPage {
                     Layout.leftMargin: 36
                     Layout.topMargin: 2
                     text: Translation.tr("Affects tiles in the launcher grid")
+                    color: Appearance.colors.colSubtext
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 16
+
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignVCenter
+                text: "open_in_full"
+                iconSize: Appearance.font.pixelSize.larger
+                color: Appearance.colors.colOnLayer1
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+
+                ConfigSelectionArray {
+                    Layout.fillWidth: true
+                    options: [
+                        { displayName: Translation.tr("Fullscreen"), icon: "fullscreen", value: "current" },
+                        { displayName: Translation.tr("Windowed"), icon: "aspect_ratio", value: "settings" }
+                    ]
+                    currentValue: Persistent.states.appLauncher?.windowSize ?? "settings"
+                    onSelected: (value) => {
+                        if (Persistent.states.appLauncher)
+                            Persistent.states.appLauncher.windowSize = value
+                    }
+                }
+
+                StyledText {
+                    Layout.leftMargin: 36
+                    Layout.topMargin: 2
+                    text: (Persistent.states.appLauncher?.windowSize ?? "settings") === "current"
+                    ? Translation.tr("Fullscreen uses the entire screen")
+                    : Translation.tr("Windowed: 900×750")
                     color: Appearance.colors.colSubtext
                     font.pixelSize: Appearance.font.pixelSize.smaller
                 }
@@ -222,6 +266,16 @@ ContentPage {
 
                             Behavior on opacity {
                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+
+                            VimiumHintLabel {
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.rightMargin: -5
+                                anchors.topMargin: -5
+                                hintText: folderRow.index < page.vimiumHints.length ? page.vimiumHints[folderRow.index] : ""
+                                typedText: page.vimiumTyped
+                                vimiumActive: page.vimiumActive
                             }
                         }
                     }

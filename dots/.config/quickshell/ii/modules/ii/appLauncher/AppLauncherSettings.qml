@@ -13,6 +13,10 @@ Item {
     property real contentPadding: 8
     property int currentPage: 0
 
+    property bool vimiumActive: false
+    property string vimiumTyped: ""
+    property var vimiumHints: []
+
     signal closed()
 
     property var pages: [
@@ -44,6 +48,16 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     text: "arrow_back"
                     iconSize: 20
+                }
+
+                VimiumHintLabel {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.rightMargin: -5
+                    anchors.topMargin: -5
+                    hintText: root.vimiumHints[0] ?? ""
+                    typedText: root.vimiumTyped
+                    vimiumActive: root.vimiumActive
                 }
             }
 
@@ -100,6 +114,14 @@ Item {
                                 buttonIcon: modelData.icon
                                 buttonText: modelData.name
                                 showToggledHighlight: false
+
+                                VimiumHintLabel {
+                                    x: 2
+                                    y: 2
+                                    hintText: root.vimiumHints[index + 1] ?? ""
+                                    typedText: root.vimiumTyped
+                                    vimiumActive: root.vimiumActive
+                                }
                             }
                         }
                     }
@@ -123,6 +145,14 @@ Item {
 
                     Component.onCompleted: {
                         source = root.pages[0].component
+                    }
+
+                    onLoaded: {
+                        if (item && item.vimiumHints !== undefined) {
+                            item.vimiumActive = Qt.binding(() => root.vimiumActive)
+                            item.vimiumTyped = Qt.binding(() => root.vimiumTyped)
+                            item.vimiumHints = Qt.binding(() => root.vimiumHints.slice(1 + root.pages.length))
+                        }
                     }
 
                     Connections {
