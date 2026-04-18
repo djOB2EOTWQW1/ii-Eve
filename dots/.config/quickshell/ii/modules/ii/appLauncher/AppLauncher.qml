@@ -175,9 +175,9 @@ Scope {
                         visible: delegateRoot.isFolder
                         radius: Appearance.rounding.normal
                         color: folderHoverArea.pressed
-                            ? Appearance.colors.colLayer1Active
+                            ? Appearance.colors.colLayer3Active
                             : folderHoverArea.containsMouse
-                                ? Appearance.colors.colLayer1Hover
+                                ? Appearance.colors.colLayer3
                                 : "transparent"
 
                         Behavior on color {
@@ -279,9 +279,9 @@ Scope {
                         visible: !delegateRoot.isFolder
                         radius: Appearance.rounding.normal
                         color: itemArea.pressed
-                            ? Appearance.colors.colLayer1Active
+                            ? Appearance.colors.colLayer3Active
                             : itemArea.containsMouse
-                                ? Appearance.colors.colLayer1Hover
+                                ? Appearance.colors.colLayer3
                                 : "transparent"
 
                         Drag.active: itemArea.drag.active
