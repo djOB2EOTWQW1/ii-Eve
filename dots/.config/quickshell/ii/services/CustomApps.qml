@@ -168,7 +168,8 @@ Singleton {
         }
 
         const basename = path.split('/').pop()
-        const name = basename.replace(/\.(AppImage|appimage|exe)$/i, '')
+        const _dot = basename.lastIndexOf('.')
+        const name = (_dot > 0) ? basename.substring(0, _dot) : basename
         const icon = root.guessIconFor(path)
 
         const next = Array.from(root.entries)
@@ -256,11 +257,54 @@ Singleton {
         return id
     }
 
+    function createDefaultFolder() {
+        const base = "New folder"
+        let name = base
+        let counter = 1
+        while (true) {
+            let exists = false
+            for (let i = 0; i < root.folders.length; i++) {
+                if (root.folders[i].name === name) { exists = true; break }
+            }
+            if (!exists) break
+            name = base + "(" + counter + ")"
+            counter++
+        }
+        return root.createFolder(name)
+    }
+
     function removeFolderAt(index) {
         if (index < 0 || index >= root.folders.length) return false
         const next = Array.from(root.folders)
         next.splice(index, 1)
         customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function renameFolder(folderId, newName) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return false
+        const trimmed = String(newName || "").trim()
+        if (trimmed.length === 0) return false
+        const next = Array.from(root.folders)
+        const f = Object.assign({}, next[fi])
+        f.name = trimmed
+        next[fi] = f
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function renameAppAt(index, newName) {
+        if (index < 0 || index >= root.entries.length) return false
+        const trimmed = String(newName || "").trim()
+        if (trimmed.length === 0) return false
+        const next = Array.from(root.entries)
+        const e = Object.assign({}, next[index])
+        e.name = trimmed
+        next[index] = e
+        customAppsAdapter.entries = next
         root.changed()
         return true
     }
@@ -374,7 +418,8 @@ Singleton {
 
     function guessIconFor(path) {
         const basename = path.split('/').pop()
-        const stem = basename.replace(/\.(AppImage|appimage|exe|sh|bin|run)$/i, '')
+        const _d = basename.lastIndexOf('.')
+        const stem = (_d > 0) ? basename.substring(0, _d) : basename
         if (basename.toLowerCase().endsWith('.exe')) {
             if (AppSearch.iconExists(stem)) return stem
             const lower = stem.toLowerCase()

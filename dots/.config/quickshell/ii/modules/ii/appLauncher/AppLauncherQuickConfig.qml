@@ -5,7 +5,6 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
 
 ContentPage {
     id: page
@@ -161,37 +160,12 @@ ContentPage {
                             radius: width * 0.28
                             color: Appearance.m3colors.m3surfaceContainerHigh
 
-                            GridLayout {
+                            FolderPreviewGrid {
                                 anchors.centerIn: parent
                                 width: parent.width * 0.72
                                 height: parent.height * 0.72
-                                columns: 2
-                                rowSpacing: 2
-                                columnSpacing: 2
                                 visible: folderRow.appCount > 0
-
-                                Repeater {
-                                    model: folderRow.previewIcons
-
-                                    delegate: Item {
-                                        required property string modelData
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-
-                                        Image {
-                                            anchors.fill: parent
-                                            anchors.margins: 1
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            cache: false
-                                            source: {
-                                                const icon = parent.modelData || ""
-                                                if (icon.startsWith("/")) return "file://" + icon
-                                                return Quickshell.iconPath(icon, "application-x-executable")
-                                            }
-                                        }
-                                    }
-                                }
+                                icons: folderRow.previewIcons
                             }
 
                             MaterialSymbol {
@@ -282,57 +256,13 @@ ContentPage {
 
                     StyledText {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Translation.tr("Name one below to start grouping apps")
+                        text: Translation.tr("Right-click in the launcher to add one")
                         color: Appearance.colors.colSubtext
                         font.pixelSize: Appearance.font.pixelSize.smaller
                     }
                 }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 10
-                spacing: 8
-
-                ToolbarTextField {
-                    id: nameField
-                    Layout.fillWidth: true
-                    implicitWidth: 0
-                    placeholderText: Translation.tr("New folder name")
-                    onAccepted: addFolderButton.clicked()
-                }
-
-                RippleButton {
-                    id: addFolderButton
-                    buttonRadius: Appearance.rounding.full
-                    implicitWidth: 40
-                    implicitHeight: 40
-                    enabled: nameField.text.trim().length > 0
-                    colBackground: enabled
-                        ? Appearance.colors.colPrimary
-                        : Appearance.m3colors.m3surfaceContainerHigh
-                    colBackgroundHover: enabled
-                        ? Appearance.colors.colPrimaryHover
-                        : Appearance.m3colors.m3surfaceContainerHigh
-                    onClicked: {
-                        const id = CustomApps.createFolder(nameField.text)
-                        if (id.length > 0) nameField.text = ""
-                    }
-                    contentItem: MaterialSymbol {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        text: "add"
-                        iconSize: 22
-                        color: addFolderButton.enabled
-                            ? Appearance.colors.colOnPrimary
-                            : Appearance.colors.colSubtext
-                    }
-
-                    Behavior on colBackground {
-                        animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                    }
-                }
-            }
         }
     }
 }
