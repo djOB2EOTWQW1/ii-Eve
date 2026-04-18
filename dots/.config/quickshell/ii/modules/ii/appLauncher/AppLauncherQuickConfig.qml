@@ -142,7 +142,9 @@ ContentPage {
                 StyledText {
                     Layout.leftMargin: 36
                     Layout.topMargin: 2
-                    text: Translation.tr("Windowed: 900×750")
+                    text: (Persistent.states.appLauncher?.windowSize ?? "settings") === "current"
+                    ? Translation.tr("Fullscreen uses the entire screen")
+                    : Translation.tr("Windowed: 900×750")
                     color: Appearance.colors.colSubtext
                     font.pixelSize: Appearance.font.pixelSize.smaller
                 }
