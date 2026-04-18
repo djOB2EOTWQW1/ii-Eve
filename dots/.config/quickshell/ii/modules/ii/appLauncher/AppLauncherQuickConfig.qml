@@ -13,6 +13,10 @@ ContentPage {
     forceWidth: true
     interactive: false
 
+    property bool vimiumActive: false
+    property string vimiumTyped: ""
+    property var vimiumHints: []
+
     ContentSection {
         icon: "straighten"
         title: Translation.tr("Appearance")
@@ -260,6 +264,16 @@ ContentPage {
 
                             Behavior on opacity {
                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+
+                            VimiumHintLabel {
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.rightMargin: -5
+                                anchors.topMargin: -5
+                                hintText: folderRow.index < page.vimiumHints.length ? page.vimiumHints[folderRow.index] : ""
+                                typedText: page.vimiumTyped
+                                vimiumActive: page.vimiumActive
                             }
                         }
                     }
