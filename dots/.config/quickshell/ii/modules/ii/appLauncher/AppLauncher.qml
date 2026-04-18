@@ -168,11 +168,21 @@ Scope {
 
                     // Android 16 style folder tile: rounded-square preview
                     // container with up to 4 mini app icons in a 2x2 grid.
-                    Item {
+                    Rectangle {
                         id: folderTileItem
                         anchors.fill: parent
                         anchors.margins: 6
                         visible: delegateRoot.isFolder
+                        radius: Appearance.rounding.normal
+                        color: folderHoverArea.pressed
+                            ? Appearance.colors.colLayer1Active
+                            : folderHoverArea.containsMouse
+                                ? Appearance.colors.colLayer1Hover
+                                : "transparent"
+
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -187,9 +197,7 @@ Scope {
                                 radius: contentRoot.iconSize * 0.28
                                 color: contentRoot.hoverFolderId === delegateRoot.folderId && contentRoot.draggedEntryIndex >= 0
                                     ? Appearance.colors.colPrimaryContainer
-                                    : folderHoverArea.containsMouse
-                                        ? Appearance.colors.colLayer1Hover
-                                        : Appearance.m3colors.m3surfaceContainerHigh
+                                    : Appearance.m3colors.m3surfaceContainerHigh
                                 border.width: contentRoot.hoverFolderId === delegateRoot.folderId && contentRoot.draggedEntryIndex >= 0 ? 2 : 0
                                 border.color: Appearance.colors.colPrimary
 
@@ -214,26 +222,6 @@ Scope {
                                     iconSize: Math.round(contentRoot.iconSize * 0.5)
                                     color: Appearance.colors.colOnLayer1
                                 }
-
-                                MouseArea {
-                                    id: folderHoverArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                    onClicked: (mouse) => {
-                                        if (mouse.button === Qt.RightButton) {
-                                            const pos = folderHoverArea.mapToItem(contentRoot, mouse.x, mouse.y);
-                                            contextMenu.selectedFolderId = delegateRoot.folderId;
-                                            contextMenu.selectedAppIndex = -1;
-                                            contextMenu.x = pos.x - contextMenu.width / 2;
-                                            contextMenu.y = pos.y;
-                                            contextMenu.openAt();
-                                            return
-                                        }
-                                        folderViewer.open(delegateRoot.modelData)
-                                    }
-                                }
-
                             }
 
                             StyledText {
@@ -261,6 +249,25 @@ Scope {
                                 if (contentRoot.hoverFolderId === delegateRoot.folderId) {
                                     contentRoot.hoverFolderId = ""
                                 }
+                            }
+                        }
+
+                        MouseArea {
+                            id: folderHoverArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.RightButton) {
+                                    const pos = folderHoverArea.mapToItem(contentRoot, mouse.x, mouse.y);
+                                    contextMenu.selectedFolderId = delegateRoot.folderId;
+                                    contextMenu.selectedAppIndex = -1;
+                                    contextMenu.x = pos.x - contextMenu.width / 2;
+                                    contextMenu.y = pos.y;
+                                    contextMenu.openAt();
+                                    return
+                                }
+                                folderViewer.open(delegateRoot.modelData)
                             }
                         }
                     }
