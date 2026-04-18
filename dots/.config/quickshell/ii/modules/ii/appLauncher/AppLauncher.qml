@@ -234,20 +234,6 @@ Scope {
                                     }
                                 }
 
-                                DropArea {
-                                    id: folderDropArea
-                                    anchors.fill: parent
-                                    onEntered: (drag) => {
-                                        if (contentRoot.draggedEntryIndex < 0) return
-                                        contentRoot.hoverFolderId = delegateRoot.folderId
-                                        drag.accept(Qt.MoveAction)
-                                    }
-                                    onExited: {
-                                        if (contentRoot.hoverFolderId === delegateRoot.folderId) {
-                                            contentRoot.hoverFolderId = ""
-                                        }
-                                    }
-                                }
                             }
 
                             StyledText {
@@ -258,6 +244,23 @@ Scope {
                                 wrapMode: Text.Wrap
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 text: delegateRoot.modelData?.name ?? ""
+                            }
+                        }
+
+                        // Drop target covers the whole tile (icon + label) so it's
+                        // reachable even at the smallest icon sizes.
+                        DropArea {
+                            id: folderDropArea
+                            anchors.fill: parent
+                            onEntered: (drag) => {
+                                if (contentRoot.draggedEntryIndex < 0) return
+                                contentRoot.hoverFolderId = delegateRoot.folderId
+                                drag.accept(Qt.MoveAction)
+                            }
+                            onExited: {
+                                if (contentRoot.hoverFolderId === delegateRoot.folderId) {
+                                    contentRoot.hoverFolderId = ""
+                                }
                             }
                         }
                     }
