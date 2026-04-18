@@ -133,7 +133,7 @@ Scope {
             }
 
             PagePlaceholder {
-                visible: appGrid.count === 0
+                visible: appGrid.count === 0 && !contentRoot.externalDragHover
                 icon: "apps"
                 title: Translation.tr("No applications yet")
                 description: Translation.tr("Right-click anywhere to add one")
@@ -405,7 +405,7 @@ Scope {
                 anchors.margins: 4
                 radius: parent.radius
                 visible: contentRoot.externalDragHover
-                z: 8
+                z: 25
                 color: "transparent"
                 border.width: 2
                 border.color: Appearance.colors.colPrimary
