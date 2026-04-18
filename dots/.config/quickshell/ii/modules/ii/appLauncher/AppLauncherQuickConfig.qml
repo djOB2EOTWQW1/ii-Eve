@@ -256,57 +256,13 @@ ContentPage {
 
                     StyledText {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Translation.tr("Name one below to start grouping apps")
+                        text: Translation.tr("Right-click in the launcher to add one")
                         color: Appearance.colors.colSubtext
                         font.pixelSize: Appearance.font.pixelSize.smaller
                     }
                 }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 10
-                spacing: 8
-
-                ToolbarTextField {
-                    id: nameField
-                    Layout.fillWidth: true
-                    implicitWidth: 0
-                    placeholderText: Translation.tr("New folder name")
-                    onAccepted: addFolderButton.clicked()
-                }
-
-                RippleButton {
-                    id: addFolderButton
-                    buttonRadius: Appearance.rounding.full
-                    implicitWidth: 40
-                    implicitHeight: 40
-                    enabled: nameField.text.trim().length > 0
-                    colBackground: enabled
-                        ? Appearance.colors.colPrimary
-                        : Appearance.m3colors.m3surfaceContainerHigh
-                    colBackgroundHover: enabled
-                        ? Appearance.colors.colPrimaryHover
-                        : Appearance.m3colors.m3surfaceContainerHigh
-                    onClicked: {
-                        const id = CustomApps.createFolder(nameField.text)
-                        if (id.length > 0) nameField.text = ""
-                    }
-                    contentItem: MaterialSymbol {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        text: "add"
-                        iconSize: 22
-                        color: addFolderButton.enabled
-                            ? Appearance.colors.colOnPrimary
-                            : Appearance.colors.colSubtext
-                    }
-
-                    Behavior on colBackground {
-                        animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                    }
-                }
-            }
         }
     }
 }

@@ -94,5 +94,15 @@ Rectangle {
                 GlobalStates.binarySelectorOpen = true;
             }
         }
+
+        MenuButton {
+            Layout.fillWidth: true
+            visible: root.isEmptyContext
+            buttonText: Translation.tr("Add folder")
+            onClicked: {
+                root.hide();
+                CustomApps.createDefaultFolder();
+            }
+        }
     }
 }

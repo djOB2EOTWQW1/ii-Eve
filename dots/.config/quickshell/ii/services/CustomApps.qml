@@ -257,6 +257,22 @@ Singleton {
         return id
     }
 
+    function createDefaultFolder() {
+        const base = "New folder"
+        let name = base
+        let counter = 1
+        while (true) {
+            let exists = false
+            for (let i = 0; i < root.folders.length; i++) {
+                if (root.folders[i].name === name) { exists = true; break }
+            }
+            if (!exists) break
+            name = base + "(" + counter + ")"
+            counter++
+        }
+        return root.createFolder(name)
+    }
+
     function removeFolderAt(index) {
         if (index < 0 || index >= root.folders.length) return false
         const next = Array.from(root.folders)
