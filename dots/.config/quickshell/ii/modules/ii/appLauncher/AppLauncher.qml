@@ -766,15 +766,22 @@ Scope {
 
                     if (event.key === Qt.Key_F && !event.modifiers) {
                         if (!launcherContent.canActivateVimium) return;
+
                         if (inSettings) {
-                            launcherContent.settingsVimiumActive = !launcherContent.settingsVimiumActive;
-                            launcherContent.settingsVimiumTyped = "";
+                            if (!launcherContent.settingsVimiumActive) {
+                                launcherContent.settingsVimiumActive = true;
+                                launcherContent.settingsVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         } else {
-                            launcherContent.vimiumActive = !launcherContent.vimiumActive;
-                            launcherContent.vimiumTyped = "";
+                            if (!launcherContent.vimiumActive) {
+                                launcherContent.vimiumActive = true;
+                                launcherContent.vimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         }
-                        event.accepted = true;
-                        return;
                     }
 
                     if (!inSettings && launcherContent.vimiumActive) {
@@ -868,15 +875,22 @@ Scope {
 
                     if (event.key === Qt.Key_F && !event.modifiers) {
                         if (!launcherContent.canActivateVimium) return;
+
                         if (inSettings) {
-                            launcherContent.settingsVimiumActive = !launcherContent.settingsVimiumActive;
-                            launcherContent.settingsVimiumTyped = "";
+                            if (!launcherContent.settingsVimiumActive) {
+                                launcherContent.settingsVimiumActive = true;
+                                launcherContent.settingsVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         } else {
-                            launcherContent.vimiumActive = !launcherContent.vimiumActive;
-                            launcherContent.vimiumTyped = "";
+                            if (!launcherContent.vimiumActive) {
+                                launcherContent.vimiumActive = true;
+                                launcherContent.vimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         }
-                        event.accepted = true;
-                        return;
                     }
 
                     if (!inSettings && launcherContent.vimiumActive) {
