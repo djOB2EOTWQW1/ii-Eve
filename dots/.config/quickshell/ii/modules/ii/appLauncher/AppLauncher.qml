@@ -610,12 +610,16 @@ Scope {
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
-                anchors {
-                    fill: parent
-                    topMargin: Appearance.sizes.hyprlandGapsOut
-                    bottomMargin: Appearance.sizes.hyprlandGapsOut
-                    leftMargin: Appearance.sizes.hyprlandGapsOut
-                    rightMargin: Appearance.sizes.hyprlandGapsOut
+                readonly property bool fixedSize: (Persistent.states.appLauncher?.windowSize ?? "settings") === "settings"
+                anchors.centerIn: parent
+                width: fixedSize ? 900 : (parent.width - 2 * Appearance.sizes.hyprlandGapsOut)
+                height: fixedSize ? 750 : (parent.height - 2 * Appearance.sizes.hyprlandGapsOut)
+
+                Behavior on width {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                }
+                Behavior on height {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
 
                 LauncherContent {}
@@ -643,8 +647,11 @@ Scope {
         sourceComponent: FloatingWindow {
             id: detachedRoot
             color: "transparent"
-
             visible: GlobalStates.appLauncherOpen
+
+            readonly property bool fixedSize: (Persistent.states.appLauncher?.windowSize ?? "settings") === "settings"
+            width: fixedSize ? 900 : implicitWidth
+            height: fixedSize ? 750 : implicitHeight
 
             StyledRectangularShadow {
                 target: detachedBackground
