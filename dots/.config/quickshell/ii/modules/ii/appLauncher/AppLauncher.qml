@@ -106,11 +106,15 @@ Scope {
             const chars = "ASDFGHJKLQWERTYUIOP"
             const n = chars.length
             const hints = []
-            for (let i = 0; i < count; i++) {
-                if (i < n) hints.push(chars[i])
-                else {
-                    const j = i - n
-                    hints.push(chars[Math.floor(j / n)] + chars[j % n])
+            if (count <= n) {
+                for (let i = 0; i < count; i++)
+                    hints.push(chars[i])
+            } else if (count <= n * n) {
+                for (let i = 0; i < count; i++)
+                    hints.push(chars[Math.floor(i / n)] + chars[i % n])
+            } else {
+                for (let i = 0; i < count; i++) {
+                    hints.push(chars[Math.floor(i / (n * n))] + chars[Math.floor(i / n) % n] + chars[i % n])
                 }
             }
             return hints
@@ -119,25 +123,28 @@ Scope {
         onVimiumTypedChanged: {
             if (!vimiumActive || vimiumTyped.length === 0) return
             const hints = vimiumHints
-            let foundExact = false
-            let hasPrefix = false
+            const typed = vimiumTyped
+            let exactIndex = -1
+            let hasLongerPrefix = false
             for (let i = 0; i < hints.length; i++) {
-                if (hints[i] === vimiumTyped) {
-                    foundExact = true
-                    vimiumActive = false
-                    vimiumTyped = ""
-                    if (i === 0) {
-                        settingsOverlay.shown = true
-                    } else {
-                        const gm = gridModel[i - 1]
-                        if (gm && gm._isFolder) folderViewer.open(gm)
-                        else if (gm) CustomApps.launch(gm)
-                    }
-                    break
-                }
-                if (hints[i].startsWith(vimiumTyped)) hasPrefix = true
+                if (hints[i] === typed) exactIndex = i
+                else if (hints[i].startsWith(typed)) hasLongerPrefix = true
             }
-            if (!foundExact && !hasPrefix) vimiumTyped = ""
+            if (exactIndex < 0 && !hasLongerPrefix) {
+                vimiumTyped = ""
+                return
+            }
+            if (exactIndex >= 0 && !hasLongerPrefix) {
+                vimiumActive = false
+                vimiumTyped = ""
+                if (exactIndex === 0) {
+                    settingsOverlay.shown = true
+                } else {
+                    const gm = gridModel[exactIndex - 1]
+                    if (gm && gm._isFolder) folderViewer.open(gm)
+                    else if (gm) CustomApps.launch(gm)
+                }
+            }
         }
 
         onSettingsVimiumActiveChanged: {
@@ -148,65 +155,71 @@ Scope {
             if (settingsOverlay.item) settingsOverlay.item.vimiumTyped = settingsVimiumTyped
             if (!settingsVimiumActive || settingsVimiumTyped.length === 0) return
             const hints = settingsVimiumHints
-            let foundExact = false
-            let hasPrefix = false
+            const typed = settingsVimiumTyped
+            let exactIndex = -1
+            let hasLongerPrefix = false
             for (let i = 0; i < hints.length; i++) {
-                if (hints[i] === settingsVimiumTyped) {
-                    foundExact = true
-                    settingsVimiumActive = false
-                    settingsVimiumTyped = ""
-                    if (i === 0) {
-                        settingsOverlay.shown = false
-                    } else if (i === 1) {
-                        if (settingsOverlay.item && settingsOverlay.item.settingsRef)
-                            settingsOverlay.item.settingsRef.toggleNavExpand()
-                    } else if (i === 2) {
-                        if (settingsOverlay.item && settingsOverlay.item.settingsRef)
-                            settingsOverlay.item.settingsRef.currentPage = 0
-                    } else if (i === 3) {
-                        if (Persistent.states.appLauncher)
-                            Persistent.states.appLauncher.windowSize = "current"
-                    } else if (i === 4) {
-                        if (Persistent.states.appLauncher)
-                            Persistent.states.appLauncher.windowSize = "settings"
-                    } else {
-                        CustomApps.removeFolderAt(i - 5)
-                    }
-                    break
-                }
-                if (hints[i].startsWith(settingsVimiumTyped)) hasPrefix = true
+                if (hints[i] === typed) exactIndex = i
+                else if (hints[i].startsWith(typed)) hasLongerPrefix = true
             }
-            if (!foundExact && !hasPrefix) settingsVimiumTyped = ""
+            if (exactIndex < 0 && !hasLongerPrefix) {
+                settingsVimiumTyped = ""
+                return
+            }
+            if (exactIndex >= 0 && !hasLongerPrefix) {
+                settingsVimiumActive = false
+                settingsVimiumTyped = ""
+                if (exactIndex === 0) {
+                    settingsOverlay.shown = false
+                } else if (exactIndex === 1) {
+                    if (settingsOverlay.item && settingsOverlay.item.settingsRef)
+                        settingsOverlay.item.settingsRef.toggleNavExpand()
+                } else if (exactIndex === 2) {
+                    if (settingsOverlay.item && settingsOverlay.item.settingsRef)
+                        settingsOverlay.item.settingsRef.currentPage = 0
+                } else if (exactIndex === 3) {
+                    if (Persistent.states.appLauncher)
+                        Persistent.states.appLauncher.windowSize = "current"
+                } else if (exactIndex === 4) {
+                    if (Persistent.states.appLauncher)
+                        Persistent.states.appLauncher.windowSize = "settings"
+                } else {
+                    CustomApps.removeFolderAt(exactIndex - 5)
+                }
+            }
         }
 
         onFolderVimiumTypedChanged: {
             if (!folderVimiumActive || folderVimiumTyped.length === 0) return
             const hints = folderVimiumHints
-            let foundExact = false
-            let hasPrefix = false
+            const typed = folderVimiumTyped
+            let exactIndex = -1
+            let hasLongerPrefix = false
             for (let i = 0; i < hints.length; i++) {
-                if (hints[i] === folderVimiumTyped) {
-                    foundExact = true
-                    folderVimiumActive = false
-                    folderVimiumTyped = ""
-                    if (i === 0) {
-                        GlobalStates.binarySelectorTargetFolderId = folderViewer.folder?.id ?? ""
-                        GlobalStates.binarySelectorOpen = true
-                    } else if (i === 1) {
-                        folderViewer.close()
-                    } else {
-                        const apps = CustomApps.appsInFolder(folderViewer.folder?.id ?? "")
-                        const appIndex = i - 2
-                        if (apps && appIndex < apps.length) {
-                            CustomApps.launch(apps[appIndex])
-                            folderViewer.close()
-                        }
-                    }
-                    break
-                }
-                if (hints[i].startsWith(folderVimiumTyped)) hasPrefix = true
+                if (hints[i] === typed) exactIndex = i
+                else if (hints[i].startsWith(typed)) hasLongerPrefix = true
             }
-            if (!foundExact && !hasPrefix) folderVimiumTyped = ""
+            if (exactIndex < 0 && !hasLongerPrefix) {
+                folderVimiumTyped = ""
+                return
+            }
+            if (exactIndex >= 0 && !hasLongerPrefix) {
+                folderVimiumActive = false
+                folderVimiumTyped = ""
+                if (exactIndex === 0) {
+                    GlobalStates.binarySelectorTargetFolderId = folderViewer.folder?.id ?? ""
+                    GlobalStates.binarySelectorOpen = true
+                } else if (exactIndex === 1) {
+                    folderViewer.close()
+                } else {
+                    const apps = CustomApps.appsInFolder(folderViewer.folder?.id ?? "")
+                    const appIndex = exactIndex - 2
+                    if (apps && appIndex < apps.length) {
+                        CustomApps.launch(apps[appIndex])
+                        folderViewer.close()
+                    }
+                }
+            }
         }
 
         Rectangle {
