@@ -170,7 +170,10 @@ Scope {
                 vimiumActive = false
                 vimiumTyped = ""
                 if (exactIndex === 0) {
-                    settingsOverlay.shown = true
+                    if (contentRoot.selectionModeActive)
+                        contentRoot.deleteSelectedApps()
+                    else
+                        settingsOverlay.shown = true
                 } else {
                     const gm = gridModel[exactIndex - 1]
                     if (gm && gm._isFolder) folderViewer.open(gm)
@@ -332,6 +335,7 @@ Scope {
                         id: deleteSelectionButton
                         visible: contentRoot.selectionModeActive
                         enabled: contentRoot.selectedAppIndices.length > 0
+                        focusPolicy: Qt.NoFocus
                         buttonRadius: Appearance.rounding.full
                         implicitWidth: 36
                         implicitHeight: 36
@@ -341,6 +345,16 @@ Scope {
                             horizontalAlignment: Text.AlignHCenter
                             text: "delete_sweep"
                             iconSize: 20
+                        }
+
+                        VimiumHintLabel {
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.rightMargin: -5
+                            anchors.topMargin: -5
+                            hintText: contentRoot.vimiumHints[0] ?? ""
+                            typedText: contentRoot.vimiumTyped
+                            vimiumActive: contentRoot.vimiumActive
                         }
                     }
 
