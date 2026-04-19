@@ -80,9 +80,41 @@ Scope {
         property bool folderVimiumActive: false
         property string folderVimiumTyped: ""
 
+        property bool selectionModeActive: false
+        property var selectedAppIndices: []
+
+        function toggleAppSelection(entryIndex) {
+            const arr = selectedAppIndices.slice();
+            const pos = arr.indexOf(entryIndex);
+            if (pos >= 0) arr.splice(pos, 1);
+            else arr.push(entryIndex);
+            selectedAppIndices = arr;
+            if (arr.length === 0) selectionModeActive = false;
+        }
+
+        function deleteSelectedApps() {
+            const sorted = selectedAppIndices.slice().sort((a, b) => b - a);
+            for (let i = 0; i < sorted.length; i++) CustomApps.removeAppAt(sorted[i]);
+            selectedAppIndices = [];
+            selectionModeActive = false;
+        }
+
+        function exitSelectionMode() {
+            selectedAppIndices = [];
+            selectionModeActive = false;
+        }
+
+        onInSettingsChanged: if (inSettings) exitSelectionMode()
+        onIsFolderOpenChanged: if (!isFolderOpen) { /* folder closed — selection cleaned up by AppFolderViewer */ }
+
         readonly property bool inSettings: settingsOverlay.shown
         readonly property bool isFolderOpen: folderViewer.active
+        readonly property bool isFolderSelectionModeActive: folderViewer.item?.selectionModeActive ?? false
         readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible
+
+        function exitFolderSelectionMode() {
+            folderViewer.item?.exitSelectionMode()
+        }
 
         readonly property var vimiumHints: {
             const count = 1 + gridModel.length
@@ -142,7 +174,14 @@ Scope {
                 } else {
                     const gm = gridModel[exactIndex - 1]
                     if (gm && gm._isFolder) folderViewer.open(gm)
-                    else if (gm) CustomApps.launch(gm)
+                    else if (gm) {
+                        if (contentRoot.selectionModeActive) {
+                            const eIdx = gm._originalIndex ?? -1
+                            if (eIdx >= 0) contentRoot.toggleAppSelection(eIdx)
+                        } else {
+                            CustomApps.launch(gm)
+                        }
+                    }
                 }
             }
         }
@@ -215,8 +254,13 @@ Scope {
                     const apps = CustomApps.appsInFolder(folderViewer.folder?.id ?? "")
                     const appIndex = exactIndex - 2
                     if (apps && appIndex < apps.length) {
-                        CustomApps.launch(apps[appIndex])
-                        folderViewer.close()
+                        if (contentRoot.isFolderSelectionModeActive) {
+                            const origIdx = apps[appIndex]._originalIndex ?? -1
+                            if (origIdx >= 0) folderViewer.item?.toggleAppSelection(origIdx)
+                        } else {
+                            CustomApps.launch(apps[appIndex])
+                            folderViewer.close()
+                        }
                     }
                 }
             }
@@ -238,7 +282,7 @@ Scope {
 
                 ColumnLayout {
                     anchors.left: parent.left
-                    anchors.right: settingsButton.left
+                    anchors.right: headerRightButtons.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.leftMargin: 20
@@ -258,40 +302,71 @@ Scope {
 
                     StyledText {
                         topPadding: -1
-                        text: appGrid.count === 0
-                            ? Translation.tr("Right-click to add an application")
-                            : Translation.tr("%1 items · drag onto a folder to group").arg(appGrid.count)
-                        color: Appearance.colors.colSubtext
+                        text: contentRoot.selectionModeActive
+                            ? (contentRoot.selectedAppIndices.length > 0
+                                ? Translation.tr("%1 selected · Esc to cancel").arg(contentRoot.selectedAppIndices.length)
+                                : Translation.tr("Tap to select · Esc to cancel"))
+                            : (appGrid.count === 0
+                                ? Translation.tr("Right-click to add an application")
+                                : Translation.tr("%1 items · drag onto a folder to group").arg(appGrid.count))
+                        color: contentRoot.selectionModeActive
+                            ? Appearance.colors.colPrimary
+                            : Appearance.colors.colSubtext
                         font.pixelSize: Appearance.font.pixelSize.smaller
+
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
                     }
                 }
 
-                RippleButton {
-                    id: settingsButton
+                Row {
+                    id: headerRightButtons
                     anchors.right: parent.right
                     anchors.top: parent.top
                     anchors.rightMargin: 12
                     anchors.topMargin: 10
-                    buttonRadius: Appearance.rounding.full
-                    implicitWidth: 36
-                    implicitHeight: 36
-                    visible: !settingsOverlay.shown
-                    onClicked: settingsOverlay.shown = true
-                    contentItem: MaterialSymbol {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        text: "settings"
-                        iconSize: 20
+                    spacing: 4
+
+                    RippleButton {
+                        id: deleteSelectionButton
+                        visible: contentRoot.selectionModeActive
+                        enabled: contentRoot.selectedAppIndices.length > 0
+                        buttonRadius: Appearance.rounding.full
+                        implicitWidth: 36
+                        implicitHeight: 36
+                        onClicked: contentRoot.deleteSelectedApps()
+                        contentItem: MaterialSymbol {
+                            anchors.centerIn: parent
+                            horizontalAlignment: Text.AlignHCenter
+                            text: "delete_sweep"
+                            iconSize: 20
+                        }
                     }
 
-                    VimiumHintLabel {
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.rightMargin: -5
-                        anchors.topMargin: -5
-                        hintText: contentRoot.vimiumHints[0] ?? ""
-                        typedText: contentRoot.vimiumTyped
-                        vimiumActive: contentRoot.vimiumActive
+                    RippleButton {
+                        id: settingsButton
+                        buttonRadius: Appearance.rounding.full
+                        implicitWidth: 36
+                        implicitHeight: 36
+                        visible: !settingsOverlay.shown && !contentRoot.selectionModeActive
+                        onClicked: settingsOverlay.shown = true
+                        contentItem: MaterialSymbol {
+                            anchors.centerIn: parent
+                            horizontalAlignment: Text.AlignHCenter
+                            text: "settings"
+                            iconSize: 20
+                        }
+
+                        VimiumHintLabel {
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.rightMargin: -5
+                            anchors.topMargin: -5
+                            hintText: contentRoot.vimiumHints[0] ?? ""
+                            typedText: contentRoot.vimiumTyped
+                            vimiumActive: contentRoot.vimiumActive
+                        }
                     }
                 }
             }
@@ -329,6 +404,18 @@ Scope {
                     readonly property bool isFolder: !!delegateRoot.modelData?._isFolder
                     readonly property int entryIndex: delegateRoot.modelData?._originalIndex ?? -1
                     readonly property string folderId: delegateRoot.modelData?.id ?? ""
+                    readonly property bool isSelected: !delegateRoot.isFolder && contentRoot.selectedAppIndices.indexOf(delegateRoot.entryIndex) >= 0
+
+                    Timer {
+                        id: longPressTimer
+                        interval: 500
+                        repeat: false
+                        onTriggered: {
+                            contentRoot.selectionModeActive = true;
+                            contentRoot.toggleAppSelection(delegateRoot.entryIndex);
+                            itemArea.longPressActivated = true;
+                        }
+                    }
 
                     VimiumHintLabel {
                         x: 12
@@ -456,7 +543,7 @@ Scope {
                                 ? Appearance.colors.colLayer3
                                 : "transparent"
 
-                        Drag.active: itemArea.drag.active
+                        Drag.active: itemArea.drag.active && !contentRoot.selectionModeActive
                         Drag.source: itemArea
                         Drag.hotSpot.x: width / 2
                         Drag.hotSpot.y: height / 2
@@ -485,6 +572,45 @@ Scope {
 
                         Behavior on scale {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            visible: delegateRoot.isSelected
+                            color: Appearance.colors.colPrimary
+                            opacity: 0.15
+                            z: 1
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            visible: delegateRoot.isSelected
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Appearance.colors.colPrimary
+                            z: 2
+                        }
+
+                        Rectangle {
+                            visible: delegateRoot.isSelected
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 6
+                            anchors.rightMargin: 6
+                            width: 20
+                            height: 20
+                            radius: 10
+                            color: Appearance.colors.colPrimary
+                            z: 3
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "check"
+                                iconSize: 13
+                                color: Appearance.colors.colOnPrimary
+                            }
                         }
 
                         ColumnLayout {
@@ -521,19 +647,33 @@ Scope {
                             id: itemArea
                             // Exposed so DropArea sees it via drag.source during drag.
                             property int entryIndex: delegateRoot.entryIndex
+                            property bool longPressActivated: false
                             anchors.fill: parent
                             hoverEnabled: true
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            drag.target: appTile
+                            drag.target: contentRoot.selectionModeActive ? null : appTile
                             drag.threshold: 8
                             preventStealing: true
 
                             onPressed: (mouse) => {
                                 if (mouse.button === Qt.LeftButton) {
-                                    contentRoot.draggedEntryIndex = delegateRoot.entryIndex
+                                    longPressActivated = false;
+                                    contentRoot.draggedEntryIndex = delegateRoot.entryIndex;
+                                    if (!contentRoot.selectionModeActive) {
+                                        longPressTimer.start();
+                                    }
+                                }
+                            }
+                            onPositionChanged: {
+                                if (drag.active && longPressTimer.running) {
+                                    longPressTimer.stop();
                                 }
                             }
                             onClicked: (mouse) => {
+                                if (longPressActivated) {
+                                    longPressActivated = false;
+                                    return;
+                                }
                                 if (mouse.button === Qt.RightButton) {
                                     const pos = itemArea.mapToItem(contentRoot, mouse.x, mouse.y);
                                     contextMenu.selectedAppIndex = delegateRoot.entryIndex;
@@ -541,22 +681,28 @@ Scope {
                                     contextMenu.x = pos.x - contextMenu.width / 2;
                                     contextMenu.y = pos.y;
                                     contextMenu.openAt();
-                                    return
+                                    return;
+                                }
+                                if (contentRoot.selectionModeActive) {
+                                    contentRoot.toggleAppSelection(delegateRoot.entryIndex);
+                                    return;
                                 }
                                 if (!appTile.Drag.active) {
                                     CustomApps.launch(delegateRoot.modelData);
                                 }
                             }
                             onReleased: {
+                                longPressTimer.stop();
                                 const targetFolder = contentRoot.hoverFolderId
                                 const idx = delegateRoot.entryIndex
                                 contentRoot.hoverFolderId = ""
                                 contentRoot.draggedEntryIndex = -1
-                                if (targetFolder.length > 0 && idx >= 0) {
+                                if (!contentRoot.selectionModeActive && targetFolder.length > 0 && idx >= 0) {
                                     CustomApps.addAppToFolder(targetFolder, idx)
                                 }
                             }
                             onCanceled: {
+                                longPressTimer.stop();
                                 contentRoot.hoverFolderId = ""
                                 contentRoot.draggedEntryIndex = -1
                             }
@@ -824,6 +970,11 @@ Scope {
                             event.accepted = true;
                             return;
                         }
+                        if (launcherContent.isFolderOpen && launcherContent.isFolderSelectionModeActive) {
+                            launcherContent.exitFolderSelectionMode();
+                            event.accepted = true;
+                            return;
+                        }
                         if (!inSettings && launcherContent.vimiumActive) {
                             launcherContent.vimiumActive = false;
                             launcherContent.vimiumTyped = "";
@@ -833,6 +984,11 @@ Scope {
                         if (inSettings && launcherContent.settingsVimiumActive) {
                             launcherContent.settingsVimiumActive = false;
                             launcherContent.settingsVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        if (launcherContent.selectionModeActive) {
+                            launcherContent.exitSelectionMode();
                             event.accepted = true;
                             return;
                         }
@@ -964,6 +1120,11 @@ Scope {
                             event.accepted = true;
                             return;
                         }
+                        if (launcherContent.isFolderOpen && launcherContent.isFolderSelectionModeActive) {
+                            launcherContent.exitFolderSelectionMode();
+                            event.accepted = true;
+                            return;
+                        }
                         if (!inSettings && launcherContent.vimiumActive) {
                             launcherContent.vimiumActive = false;
                             launcherContent.vimiumTyped = "";
@@ -973,6 +1134,11 @@ Scope {
                         if (inSettings && launcherContent.settingsVimiumActive) {
                             launcherContent.settingsVimiumActive = false;
                             launcherContent.settingsVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
+                        if (launcherContent.selectionModeActive) {
+                            launcherContent.exitSelectionMode();
                             event.accepted = true;
                             return;
                         }

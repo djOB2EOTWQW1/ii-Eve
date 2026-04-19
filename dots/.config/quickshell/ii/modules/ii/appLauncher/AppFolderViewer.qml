@@ -18,6 +18,31 @@ Item {
     signal closed()
     signal renameAppRequested(int appIndex, string currentName)
 
+    property bool selectionModeActive: false
+    property var selectedAppIndices: []
+
+    function toggleAppSelection(originalIndex) {
+        const arr = selectedAppIndices.slice();
+        const pos = arr.indexOf(originalIndex);
+        if (pos >= 0) arr.splice(pos, 1);
+        else arr.push(originalIndex);
+        selectedAppIndices = arr;
+        if (arr.length === 0) selectionModeActive = false;
+    }
+
+    function deleteSelectedApps() {
+        const indices = selectedAppIndices.slice();
+        for (let i = 0; i < indices.length; i++)
+            CustomApps.removeAppFromFolder(root.folder.id, indices[i]);
+        selectedAppIndices = [];
+        selectionModeActive = false;
+    }
+
+    function exitSelectionMode() {
+        selectedAppIndices = [];
+        selectionModeActive = false;
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Appearance.colors.colScrim
@@ -116,18 +141,27 @@ Item {
                     }
 
                     StyledText {
-                        text: folderAppsGrid.count === 0
-                            ? Translation.tr("Empty")
-                            : folderAppsGrid.count === 1
-                                ? Translation.tr("1 app")
-                                : Translation.tr("%1 apps").arg(folderAppsGrid.count)
-                        color: Appearance.colors.colSubtext
+                        text: root.selectionModeActive
+                            ? (root.selectedAppIndices.length > 0
+                                ? Translation.tr("%1 selected · Esc to cancel").arg(root.selectedAppIndices.length)
+                                : Translation.tr("Tap to select · Esc to cancel"))
+                            : (folderAppsGrid.count === 0
+                                ? Translation.tr("Empty")
+                                : folderAppsGrid.count === 1
+                                    ? Translation.tr("1 app")
+                                    : Translation.tr("%1 apps").arg(folderAppsGrid.count))
+                        color: root.selectionModeActive ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
                         font.pixelSize: Appearance.font.pixelSize.smaller
+
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
                     }
                 }
 
                 RippleButton {
                     Layout.alignment: Qt.AlignVCenter
+                    visible: !root.selectionModeActive
                     buttonRadius: Appearance.rounding.full
                     implicitWidth: 36
                     implicitHeight: 36
@@ -150,6 +184,22 @@ Item {
                         hintText: root.vimiumHints[0] ?? ""
                         typedText: root.vimiumTyped
                         vimiumActive: root.vimiumActive
+                    }
+                }
+
+                RippleButton {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.selectionModeActive
+                    enabled: root.selectedAppIndices.length > 0
+                    buttonRadius: Appearance.rounding.full
+                    implicitWidth: 36
+                    implicitHeight: 36
+                    onClicked: root.deleteSelectedApps()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "delete_sweep"
+                        iconSize: 20
                     }
                 }
 
@@ -201,6 +251,19 @@ Item {
                     width: folderAppsGrid.cellWidth
                     height: folderAppsGrid.cellHeight
 
+                    readonly property bool isSelected: root.selectedAppIndices.indexOf(folderAppDelegate.modelData._originalIndex) >= 0
+
+                    Timer {
+                        id: folderLongPressTimer
+                        interval: 500
+                        repeat: false
+                        onTriggered: {
+                            root.selectionModeActive = true;
+                            root.toggleAppSelection(folderAppDelegate.modelData._originalIndex);
+                            folderAppArea.longPressActivated = true;
+                        }
+                    }
+
                     VimiumHintLabel {
                         x: 4
                         y: 4
@@ -211,17 +274,41 @@ Item {
 
                     MouseArea {
                         id: folderAppArea
+                        property bool longPressActivated: false
                         anchors.fill: parent
                         anchors.margins: 4
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                        onPressed: (mouse) => {
+                            if (mouse.button === Qt.LeftButton) {
+                                longPressActivated = false;
+                                if (!root.selectionModeActive)
+                                    folderLongPressTimer.start();
+                            }
+                        }
+                        onPositionChanged: {
+                            if (folderLongPressTimer.running)
+                                folderLongPressTimer.stop();
+                        }
+                        onReleased: folderLongPressTimer.stop()
+                        onCanceled: folderLongPressTimer.stop()
+
                         onClicked: (mouse) => {
+                            if (longPressActivated) {
+                                longPressActivated = false;
+                                return;
+                            }
                             if (mouse.button === Qt.RightButton) {
                                 const pos = folderAppArea.mapToItem(folderPanel, mouse.x, mouse.y)
                                 folderItemMenu.targetAppIndex = folderAppDelegate.modelData._originalIndex
                                 folderItemMenu.targetAppName = folderAppDelegate.modelData.name
                                 folderItemMenu.openAt(pos.x, pos.y)
-                                return
+                                return;
+                            }
+                            if (root.selectionModeActive) {
+                                root.toggleAppSelection(folderAppDelegate.modelData._originalIndex);
+                                return;
                             }
                             CustomApps.launch(folderAppDelegate.modelData)
                             root.closed()
@@ -238,6 +325,45 @@ Item {
 
                             Behavior on color {
                                 animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                visible: folderAppDelegate.isSelected
+                                color: Appearance.colors.colPrimary
+                                opacity: 0.15
+                                z: 1
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                visible: folderAppDelegate.isSelected
+                                color: "transparent"
+                                border.width: 2
+                                border.color: Appearance.colors.colPrimary
+                                z: 2
+                            }
+
+                            Rectangle {
+                                visible: folderAppDelegate.isSelected
+                                anchors.top: parent.top
+                                anchors.right: parent.right
+                                anchors.topMargin: 4
+                                anchors.rightMargin: 4
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: Appearance.colors.colPrimary
+                                z: 3
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "check"
+                                    iconSize: 13
+                                    color: Appearance.colors.colOnPrimary
+                                }
                             }
 
                             ColumnLayout {
