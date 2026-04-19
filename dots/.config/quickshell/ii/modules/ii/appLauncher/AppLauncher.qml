@@ -385,7 +385,8 @@ Scope {
                 anchors.margins: 14
                 anchors.topMargin: headerBar.height + 4
                 visible: count > 0
-                cellWidth: contentRoot.iconSize + 76
+                readonly property int columns: Math.max(1, Math.floor(width / (contentRoot.iconSize + 76)))
+                cellWidth: width / columns
                 cellHeight: contentRoot.iconSize + 76
                 clip: true
                 interactive: true

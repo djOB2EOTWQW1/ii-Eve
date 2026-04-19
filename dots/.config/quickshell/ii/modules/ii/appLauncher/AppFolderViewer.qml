@@ -232,7 +232,8 @@ Item {
                 id: folderAppsGrid
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                cellWidth: root.iconSize + 40
+                readonly property int columns: Math.max(1, Math.floor(width / (root.iconSize + 40)))
+                cellWidth: width / columns
                 cellHeight: root.iconSize + 50
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
