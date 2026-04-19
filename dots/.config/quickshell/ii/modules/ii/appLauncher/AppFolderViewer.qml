@@ -12,6 +12,9 @@ Item {
     id: root
     property var folder: null
     property int iconSize: 64
+    property bool vimiumActive: false
+    property string vimiumTyped: ""
+    property var vimiumHints: []
     signal closed()
     signal renameAppRequested(int appIndex, string currentName)
 
@@ -138,6 +141,16 @@ Item {
                         text: "add"
                         iconSize: 20
                     }
+
+                    VimiumHintLabel {
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -5
+                        anchors.topMargin: -5
+                        hintText: root.vimiumHints[0] ?? ""
+                        typedText: root.vimiumTyped
+                        vimiumActive: root.vimiumActive
+                    }
                 }
 
                 RippleButton {
@@ -151,6 +164,16 @@ Item {
                         horizontalAlignment: Text.AlignHCenter
                         text: "close"
                         iconSize: 20
+                    }
+
+                    VimiumHintLabel {
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -5
+                        anchors.topMargin: -5
+                        hintText: root.vimiumHints[1] ?? ""
+                        typedText: root.vimiumTyped
+                        vimiumActive: root.vimiumActive
                     }
                 }
             }
@@ -177,6 +200,14 @@ Item {
                     required property int index
                     width: folderAppsGrid.cellWidth
                     height: folderAppsGrid.cellHeight
+
+                    VimiumHintLabel {
+                        x: 4
+                        y: 4
+                        hintText: root.vimiumHints[folderAppDelegate.index + 2] ?? ""
+                        typedText: root.vimiumTyped
+                        vimiumActive: root.vimiumActive
+                    }
 
                     MouseArea {
                         id: folderAppArea

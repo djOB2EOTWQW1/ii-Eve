@@ -77,9 +77,12 @@ Scope {
         property string vimiumTyped: ""
         property bool settingsVimiumActive: false
         property string settingsVimiumTyped: ""
+        property bool folderVimiumActive: false
+        property string folderVimiumTyped: ""
 
         readonly property bool inSettings: settingsOverlay.shown
-        readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !folderViewer.active
+        readonly property bool isFolderOpen: folderViewer.active
+        readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible
 
         readonly property var vimiumHints: {
             const count = 1 + gridModel.length
@@ -88,7 +91,15 @@ Scope {
 
         readonly property var settingsVimiumHints: {
             const foldersLen = CustomApps.folders ? CustomApps.folders.length : 0
-            return _generateHints(2 + foldersLen)
+            return _generateHints(5 + foldersLen)
+        }
+
+        readonly property var folderVimiumHints: {
+            const _e = CustomApps.entries
+            const _f = CustomApps.folders
+            if (!folderViewer.active || !folderViewer.folder) return _generateHints(2)
+            const apps = CustomApps.appsInFolder(folderViewer.folder.id)
+            return _generateHints(2 + (apps ? apps.length : 0))
         }
 
         function _generateHints(count) {
@@ -148,15 +159,54 @@ Scope {
                         settingsOverlay.shown = false
                     } else if (i === 1) {
                         if (settingsOverlay.item && settingsOverlay.item.settingsRef)
+                            settingsOverlay.item.settingsRef.toggleNavExpand()
+                    } else if (i === 2) {
+                        if (settingsOverlay.item && settingsOverlay.item.settingsRef)
                             settingsOverlay.item.settingsRef.currentPage = 0
+                    } else if (i === 3) {
+                        if (Persistent.states.appLauncher)
+                            Persistent.states.appLauncher.windowSize = "current"
+                    } else if (i === 4) {
+                        if (Persistent.states.appLauncher)
+                            Persistent.states.appLauncher.windowSize = "settings"
                     } else {
-                        CustomApps.removeFolderAt(i - 2)
+                        CustomApps.removeFolderAt(i - 5)
                     }
                     break
                 }
                 if (hints[i].startsWith(settingsVimiumTyped)) hasPrefix = true
             }
             if (!foundExact && !hasPrefix) settingsVimiumTyped = ""
+        }
+
+        onFolderVimiumTypedChanged: {
+            if (!folderVimiumActive || folderVimiumTyped.length === 0) return
+            const hints = folderVimiumHints
+            let foundExact = false
+            let hasPrefix = false
+            for (let i = 0; i < hints.length; i++) {
+                if (hints[i] === folderVimiumTyped) {
+                    foundExact = true
+                    folderVimiumActive = false
+                    folderVimiumTyped = ""
+                    if (i === 0) {
+                        GlobalStates.binarySelectorTargetFolderId = folderViewer.folder?.id ?? ""
+                        GlobalStates.binarySelectorOpen = true
+                    } else if (i === 1) {
+                        folderViewer.close()
+                    } else {
+                        const apps = CustomApps.appsInFolder(folderViewer.folder?.id ?? "")
+                        const appIndex = i - 2
+                        if (apps && appIndex < apps.length) {
+                            CustomApps.launch(apps[appIndex])
+                            folderViewer.close()
+                        }
+                    }
+                    break
+                }
+                if (hints[i].startsWith(folderVimiumTyped)) hasPrefix = true
+            }
+            if (!foundExact && !hasPrefix) folderVimiumTyped = ""
         }
 
         Rectangle {
@@ -595,9 +645,19 @@ Scope {
                     folderViewer.folder = null
                 }
 
+                onActiveChanged: {
+                    if (!active) {
+                        contentRoot.folderVimiumActive = false
+                        contentRoot.folderVimiumTyped = ""
+                    }
+                }
+
                 sourceComponent: AppFolderViewer {
                     folder: folderViewer.folder
                     iconSize: contentRoot.iconSize
+                    vimiumActive: contentRoot.folderVimiumActive
+                    vimiumTyped: contentRoot.folderVimiumTyped
+                    vimiumHints: contentRoot.folderVimiumHints
                     onClosed: folderViewer.close()
                     onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
                 }
@@ -745,6 +805,12 @@ Scope {
                     const inSettings = launcherContent.inSettings;
 
                     if (event.key === Qt.Key_Escape) {
+                        if (launcherContent.isFolderOpen && launcherContent.folderVimiumActive) {
+                            launcherContent.folderVimiumActive = false;
+                            launcherContent.folderVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
                         if (!inSettings && launcherContent.vimiumActive) {
                             launcherContent.vimiumActive = false;
                             launcherContent.vimiumTyped = "";
@@ -774,6 +840,13 @@ Scope {
                                 event.accepted = true;
                                 return;
                             }
+                        } else if (launcherContent.isFolderOpen) {
+                            if (!launcherContent.folderVimiumActive) {
+                                launcherContent.folderVimiumActive = true;
+                                launcherContent.folderVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         } else {
                             if (!launcherContent.vimiumActive) {
                                 launcherContent.vimiumActive = true;
@@ -782,6 +855,20 @@ Scope {
                                 return;
                             }
                         }
+                    }
+
+                    if (launcherContent.isFolderOpen && launcherContent.folderVimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.folderVimiumTyped.length > 0) {
+                            launcherContent.folderVimiumTyped = launcherContent.folderVimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.folderVimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
                     }
 
                     if (!inSettings && launcherContent.vimiumActive) {
@@ -858,6 +945,12 @@ Scope {
                     const inSettings = launcherContent.inSettings;
 
                     if (event.key === Qt.Key_Escape) {
+                        if (launcherContent.isFolderOpen && launcherContent.folderVimiumActive) {
+                            launcherContent.folderVimiumActive = false;
+                            launcherContent.folderVimiumTyped = "";
+                            event.accepted = true;
+                            return;
+                        }
                         if (!inSettings && launcherContent.vimiumActive) {
                             launcherContent.vimiumActive = false;
                             launcherContent.vimiumTyped = "";
@@ -883,6 +976,13 @@ Scope {
                                 event.accepted = true;
                                 return;
                             }
+                        } else if (launcherContent.isFolderOpen) {
+                            if (!launcherContent.folderVimiumActive) {
+                                launcherContent.folderVimiumActive = true;
+                                launcherContent.folderVimiumTyped = "";
+                                event.accepted = true;
+                                return;
+                            }
                         } else {
                             if (!launcherContent.vimiumActive) {
                                 launcherContent.vimiumActive = true;
@@ -891,6 +991,20 @@ Scope {
                                 return;
                             }
                         }
+                    }
+
+                    if (launcherContent.isFolderOpen && launcherContent.folderVimiumActive) {
+                        if (event.key === Qt.Key_Backspace && launcherContent.folderVimiumTyped.length > 0) {
+                            launcherContent.folderVimiumTyped = launcherContent.folderVimiumTyped.slice(0, -1);
+                            event.accepted = true;
+                            return;
+                        }
+                        const ch = event.text.toUpperCase();
+                        if (event.text.length > 0 && ch >= 'A' && ch <= 'Z') {
+                            launcherContent.folderVimiumTyped += ch;
+                            event.accepted = true;
+                        }
+                        return;
                     }
 
                     if (!inSettings && launcherContent.vimiumActive) {
