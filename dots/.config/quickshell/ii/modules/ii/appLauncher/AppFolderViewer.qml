@@ -312,6 +312,7 @@ Item {
                                 return;
                             }
                             CustomApps.launch(folderAppDelegate.modelData)
+                            GlobalStates.appLauncherOpen = false
                             root.closed()
                         }
 

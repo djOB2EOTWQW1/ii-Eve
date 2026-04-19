@@ -183,6 +183,7 @@ Scope {
                             if (eIdx >= 0) contentRoot.toggleAppSelection(eIdx)
                         } else {
                             CustomApps.launch(gm)
+                            GlobalStates.appLauncherOpen = false
                         }
                     }
                 }
@@ -262,6 +263,7 @@ Scope {
                             if (origIdx >= 0) folderViewer.item?.toggleAppSelection(origIdx)
                         } else {
                             CustomApps.launch(apps[appIndex])
+                            GlobalStates.appLauncherOpen = false
                             folderViewer.close()
                         }
                     }
@@ -704,6 +706,7 @@ Scope {
                                 }
                                 if (!appTile.Drag.active) {
                                     CustomApps.launch(delegateRoot.modelData);
+                                    GlobalStates.appLauncherOpen = false;
                                 }
                             }
                             onReleased: {
