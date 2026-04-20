@@ -105,7 +105,15 @@ LazyLoader {
             readonly property real targetWidth: (root.contentItem?.implicitWidth ?? 0) + margin * 2
             readonly property real targetHeight: (root.contentItem?.implicitHeight ?? 0) + margin * 2
             
-            anchors.centerIn: parent
+            anchors {
+                top: (!Config.options.bar.vertical && !Config.options.bar.bottom) ? parent.top : undefined
+                bottom: (!Config.options.bar.vertical && Config.options.bar.bottom) ? parent.bottom : undefined
+                verticalCenter: Config.options.bar.vertical ? parent.verticalCenter : undefined
+
+                horizontalCenter: !Config.options.bar.vertical ? parent.horizontalCenter : undefined
+                left: (Config.options.bar.vertical && !Config.options.bar.bottom) ? parent.left : undefined
+                right: (Config.options.bar.vertical && Config.options.bar.bottom) ? parent.right : undefined
+            }
             
             width: targetWidth
             height: {
