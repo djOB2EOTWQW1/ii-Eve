@@ -371,6 +371,39 @@ Singleton {
         return true
     }
 
+    function setFolderGpu(folderId, gpu) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return false
+
+        const nextFolders = Array.from(root.folders)
+        const f = Object.assign({}, nextFolders[fi])
+        if (gpu === "dGPU" || gpu === "iGPU") {
+            f.gpu = gpu
+        } else {
+            delete f.gpu
+        }
+        nextFolders[fi] = f
+
+        const nextEntries = Array.from(root.entries)
+        const appIndices = f.appIndices || []
+        for (let i = 0; i < appIndices.length; i++) {
+            const idx = appIndices[i]
+            if (idx < 0 || idx >= nextEntries.length) continue
+            const e = Object.assign({}, nextEntries[idx])
+            if (gpu === "dGPU" || gpu === "iGPU") {
+                e.gpu = gpu
+            } else {
+                delete e.gpu
+            }
+            nextEntries[idx] = e
+        }
+
+        customAppsAdapter.folders = nextFolders
+        customAppsAdapter.entries = nextEntries
+        root.changed()
+        return true
+    }
+
     function renameAppAt(index, newName) {
         if (index < 0 || index >= root.entries.length) return false
         const trimmed = String(newName || "").trim()
