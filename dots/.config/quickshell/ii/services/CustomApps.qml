@@ -434,10 +434,11 @@ Singleton {
 
     function addAppToFolder(folderId, entryIndex) {
         if (entryIndex < 0 || entryIndex >= root.entries.length) return false
-        const next = Array.from(root.folders)
+        const nextFolders = Array.from(root.folders)
         let changed = false
-        for (let i = 0; i < next.length; i++) {
-            const f = Object.assign({}, next[i])
+        let targetFolder = null
+        for (let i = 0; i < nextFolders.length; i++) {
+            const f = Object.assign({}, nextFolders[i])
             const appIndices = Array.from(f.appIndices || [])
             const pos = appIndices.indexOf(entryIndex)
             if (f.id === folderId) {
@@ -445,15 +446,27 @@ Singleton {
                     appIndices.push(entryIndex)
                     changed = true
                 }
+                targetFolder = f
             } else if (pos >= 0) {
                 appIndices.splice(pos, 1)
                 changed = true
             }
             f.appIndices = appIndices
-            next[i] = f
+            nextFolders[i] = f
         }
         if (!changed) return false
-        customAppsAdapter.folders = next
+
+        customAppsAdapter.folders = nextFolders
+
+        // Propagate folder's GPU pref to the newly added entry
+        if (targetFolder && (targetFolder.gpu === "dGPU" || targetFolder.gpu === "iGPU")) {
+            const nextEntries = Array.from(root.entries)
+            const e = Object.assign({}, nextEntries[entryIndex])
+            e.gpu = targetFolder.gpu
+            nextEntries[entryIndex] = e
+            customAppsAdapter.entries = nextEntries
+        }
+
         root.changed()
         return true
     }
