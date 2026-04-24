@@ -222,7 +222,7 @@ MouseArea {
     }
 
     Rectangle {
-        id: innerLayer
+        id: innerLayerRect
         anchors.fill: parent
         anchors.margins: 10
         radius: Appearance.rounding.normal
@@ -365,7 +365,7 @@ MouseArea {
                 width: appGrid.cellWidth
                 height: appGrid.cellHeight
                 launcher: root
-                innerLayer: innerLayer
+                innerLayer: innerLayerRect
                 onOpenFolderRequested: (folder) => folderViewer.open(folder)
                 onContextMenuForAppRequested: (entryIndex, launcherX, launcherY) => {
                     contextMenu.selectedAppIndex = entryIndex
