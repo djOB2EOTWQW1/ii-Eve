@@ -384,6 +384,21 @@ Singleton {
         return true
     }
 
+    function setEntryGpu(index, gpu) {
+        if (index < 0 || index >= root.entries.length) return false
+        const next = Array.from(root.entries)
+        const e = Object.assign({}, next[index])
+        if (gpu === "dGPU" || gpu === "iGPU") {
+            e.gpu = gpu
+        } else {
+            delete e.gpu
+        }
+        next[index] = e
+        customAppsAdapter.entries = next
+        root.changed()
+        return true
+    }
+
     function addAppToFolder(folderId, entryIndex) {
         if (entryIndex < 0 || entryIndex >= root.entries.length) return false
         const next = Array.from(root.folders)
