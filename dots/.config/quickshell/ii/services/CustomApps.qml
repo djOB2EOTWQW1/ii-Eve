@@ -76,9 +76,30 @@ Singleton {
             const task = root._currentIconTask
             root._currentIconTask = null
             if (task && exitCode === 0) {
-                root._applyExtractedIcon(task.exePath, task.outPath)
+                root._applyExtractedIcon(task.targetPath || task.exePath, task.outPath)
             }
             root._processIconQueue()
+        }
+    }
+
+    property var _siblingQueue: []
+    property var _currentSiblingTask: null
+
+    Process {
+        id: siblingExeFinder
+        stdout: StdioCollector {
+            id: siblingExeFinderOut
+        }
+        onExited: (exitCode, exitStatus) => {
+            const task = root._currentSiblingTask
+            root._currentSiblingTask = null
+            if (task && exitCode === 0) {
+                const found = String(siblingExeFinderOut.text || "").trim()
+                if (found.length > 0) {
+                    root._enqueueExeIcon(found, root._exeIconCachePath(found), task.scriptPath)
+                }
+            }
+            root._processSiblingQueue()
         }
     }
 
@@ -104,13 +125,17 @@ Singleton {
         iconExtractor.running = true
     }
 
-    function _enqueueExeIcon(exePath, outPath) {
-        root._iconQueue.push({ exePath: exePath, outPath: outPath })
+    function _enqueueExeIcon(exePath, outPath, targetPath) {
+        root._iconQueue.push({
+            exePath: exePath,
+            outPath: outPath,
+            targetPath: targetPath || exePath
+        })
         root._processIconQueue()
     }
 
-    function _applyExtractedIcon(exePath, iconPath) {
-        const idx = root.indexOfPath(exePath)
+    function _applyExtractedIcon(targetPath, iconPath) {
+        const idx = root.indexOfPath(targetPath)
         if (idx < 0) return
         const next = Array.from(root.entries)
         const updated = Object.assign({}, next[idx])
@@ -118,6 +143,24 @@ Singleton {
         next[idx] = updated
         customAppsAdapter.entries = next
         root.changed()
+    }
+
+    function _processSiblingQueue() {
+        if (root._currentSiblingTask) return
+        if (root._siblingQueue.length === 0) return
+        const task = root._siblingQueue.shift()
+        root._currentSiblingTask = task
+        // Prefer a same-stem .exe, otherwise any .exe in the same directory.
+        const script = 'p="$1"; d="$(dirname "$p")"; b="$(basename "$p")"; s="${b%.*}";' +
+            ' if [ -f "$d/$s.exe" ]; then printf %s "$d/$s.exe"; exit 0; fi;' +
+            ' find "$d" -maxdepth 1 -type f -iname "*.exe" 2>/dev/null | head -n1'
+        siblingExeFinder.command = ["bash", "-c", script, "_", task.scriptPath]
+        siblingExeFinder.running = true
+    }
+
+    function _enqueueSiblingExeLookup(scriptPath) {
+        root._siblingQueue.push({ scriptPath: scriptPath })
+        root._processSiblingQueue()
     }
 
     function _upgradeExeIcons() {
@@ -130,7 +173,37 @@ Singleton {
         }
     }
 
-    onReadyChanged: if (root.ready) root._upgradeExeIcons()
+    function _upgradeScriptIcons() {
+        const next = Array.from(root.entries)
+        let changed = false
+        for (let i = 0; i < next.length; i++) {
+            const e = next[i]
+            if (!e || !e.path) continue
+            if (String(e.path).toLowerCase().endsWith('.exe')) continue
+            if (e.icon && String(e.icon).startsWith('/')) continue
+            // Re-evaluate with the new conservative logic. Old fuzzy-match
+            // garbage gets overwritten; legitimate icon names stay.
+            const conservative = root.guessIconFor(e.path)
+            if (e.icon !== conservative) {
+                const updated = Object.assign({}, e)
+                updated.icon = conservative
+                next[i] = updated
+                changed = true
+            }
+            if (conservative === "application-x-executable") {
+                root._enqueueSiblingExeLookup(e.path)
+            }
+        }
+        if (changed) {
+            customAppsAdapter.entries = next
+            root.changed()
+        }
+    }
+
+    onReadyChanged: if (root.ready) {
+        root._upgradeExeIcons()
+        root._upgradeScriptIcons()
+    }
 
     function indexOfPath(path) {
         const trimmed = FileUtils.trimFileProtocol(path)
@@ -179,6 +252,8 @@ Singleton {
 
         if (path.toLowerCase().endsWith('.exe')) {
             root._enqueueExeIcon(path, root._exeIconCachePath(path))
+        } else if (icon === "application-x-executable") {
+            root._enqueueSiblingExeLookup(path)
         }
         return true
     }
@@ -426,7 +501,17 @@ Singleton {
             if (AppSearch.iconExists(lower)) return lower
             return "wine"
         }
-        return AppSearch.guessIcon(stem)
+        // For scripts/native binaries we intentionally skip fuzzy matching —
+        // it produces unrelated system icons for arbitrary script names.
+        // A sibling .exe lookup will replace this with a real icon if possible.
+        const entry = DesktopEntries.byId(stem)
+        if (entry) return entry.icon
+        if (AppSearch.iconExists(stem)) return stem
+        const lower = stem.toLowerCase()
+        if (AppSearch.iconExists(lower)) return lower
+        const kebab = lower.replace(/\s+/g, "-")
+        if (AppSearch.iconExists(kebab)) return kebab
+        return "application-x-executable"
     }
 
     function shellQuote(s) {
