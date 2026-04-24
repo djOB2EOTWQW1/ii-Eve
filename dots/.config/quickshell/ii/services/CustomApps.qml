@@ -520,16 +520,20 @@ Singleton {
 
     function launch(entry) {
         if (!entry || !entry.path) return
+        const useDGpu = entry.gpu === "dGPU" && GpuInfo.hybrid
+        const envList = useDGpu ? GpuInfo.dGpuEnv : []
+        const envPrefix = envList.length > 0 ? ["env", ...envList] : []
+
         const path = entry.path
         const lower = path.toLowerCase()
 
         if (lower.endsWith('.exe')) {
             if (root.portprotonPresent) {
-                Quickshell.execDetached({ command: ["portproton", "--launch", path] })
+                Quickshell.execDetached({ command: [...envPrefix, "portproton", "--launch", path] })
                 return
             }
             if (root.winePresent) {
-                Quickshell.execDetached({ command: ["wine", path] })
+                Quickshell.execDetached({ command: [...envPrefix, "wine", path] })
                 return
             }
             console.warn("[CustomApps] cannot launch .exe: neither portproton nor wine is installed:", path)
@@ -538,7 +542,7 @@ Singleton {
 
         // Native binary / .AppImage / script — ensure +x, then exec directly
         Quickshell.execDetached({
-            command: ["bash", "-c", `chmod +x ${root.shellQuote(path)} 2>/dev/null; exec ${root.shellQuote(path)}`]
+            command: [...envPrefix, "bash", "-c", `chmod +x ${root.shellQuote(path)} 2>/dev/null; exec ${root.shellQuote(path)}`]
         })
     }
 

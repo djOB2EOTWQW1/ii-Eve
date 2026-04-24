@@ -36,7 +36,6 @@ Singleton {
             const text = String(lspciOut.text || "")
             root._parse(text)
             root.ready = true
-            console.log("[GpuInfo] hybrid=", root.hybrid, "vendor=", root.dGpuVendor, "env=", JSON.stringify(root.dGpuEnv))
         }
     }
 
