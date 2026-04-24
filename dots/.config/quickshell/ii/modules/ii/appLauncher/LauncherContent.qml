@@ -55,7 +55,7 @@ MouseArea {
     readonly property bool isFolderSelectionModeActive: folderViewer.item?.selectionModeActive ?? false
     readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible
 
-    readonly property var vimiumHints: LV.generateHints(1 + gridModel.length)
+    readonly property var vimiumHints: LV.generateHints(2 + gridModel.length)
 
     readonly property var settingsVimiumHints: {
         const foldersLen = CustomApps.folders ? CustomApps.folders.length : 0
@@ -133,7 +133,12 @@ MouseArea {
             else settingsOverlay.shown = true
             return
         }
-        const gm = gridModel[idx - 1]
+        if (idx === 1) {
+            GlobalStates.binarySelectorTargetFolderId = ""
+            GlobalStates.binarySelectorOpen = true
+            return
+        }
+        const gm = gridModel[idx - 2]
         if (!gm) return
         if (gm._isFolder) { folderViewer.open(gm); return }
         if (selectionModeActive) {
@@ -305,6 +310,34 @@ MouseArea {
                         anchors.rightMargin: -5
                         anchors.topMargin: -5
                         hintText: root.vimiumHints[0] ?? ""
+                        typedText: root.vimiumTyped
+                        vimiumActive: root.vimiumActive
+                    }
+                }
+
+                RippleButton {
+                    id: addAppButton
+                    buttonRadius: Appearance.rounding.full
+                    implicitWidth: 36
+                    implicitHeight: 36
+                    visible: !settingsOverlay.shown && !root.selectionModeActive
+                    onClicked: {
+                        GlobalStates.binarySelectorTargetFolderId = ""
+                        GlobalStates.binarySelectorOpen = true
+                    }
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "add"
+                        iconSize: 20
+                    }
+
+                    VimiumHintLabel {
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -5
+                        anchors.topMargin: -5
+                        hintText: root.vimiumHints[1] ?? ""
                         typedText: root.vimiumTyped
                         vimiumActive: root.vimiumActive
                     }

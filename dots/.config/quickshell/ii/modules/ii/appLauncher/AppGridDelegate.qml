@@ -45,7 +45,7 @@ Item {
     VimiumHintLabel {
         x: 12
         y: 12
-        hintText: delegateRoot.launcher?.vimiumHints[delegateRoot.index + 1] ?? ""
+        hintText: delegateRoot.launcher?.vimiumHints[delegateRoot.index + 2] ?? ""
         typedText: delegateRoot.launcher?.vimiumTyped ?? ""
         vimiumActive: delegateRoot.launcher?.vimiumActive ?? false
     }
