@@ -433,7 +433,12 @@ Item {
             onPressed: event => {
                 const inMenu = (event.x >= folderItemMenu.x && event.x <= folderItemMenu.x + folderItemMenu.width
                     && event.y >= folderItemMenu.y && event.y <= folderItemMenu.y + folderItemMenu.height)
-                if (!inMenu) {
+                const subAbsX = folderItemMenu.x + folderItemSubmenu.x
+                const subAbsY = folderItemMenu.y + folderItemSubmenu.y
+                const inSub = folderItemSubmenu.visible
+                    && event.x >= subAbsX && event.x <= subAbsX + folderItemSubmenu.width
+                    && event.y >= subAbsY && event.y <= subAbsY + folderItemSubmenu.height
+                if (!inMenu && !inSub) {
                     folderItemMenu.hide()
                     event.accepted = true
                 } else {
@@ -456,6 +461,11 @@ Item {
             property int targetAppIndex: -1
             property string targetAppName: ""
 
+            readonly property string currentGpu: {
+                const e = CustomApps.entries[targetAppIndex]
+                return e?.gpu ?? ""
+            }
+
             function openAt(cx, cy) {
                 const maxX = folderPanel.width - folderItemMenu.width - 4
                 const maxY = folderPanel.height - folderItemMenu.height - 4
@@ -464,7 +474,42 @@ Item {
                 folderItemMenu.visible = true
             }
 
-            function hide() { folderItemMenu.visible = false }
+            function hide() {
+                folderItemOpenSubmenuTimer.stop()
+                folderItemCloseSubmenuTimer.stop()
+                folderItemSubmenu.visible = false
+                folderItemMenu.visible = false
+            }
+
+            function _toggleSubmenu() {
+                folderItemOpenSubmenuTimer.stop()
+                folderItemCloseSubmenuTimer.stop()
+                folderItemSubmenu.visible = !folderItemSubmenu.visible
+            }
+
+            function _applyGpu(gpu) {
+                const idx = folderItemMenu.targetAppIndex
+                if (idx < 0) return
+                CustomApps.setEntryGpu(idx, gpu)
+                folderItemMenu.hide()
+                CustomApps.launch(CustomApps.entries[idx])
+                GlobalStates.appLauncherOpen = false
+                root.closed()
+            }
+
+            Timer {
+                id: folderItemOpenSubmenuTimer
+                interval: 100
+                repeat: false
+                onTriggered: folderItemSubmenu.visible = true
+            }
+
+            Timer {
+                id: folderItemCloseSubmenuTimer
+                interval: 200
+                repeat: false
+                onTriggered: folderItemSubmenu.visible = false
+            }
 
             StyledRectangularShadow {
                 target: folderItemMenu
@@ -495,6 +540,99 @@ Item {
                         const idx = folderItemMenu.targetAppIndex
                         folderItemMenu.hide()
                         CustomApps.removeAppFromFolder(root.folder.id, idx)
+                    }
+                }
+
+                MenuButton {
+                    id: folderItemMoreButton
+                    Layout.fillWidth: true
+                    visible: GpuInfo.hybrid
+                    symbolName: "chevron_right"
+                    buttonText: Translation.tr("More")
+                    onClicked: folderItemMenu._toggleSubmenu()
+
+                    HoverHandler {
+                        id: folderItemMoreHover
+                        onHoveredChanged: {
+                            if (folderItemMoreHover.hovered) {
+                                folderItemCloseSubmenuTimer.stop()
+                                if (!folderItemSubmenu.visible) folderItemOpenSubmenuTimer.start()
+                            } else {
+                                folderItemOpenSubmenuTimer.stop()
+                                if (!folderItemSubmenuHover.hovered) folderItemCloseSubmenuTimer.start()
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                id: folderItemSubmenu
+                z: 11
+                visible: false
+
+                width: 200
+                height: folderItemSubmenuColumn.implicitHeight + 12
+
+                // Default: right of main menu, aligned to moreButton.
+                // Flip horizontally if it would overflow folderPanel; clamp vertically.
+                x: {
+                    const defaultX = folderItemMenu.width - 2
+                    const absoluteRight = folderItemMenu.x + defaultX + folderItemSubmenu.width
+                    const panelWidth = folderPanel.width
+                    if (absoluteRight > panelWidth - 8) {
+                        return -folderItemSubmenu.width + 2
+                    }
+                    return defaultX
+                }
+
+                y: {
+                    const desired = folderItemMoreButton.y
+                    const maxY = folderPanel.height - folderItemMenu.y - folderItemSubmenu.height - 8
+                    return Math.max(0, Math.min(desired, maxY))
+                }
+
+                color: Appearance.m3colors.m3surfaceContainer
+                radius: Appearance.rounding.normal
+                border.width: 1
+                border.color: Appearance.colors.colLayer0Border
+
+                StyledRectangularShadow {
+                    target: folderItemSubmenu
+                    visible: folderItemSubmenu.visible
+                }
+
+                HoverHandler {
+                    id: folderItemSubmenuHover
+                    onHoveredChanged: {
+                        if (folderItemSubmenuHover.hovered) {
+                            folderItemCloseSubmenuTimer.stop()
+                        } else if (!folderItemMoreHover.hovered) {
+                            folderItemCloseSubmenuTimer.start()
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    id: folderItemSubmenuColumn
+                    anchors.fill: parent
+                    anchors.margins: 6
+                    spacing: 0
+
+                    MenuButton {
+                        Layout.fillWidth: true
+                        visible: folderItemMenu.currentGpu !== "dGPU"
+                        symbolName: "developer_board"
+                        buttonText: Translation.tr("Run on dGPU")
+                        onClicked: folderItemMenu._applyGpu("dGPU")
+                    }
+
+                    MenuButton {
+                        Layout.fillWidth: true
+                        visible: folderItemMenu.currentGpu === "dGPU"
+                        symbolName: "memory"
+                        buttonText: Translation.tr("Run on iGPU")
+                        onClicked: folderItemMenu._applyGpu("iGPU")
                     }
                 }
             }
