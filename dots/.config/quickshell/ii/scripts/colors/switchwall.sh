@@ -57,6 +57,9 @@ post_process() {
 
     handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
+    
+    # Generate YouTube Music theme
+    "$SCRIPT_DIR/../ytmusic/generate-ytmusic-theme.sh" > /dev/null 2>&1 &
 }
 
 check_and_prompt_upscale() {

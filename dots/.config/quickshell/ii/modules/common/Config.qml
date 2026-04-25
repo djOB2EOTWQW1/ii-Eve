@@ -400,6 +400,15 @@ Singleton {
                     ]
                     property list<var> right: [
                         {
+                            id: "screen_share_indicator"
+                        },
+                        {
+                            id: "record_indicator"
+                        },
+                        {
+                            id: "weather"
+                        },
+                        {
                             id: "clock"
                         },
                         {
