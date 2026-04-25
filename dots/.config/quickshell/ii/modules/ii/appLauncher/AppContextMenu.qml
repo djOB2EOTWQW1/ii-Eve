@@ -45,10 +45,30 @@ Rectangle {
         root.visible = true;
     }
 
-    function hide() { root.visible = false; }
+    function hide() {
+        submenu.visible = false
+        root.visible = false
+    }
 
     function _toggleSubmenu() {
-        // Real implementation replaces this stub in Task 7.3.
+        submenu.visible = !submenu.visible
+    }
+
+    function _applyGpu(gpu) {
+        if (root.isAppContext) {
+            const idx = root.selectedAppIndex
+            CustomApps.setEntryGpu(idx, gpu)
+            root.hide()
+            submenu.visible = false
+            CustomApps.launch(CustomApps.entries[idx])
+            return
+        }
+        if (root.isFolderContext) {
+            CustomApps.setFolderGpu(root.selectedFolderId, gpu)
+            root.hide()
+            submenu.visible = false
+            return
+        }
     }
 
     StyledRectangularShadow {
@@ -160,6 +180,52 @@ Rectangle {
             symbolName: "chevron_right"
             buttonText: Translation.tr("More")
             onClicked: root._toggleSubmenu()
+        }
+    }
+
+    Rectangle {
+        id: submenu
+        z: 11
+        visible: false
+
+        width: 200
+        height: submenuColumn.implicitHeight + 12
+
+        // Default: right of main menu, aligned to moreButton
+        x: root.width - 2
+        y: moreButton.y
+
+        color: Appearance.m3colors.m3surfaceContainer
+        radius: Appearance.rounding.normal
+        border.width: 1
+        border.color: Appearance.colors.colLayer0Border
+
+        StyledRectangularShadow {
+            target: submenu
+            visible: submenu.visible
+        }
+
+        ColumnLayout {
+            id: submenuColumn
+            anchors.fill: parent
+            anchors.margins: 6
+            spacing: 0
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.currentGpu !== "dGPU"
+                symbolName: "developer_board"
+                buttonText: Translation.tr("Run on dGPU")
+                onClicked: root._applyGpu("dGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.currentGpu === "dGPU"
+                symbolName: "memory"
+                buttonText: Translation.tr("Run on iGPU")
+                onClicked: root._applyGpu("iGPU")
+            }
         }
     }
 }
