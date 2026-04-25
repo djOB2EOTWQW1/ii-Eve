@@ -102,7 +102,8 @@ Scope {
 
                 Keys.onPressed: (event) => LK.handleKey(event, launcherContent, {
                     onEscapeDismissIfIdle: () => panelWindow.hide(),
-                    onToggleDetach: () => root.toggleDetach()
+                    onToggleDetach: () => root.toggleDetach(),
+                    onToggleHelp: () => launcherContent.toggleHelp()
                 })
             }
         }
@@ -140,7 +141,8 @@ Scope {
                 }
 
                 Keys.onPressed: (event) => LK.handleKey(event, launcherContent, {
-                    onToggleDetach: () => root.toggleDetach()
+                    onToggleDetach: () => root.toggleDetach(),
+                    onToggleHelp: () => launcherContent.toggleHelp()
                 })
             }
         }

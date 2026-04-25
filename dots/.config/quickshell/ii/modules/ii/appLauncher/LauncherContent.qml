@@ -55,7 +55,12 @@ MouseArea {
     readonly property bool inSettings: settingsOverlay.shown
     readonly property bool isFolderOpen: folderViewer.active
     readonly property bool isFolderSelectionModeActive: folderViewer.item?.selectionModeActive ?? false
-    readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible
+    readonly property bool helpOverlayShown: helpOverlay.shown
+    readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !helpOverlay.shown
+
+    function toggleHelp() {
+        helpOverlay.shown = !helpOverlay.shown
+    }
 
     readonly property var vimiumHints: LV.generateHints(2 + gridModel.length)
 
@@ -527,6 +532,16 @@ MouseArea {
                 vimiumHints: root.folderVimiumHints
                 onClosed: folderViewer.close()
                 onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
+            }
+        }
+
+        FadeLoader {
+            id: helpOverlay
+            anchors.fill: parent
+            z: 21
+            shown: false
+            sourceComponent: HelpOverlay {
+                onClosed: helpOverlay.shown = false
             }
         }
     }
