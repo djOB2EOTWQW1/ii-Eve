@@ -19,6 +19,10 @@ Item {
 
     signal closed()
 
+    function toggleNavExpand() {
+        navRail.expanded = !navRail.expanded
+    }
+
     property var pages: [
         {
             name: Translation.tr("Quick"),
@@ -98,7 +102,17 @@ Item {
                     spacing: 10
                     expanded: root.width > 700
 
-                    NavigationRailExpandButton {}
+                    NavigationRailExpandButton {
+                    VimiumHintLabel {
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -5
+                        anchors.topMargin: -5
+                        hintText: root.vimiumHints[1] ?? ""
+                        typedText: root.vimiumTyped
+                        vimiumActive: root.vimiumActive
+                    }
+                }
 
                     NavigationRailTabArray {
                         currentIndex: root.currentPage
@@ -118,7 +132,7 @@ Item {
                                 VimiumHintLabel {
                                     x: 2
                                     y: 2
-                                    hintText: root.vimiumHints[index + 1] ?? ""
+                                    hintText: root.vimiumHints[index + 2] ?? ""
                                     typedText: root.vimiumTyped
                                     vimiumActive: root.vimiumActive
                                 }
@@ -151,7 +165,7 @@ Item {
                         if (item && item.vimiumHints !== undefined) {
                             item.vimiumActive = Qt.binding(() => root.vimiumActive)
                             item.vimiumTyped = Qt.binding(() => root.vimiumTyped)
-                            item.vimiumHints = Qt.binding(() => root.vimiumHints.slice(1 + root.pages.length))
+                            item.vimiumHints = Qt.binding(() => root.vimiumHints.slice(2 + root.pages.length))
                         }
                     }
 

@@ -14,6 +14,9 @@ Flow {
     property color colBackgroundActive: Appearance.colors.colSecondaryContainerActive
 
     spacing: 2
+    property var vimiumHints: []
+    property string vimiumTyped: ""
+    property bool vimiumActive: false
     property list<var> options: [
         {
             "displayName": "Option 1",
@@ -68,6 +71,32 @@ Flow {
 
             onClicked: {
                 root.selected(modelData.value);
+            }
+
+            Rectangle {
+                property string hintText: root.vimiumHints[index] ?? ""
+                visible: root.vimiumActive && hintText.length > 0 && hintText.startsWith(root.vimiumTyped)
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.rightMargin: -5
+                anchors.topMargin: -5
+                width: hintLabel.implicitWidth + 10
+                height: hintLabel.implicitHeight + 6
+                color: "#f5e100"
+                border.color: "#a89800"
+                border.width: 1
+                radius: 3
+                z: 300
+
+                Text {
+                    id: hintLabel
+                    anchors.centerIn: parent
+                    text: parent.hintText
+                    font.pixelSize: 11
+                    font.bold: true
+                    font.family: "monospace"
+                    color: "#1a1200"
+                }
             }
         }
     }
