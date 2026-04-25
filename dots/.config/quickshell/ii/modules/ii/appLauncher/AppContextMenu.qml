@@ -220,9 +220,24 @@ Rectangle {
         width: 200
         height: submenuColumn.implicitHeight + 12
 
-        // Default: right of main menu, aligned to moreButton
-        x: root.width - 2
-        y: moreButton.y
+        // Default: right of main menu, aligned to moreButton.
+        // Flip horizontally if it would overflow the viewport; clamp vertically.
+        x: {
+            const defaultX = root.width - 2
+            const absoluteRight = root.x + defaultX + submenu.width
+            const parentWidth = root.parent ? root.parent.width : 0
+            if (absoluteRight > parentWidth - 8) {
+                return -submenu.width + 2
+            }
+            return defaultX
+        }
+
+        y: {
+            const desired = moreButton.y
+            const parentHeight = root.parent ? root.parent.height : 0
+            const maxY = parentHeight - root.y - submenu.height - 8
+            return Math.max(0, Math.min(desired, maxY))
+        }
 
         color: Appearance.m3colors.m3surfaceContainer
         radius: Appearance.rounding.normal
