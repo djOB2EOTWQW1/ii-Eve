@@ -58,12 +58,18 @@ Rectangle {
         submenu.visible = !submenu.visible
     }
 
-    function _applyGpu(gpu) {
+    function _launchWithGpu(gpu) {
+        if (!root.isAppContext) return
+        const idx = root.selectedAppIndex
+        CustomApps.setEntryGpu(idx, gpu)
+        root.hide()
+        CustomApps.launch(CustomApps.entries[idx])
+    }
+
+    function _setDefaultGpu(gpu) {
         if (root.isAppContext) {
-            const idx = root.selectedAppIndex
-            CustomApps.setEntryGpu(idx, gpu)
+            CustomApps.setEntryGpu(root.selectedAppIndex, gpu)
             root.hide()
-            CustomApps.launch(CustomApps.entries[idx])
             return
         }
         if (root.isFolderContext) {
@@ -268,18 +274,34 @@ Rectangle {
 
             MenuButton {
                 Layout.fillWidth: true
-                visible: root.currentGpu !== "dGPU"
+                visible: root.isAppContext && root.currentGpu !== "dGPU"
                 symbolName: "developer_board"
-                buttonText: Translation.tr("Run on dGPU")
-                onClicked: root._applyGpu("dGPU")
+                buttonText: Translation.tr("Launch with dGPU")
+                onClicked: root._launchWithGpu("dGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.isAppContext && root.currentGpu === "dGPU"
+                symbolName: "memory"
+                buttonText: Translation.tr("Launch with iGPU")
+                onClicked: root._launchWithGpu("iGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.currentGpu !== "dGPU"
+                symbolName: "bookmark_add"
+                buttonText: Translation.tr("Set default to dGPU")
+                onClicked: root._setDefaultGpu("dGPU")
             }
 
             MenuButton {
                 Layout.fillWidth: true
                 visible: root.currentGpu === "dGPU"
-                symbolName: "memory"
-                buttonText: Translation.tr("Run on iGPU")
-                onClicked: root._applyGpu("iGPU")
+                symbolName: "bookmark_add"
+                buttonText: Translation.tr("Set default to iGPU")
+                onClicked: root._setDefaultGpu("iGPU")
             }
         }
     }

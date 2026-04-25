@@ -487,7 +487,7 @@ Item {
                 folderItemSubmenu.visible = !folderItemSubmenu.visible
             }
 
-            function _applyGpu(gpu) {
+            function _launchWithGpu(gpu) {
                 const idx = folderItemMenu.targetAppIndex
                 if (idx < 0) return
                 CustomApps.setEntryGpu(idx, gpu)
@@ -495,6 +495,13 @@ Item {
                 CustomApps.launch(CustomApps.entries[idx])
                 GlobalStates.appLauncherOpen = false
                 root.closed()
+            }
+
+            function _setDefaultGpu(gpu) {
+                const idx = folderItemMenu.targetAppIndex
+                if (idx < 0) return
+                CustomApps.setEntryGpu(idx, gpu)
+                folderItemMenu.hide()
             }
 
             Timer {
@@ -623,16 +630,32 @@ Item {
                         Layout.fillWidth: true
                         visible: folderItemMenu.currentGpu !== "dGPU"
                         symbolName: "developer_board"
-                        buttonText: Translation.tr("Run on dGPU")
-                        onClicked: folderItemMenu._applyGpu("dGPU")
+                        buttonText: Translation.tr("Launch with dGPU")
+                        onClicked: folderItemMenu._launchWithGpu("dGPU")
                     }
 
                     MenuButton {
                         Layout.fillWidth: true
                         visible: folderItemMenu.currentGpu === "dGPU"
                         symbolName: "memory"
-                        buttonText: Translation.tr("Run on iGPU")
-                        onClicked: folderItemMenu._applyGpu("iGPU")
+                        buttonText: Translation.tr("Launch with iGPU")
+                        onClicked: folderItemMenu._launchWithGpu("iGPU")
+                    }
+
+                    MenuButton {
+                        Layout.fillWidth: true
+                        visible: folderItemMenu.currentGpu !== "dGPU"
+                        symbolName: "bookmark_add"
+                        buttonText: Translation.tr("Set default to dGPU")
+                        onClicked: folderItemMenu._setDefaultGpu("dGPU")
+                    }
+
+                    MenuButton {
+                        Layout.fillWidth: true
+                        visible: folderItemMenu.currentGpu === "dGPU"
+                        symbolName: "bookmark_add"
+                        buttonText: Translation.tr("Set default to iGPU")
+                        onClicked: folderItemMenu._setDefaultGpu("iGPU")
                     }
                 }
             }
