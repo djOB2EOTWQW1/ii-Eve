@@ -15,6 +15,17 @@ Rectangle {
     readonly property bool isFolderContext: selectedFolderId.length > 0
     readonly property bool isAppContext: selectedAppIndex >= 0
     readonly property bool isEmptyContext: !isFolderContext && !isAppContext
+    readonly property string currentGpu: {
+        if (isAppContext) {
+            const e = CustomApps.entries[selectedAppIndex]
+            return e?.gpu ?? ""
+        }
+        if (isFolderContext) {
+            const f = CustomApps.folderById(selectedFolderId)
+            return f?.gpu ?? ""
+        }
+        return ""
+    }
     implicitWidth: 220
     implicitHeight: menuColumn.implicitHeight + 12
     color: Appearance.m3colors.m3surfaceContainer
@@ -35,6 +46,10 @@ Rectangle {
     }
 
     function hide() { root.visible = false; }
+
+    function _toggleSubmenu() {
+        // Real implementation replaces this stub in Task 7.3.
+    }
 
     StyledRectangularShadow {
         target: root
@@ -136,6 +151,15 @@ Rectangle {
                 root.hide();
                 CustomApps.createDefaultFolder();
             }
+        }
+
+        MenuButton {
+            id: moreButton
+            Layout.fillWidth: true
+            visible: GpuInfo.hybrid && (root.isAppContext || root.isFolderContext)
+            symbolName: "chevron_right"
+            buttonText: Translation.tr("More")
+            onClicked: root._toggleSubmenu()
         }
     }
 }
