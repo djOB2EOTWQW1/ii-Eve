@@ -46,11 +46,15 @@ Rectangle {
     }
 
     function hide() {
+        openSubmenuTimer.stop()
+        closeSubmenuTimer.stop()
         submenu.visible = false
         root.visible = false
     }
 
     function _toggleSubmenu() {
+        openSubmenuTimer.stop()
+        closeSubmenuTimer.stop()
         submenu.visible = !submenu.visible
     }
 
@@ -59,14 +63,12 @@ Rectangle {
             const idx = root.selectedAppIndex
             CustomApps.setEntryGpu(idx, gpu)
             root.hide()
-            submenu.visible = false
             CustomApps.launch(CustomApps.entries[idx])
             return
         }
         if (root.isFolderContext) {
             CustomApps.setFolderGpu(root.selectedFolderId, gpu)
             root.hide()
-            submenu.visible = false
             return
         }
     }
