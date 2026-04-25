@@ -18,6 +18,7 @@ Item {
     }
 
     component KeyChip: Rectangle {
+        id: keyChip
         property string label: ""
         radius: Appearance.rounding.small
         color: Appearance.colors.colLayer2
@@ -27,7 +28,7 @@ Item {
         StyledText {
             id: chipText
             anchors.centerIn: parent
-            text: parent.label
+            text: keyChip.label
             font.family: Appearance.font.family.monospace
             font.pixelSize: Appearance.font.pixelSize.smaller
             color: Appearance.colors.colOnLayer1
@@ -35,18 +36,19 @@ Item {
     }
 
     component HelpRow: RowLayout {
+        id: helpRow
         property string keyLabel: ""
         property string descText: ""
         Layout.fillWidth: true
         spacing: 12
 
         KeyChip {
-            label: parent.keyLabel
+            label: helpRow.keyLabel
         }
 
         StyledText {
             Layout.fillWidth: true
-            text: parent.descText
+            text: helpRow.descText
             color: Appearance.colors.colOnLayer1
             font.pixelSize: Appearance.font.pixelSize.normal
             wrapMode: Text.Wrap
@@ -54,13 +56,14 @@ Item {
     }
 
     component HelpSection: ColumnLayout {
+        id: helpSection
         property string title: ""
         default property alias rows: rowContainer.data
         Layout.fillWidth: true
         spacing: 8
 
         StyledText {
-            text: parent.title
+            text: helpSection.title
             color: Appearance.colors.colOnLayer1
             font {
                 family: Appearance.font.family.title
@@ -130,13 +133,15 @@ Item {
             }
 
             ScrollView {
+                id: scroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
+                contentWidth: availableWidth
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                 ColumnLayout {
-                    width: root.width - 32
+                    width: scroll.availableWidth
                     spacing: 16
 
                     HelpSection {
