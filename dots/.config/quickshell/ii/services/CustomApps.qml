@@ -506,6 +506,7 @@ Singleton {
                 name: e.name,
                 path: e.path,
                 icon: e.icon,
+                gpu: e.gpu,
                 _originalIndex: i,
                 _isFolder: false
             })
@@ -532,6 +533,7 @@ Singleton {
                 name: e.name,
                 path: e.path,
                 icon: e.icon,
+                gpu: e.gpu,
                 _originalIndex: idx,
                 _isFolder: false
             })
