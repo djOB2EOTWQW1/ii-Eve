@@ -59,7 +59,13 @@ MouseArea {
     readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !helpOverlay.shown
 
     function toggleHelp() {
-        helpOverlay.shown = !helpOverlay.shown
+        const opening = !helpOverlay.shown
+        if (opening) {
+            vimiumActive = false; vimiumTyped = ""
+            folderVimiumActive = false; folderVimiumTyped = ""
+            settingsVimiumActive = false; settingsVimiumTyped = ""
+        }
+        helpOverlay.shown = opening
     }
 
     readonly property var vimiumHints: LV.generateHints(2 + gridModel.length)
