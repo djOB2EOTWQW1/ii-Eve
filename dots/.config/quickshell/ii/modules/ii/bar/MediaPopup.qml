@@ -15,16 +15,13 @@ StyledPopup {
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
+    animate: false // We have to disable the animation if we have only one card
     contentItem: HeroCard {
         id: mediaHero
-        Layout.fillWidth: true
+        compactMode: true
+        adaptiveWidth: true
         anchors.centerIn: parent
         icon: "music_note"
-
-        implicitHeight: 150
-
-        titleSize: Appearance.font.pixelSize.huge
-        subtitleSize: Appearance.font.pixelSize.large
 
         title: activePlayer?.trackArtist || Translation.tr("Unknown Artist")
         subtitle: activePlayer ? activePlayer.trackTitle : Translation.tr("No media")
