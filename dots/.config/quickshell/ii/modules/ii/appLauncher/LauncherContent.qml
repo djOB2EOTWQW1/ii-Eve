@@ -383,12 +383,27 @@ MouseArea {
             }
         }
 
-        PagePlaceholder {
+        Item {
+            anchors.fill: parent
             visible: appGrid.count === 0 && !root.externalDragHover
-            icon: "apps"
-            title: Translation.tr("No applications yet")
-            description: Translation.tr("Right-click anywhere to add one")
-            descriptionHorizontalAlignment: Text.AlignHCenter
+
+            PagePlaceholder {
+                anchors.fill: parent
+                icon: "apps"
+                title: Translation.tr("No applications yet")
+                description: Translation.tr("Right-click anywhere to add one")
+                descriptionHorizontalAlignment: Text.AlignHCenter
+            }
+
+            StyledText {
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 24
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Translation.tr("Show help: Ctrl + ?")
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                color: Appearance.colors.colSubtext
+                opacity: 0.7
+            }
         }
 
         GridView {
