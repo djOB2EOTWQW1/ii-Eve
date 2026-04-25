@@ -71,6 +71,20 @@ Rectangle {
         }
     }
 
+    Timer {
+        id: openSubmenuTimer
+        interval: 100
+        repeat: false
+        onTriggered: submenu.visible = true
+    }
+
+    Timer {
+        id: closeSubmenuTimer
+        interval: 200
+        repeat: false
+        onTriggered: submenu.visible = false
+    }
+
     StyledRectangularShadow {
         target: root
         visible: root.visible
@@ -180,6 +194,19 @@ Rectangle {
             symbolName: "chevron_right"
             buttonText: Translation.tr("More")
             onClicked: root._toggleSubmenu()
+
+            HoverHandler {
+                id: moreHover
+                onHoveredChanged: {
+                    if (moreHover.hovered) {
+                        closeSubmenuTimer.stop()
+                        if (!submenu.visible) openSubmenuTimer.start()
+                    } else {
+                        openSubmenuTimer.stop()
+                        if (!submenuHover.hovered) closeSubmenuTimer.start()
+                    }
+                }
+            }
         }
     }
 
@@ -203,6 +230,17 @@ Rectangle {
         StyledRectangularShadow {
             target: submenu
             visible: submenu.visible
+        }
+
+        HoverHandler {
+            id: submenuHover
+            onHoveredChanged: {
+                if (submenuHover.hovered) {
+                    closeSubmenuTimer.stop()
+                } else if (!moreHover.hovered) {
+                    closeSubmenuTimer.start()
+                }
+            }
         }
 
         ColumnLayout {
