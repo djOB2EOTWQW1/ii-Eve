@@ -1,6 +1,7 @@
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
@@ -137,6 +138,9 @@ ContentPage {
                         if (Persistent.states.appLauncher)
                             Persistent.states.appLauncher.windowSize = value
                     }
+                    vimiumActive: page.vimiumActive
+                    vimiumTyped: page.vimiumTyped
+                    vimiumHints: [page.vimiumHints[0] ?? "", page.vimiumHints[1] ?? ""]
                 }
 
                 StyledText {
@@ -273,7 +277,7 @@ ContentPage {
                                 anchors.top: parent.top
                                 anchors.rightMargin: -5
                                 anchors.topMargin: -5
-                                hintText: folderRow.index < page.vimiumHints.length ? page.vimiumHints[folderRow.index] : ""
+                                hintText: (folderRow.index + 2) < page.vimiumHints.length ? page.vimiumHints[folderRow.index + 2] : ""
                                 typedText: page.vimiumTyped
                                 vimiumActive: page.vimiumActive
                             }

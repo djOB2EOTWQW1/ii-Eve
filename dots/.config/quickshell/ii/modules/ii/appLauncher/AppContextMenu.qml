@@ -15,6 +15,17 @@ Rectangle {
     readonly property bool isFolderContext: selectedFolderId.length > 0
     readonly property bool isAppContext: selectedAppIndex >= 0
     readonly property bool isEmptyContext: !isFolderContext && !isAppContext
+    readonly property string currentGpu: {
+        if (isAppContext) {
+            const e = CustomApps.entries[selectedAppIndex]
+            return e?.gpu ?? ""
+        }
+        if (isFolderContext) {
+            const f = CustomApps.folderById(selectedFolderId)
+            return f?.gpu ?? ""
+        }
+        return ""
+    }
     implicitWidth: 220
     implicitHeight: menuColumn.implicitHeight + 12
     color: Appearance.m3colors.m3surfaceContainer
@@ -34,7 +45,53 @@ Rectangle {
         root.visible = true;
     }
 
-    function hide() { root.visible = false; }
+    function hide() {
+        openSubmenuTimer.stop()
+        closeSubmenuTimer.stop()
+        submenu.visible = false
+        root.visible = false
+    }
+
+    function _toggleSubmenu() {
+        openSubmenuTimer.stop()
+        closeSubmenuTimer.stop()
+        submenu.visible = !submenu.visible
+    }
+
+    function _launchWithGpu(gpu) {
+        if (!root.isAppContext) return
+        const idx = root.selectedAppIndex
+        CustomApps.setEntryGpu(idx, gpu)
+        root.hide()
+        CustomApps.launch(CustomApps.entries[idx])
+    }
+
+    function _setDefaultGpu(gpu) {
+        if (root.isAppContext) {
+            CustomApps.setEntryGpu(root.selectedAppIndex, gpu)
+            root.hide()
+            return
+        }
+        if (root.isFolderContext) {
+            CustomApps.setFolderGpu(root.selectedFolderId, gpu)
+            root.hide()
+            return
+        }
+    }
+
+    Timer {
+        id: openSubmenuTimer
+        interval: 100
+        repeat: false
+        onTriggered: submenu.visible = true
+    }
+
+    Timer {
+        id: closeSubmenuTimer
+        interval: 200
+        repeat: false
+        onTriggered: submenu.visible = false
+    }
 
     StyledRectangularShadow {
         target: root
@@ -135,6 +192,116 @@ Rectangle {
             onClicked: {
                 root.hide();
                 CustomApps.createDefaultFolder();
+            }
+        }
+
+        MenuButton {
+            id: moreButton
+            Layout.fillWidth: true
+            visible: GpuInfo.hybrid && (root.isAppContext || root.isFolderContext)
+            symbolName: "chevron_right"
+            buttonText: Translation.tr("More")
+            onClicked: root._toggleSubmenu()
+
+            HoverHandler {
+                id: moreHover
+                onHoveredChanged: {
+                    if (moreHover.hovered) {
+                        closeSubmenuTimer.stop()
+                        if (!submenu.visible) openSubmenuTimer.start()
+                    } else {
+                        openSubmenuTimer.stop()
+                        if (!submenuHover.hovered) closeSubmenuTimer.start()
+                    }
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        id: submenu
+        z: 11
+        visible: false
+
+        width: 200
+        height: submenuColumn.implicitHeight + 12
+
+        // Default: right of main menu, aligned to moreButton.
+        // Flip horizontally if it would overflow the viewport; clamp vertically.
+        x: {
+            const defaultX = root.width - 2
+            const absoluteRight = root.x + defaultX + submenu.width
+            const parentWidth = root.parent ? root.parent.width : 0
+            if (absoluteRight > parentWidth - 8) {
+                return -submenu.width + 2
+            }
+            return defaultX
+        }
+
+        y: {
+            const desired = moreButton.y
+            const parentHeight = root.parent ? root.parent.height : 0
+            const maxY = parentHeight - root.y - submenu.height - 8
+            return Math.max(0, Math.min(desired, maxY))
+        }
+
+        color: Appearance.m3colors.m3surfaceContainer
+        radius: Appearance.rounding.normal
+        border.width: 1
+        border.color: Appearance.colors.colLayer0Border
+
+        StyledRectangularShadow {
+            target: submenu
+            visible: submenu.visible
+        }
+
+        HoverHandler {
+            id: submenuHover
+            onHoveredChanged: {
+                if (submenuHover.hovered) {
+                    closeSubmenuTimer.stop()
+                } else if (!moreHover.hovered) {
+                    closeSubmenuTimer.start()
+                }
+            }
+        }
+
+        ColumnLayout {
+            id: submenuColumn
+            anchors.fill: parent
+            anchors.margins: 6
+            spacing: 0
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.isAppContext && root.currentGpu !== "dGPU"
+                symbolName: "developer_board"
+                buttonText: Translation.tr("Launch with dGPU")
+                onClicked: root._launchWithGpu("dGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.isAppContext && root.currentGpu === "dGPU"
+                symbolName: "memory"
+                buttonText: Translation.tr("Launch with iGPU")
+                onClicked: root._launchWithGpu("iGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.currentGpu !== "dGPU"
+                symbolName: "bookmark_add"
+                buttonText: Translation.tr("Set default to dGPU")
+                onClicked: root._setDefaultGpu("dGPU")
+            }
+
+            MenuButton {
+                Layout.fillWidth: true
+                visible: root.currentGpu === "dGPU"
+                symbolName: "bookmark_add"
+                buttonText: Translation.tr("Set default to iGPU")
+                onClicked: root._setDefaultGpu("iGPU")
             }
         }
     }
