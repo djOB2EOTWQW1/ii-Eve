@@ -32,7 +32,8 @@ Item {
     }
 
     function deleteSelectedApps() {
-        const indices = selectedAppIndices.slice();
+        // Sort descending so earlier indices don't shift after each removal.
+        const indices = selectedAppIndices.slice().sort((a, b) => b - a);
         for (let i = 0; i < indices.length; i++)
             CustomApps.removeAppFromFolder(root.folder.id, indices[i]);
         selectedAppIndices = [];

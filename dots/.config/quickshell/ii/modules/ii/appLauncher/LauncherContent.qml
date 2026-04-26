@@ -521,16 +521,27 @@ MouseArea {
             anchors.fill: parent
             z: 20
             active: false
-            property var folder: null
+            // Track folder by id so `folder` re-resolves against the current
+            // CustomApps.folders snapshot — the cached object goes stale after
+            // rename / reorder when the model rebuilds entries.
+            property string folderId: ""
+            readonly property var folder: {
+                if (!folderId) return null
+                const folders = CustomApps.folders || []
+                for (let i = 0; i < folders.length; i++) {
+                    if (folders[i].id === folderId) return folders[i]
+                }
+                return null
+            }
 
             function open(f) {
-                folderViewer.folder = f
+                folderViewer.folderId = f?.id ?? ""
                 folderViewer.active = true
             }
 
             function close() {
                 folderViewer.active = false
-                folderViewer.folder = null
+                folderViewer.folderId = ""
             }
 
             onActiveChanged: {
