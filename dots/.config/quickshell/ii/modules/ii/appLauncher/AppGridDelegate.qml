@@ -31,6 +31,9 @@ Item {
     readonly property string folderId: delegateRoot.modelData?.id ?? ""
     readonly property bool isSelected: !delegateRoot.isFolder
         && (delegateRoot.launcher?.selectedAppIndices?.indexOf(delegateRoot.entryIndex) ?? -1) >= 0
+    readonly property var folderPreviewIcons: delegateRoot.isFolder
+        ? CustomApps.folderPreviewIcons(delegateRoot.modelData, 4)
+        : []
 
     Timer {
         id: longPressTimer
@@ -99,7 +102,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.72
                     height: parent.height * 0.72
-                    icons: delegateRoot.isFolder ? CustomApps.folderPreviewIcons(delegateRoot.modelData, 4) : []
+                    icons: delegateRoot.folderPreviewIcons
                 }
 
                 MaterialSymbol {

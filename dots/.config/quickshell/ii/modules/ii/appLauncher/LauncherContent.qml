@@ -108,6 +108,13 @@ MouseArea {
 
     onInSettingsChanged: if (inSettings) exitSelectionMode()
 
+    Connections {
+        target: GlobalStates
+        function onAppLauncherOpenChanged() {
+            if (!GlobalStates.appLauncherOpen) root.exitSelectionMode()
+        }
+    }
+
     onPressed: event => {
         if (settingsOverlay.shown) {
             event.accepted = false
