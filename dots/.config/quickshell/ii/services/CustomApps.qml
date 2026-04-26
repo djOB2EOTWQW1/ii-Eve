@@ -507,8 +507,7 @@ Singleton {
                 path: e.path,
                 icon: e.icon,
                 gpu: e.gpu,
-                _originalIndex: i,
-                _isFolder: false
+                _originalIndex: i
             })
         }
         return out
@@ -534,8 +533,7 @@ Singleton {
                 path: e.path,
                 icon: e.icon,
                 gpu: e.gpu,
-                _originalIndex: idx,
-                _isFolder: false
+                _originalIndex: idx
             })
         }
         return out

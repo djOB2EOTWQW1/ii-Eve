@@ -4,7 +4,7 @@
 //   onEscapeDismissIfIdle: close the attached window when Escape is pressed
 //                          and no modal state is active (omitted in detached).
 //   onToggleDetach:        toggle detach on Ctrl+D.
-//   onToggleHelp:          toggle the help overlay on Ctrl+?.
+//   onToggleHelp:          toggle the help overlay on Ctrl+/.
 
 function handleKey(event, content, options) {
     options = options || {}
@@ -16,10 +16,7 @@ function handleKey(event, content, options) {
     }
 
     if ((event.modifiers & Qt.ControlModifier)
-        && (event.key === Qt.Key_Question
-            || event.key === Qt.Key_Slash
-            || event.text === "?"
-            || event.text === "/")) {
+        && (event.key === Qt.Key_Slash || event.text === "/")) {
         if (options.onToggleHelp) options.onToggleHelp()
         event.accepted = true
         return
@@ -84,6 +81,11 @@ function _handleEscape(event, content, inSettings, options) {
     }
     if (content.selectionModeActive) {
         content.exitSelectionMode()
+        event.accepted = true
+        return
+    }
+    if (content.isFolderOpen) {
+        content.closeFolder()
         event.accepted = true
         return
     }
