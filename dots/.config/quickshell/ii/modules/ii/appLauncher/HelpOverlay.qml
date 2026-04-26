@@ -55,6 +55,38 @@ Item {
         }
     }
 
+    component SubHeading: ColumnLayout {
+        id: subHeading
+        property string label: ""
+        Layout.fillWidth: true
+        Layout.topMargin: 4
+        spacing: 6
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Appearance.colors.colLayer2
+            opacity: 0.5
+        }
+
+        StyledText {
+            text: subHeading.label
+            color: Appearance.colors.colOnLayer1
+            font.pixelSize: Appearance.font.pixelSize.small
+            font.weight: Font.Bold
+            opacity: 0.8
+        }
+    }
+
+    component HelpNote: StyledText {
+        Layout.fillWidth: true
+        Layout.topMargin: 2
+        color: Appearance.colors.colSubtext
+        font.pixelSize: Appearance.font.pixelSize.smaller
+        opacity: 0.7
+        wrapMode: Text.Wrap
+    }
+
     component HelpSection: ColumnLayout {
         id: helpSection
         property string title: ""
@@ -165,8 +197,16 @@ Item {
                         title: Translation.tr("Mouse & Drag")
 
                         HelpRow {
+                            keyLabel: Translation.tr("Click")
+                            descText: Translation.tr("Launch app")
+                        }
+                        HelpRow {
                             keyLabel: Translation.tr("Right-click")
                             descText: Translation.tr("Context menu / add app")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Long-press")
+                            descText: Translation.tr("Enter selection mode")
                         }
                         HelpRow {
                             keyLabel: Translation.tr("Drag app onto folder")
@@ -175,6 +215,117 @@ Item {
                         HelpRow {
                             keyLabel: Translation.tr("Drop file from file manager")
                             descText: Translation.tr("Add to launcher")
+                        }
+                    }
+
+                    HelpSection {
+                        title: Translation.tr("Context menu — App")
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Rename")
+                            descText: Translation.tr("Rename this application")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Remove from launcher")
+                            descText: Translation.tr("Remove this app from the launcher")
+                        }
+
+                        SubHeading {
+                            label: Translation.tr("More submenu")
+                        }
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Launch with dGPU / iGPU")
+                            descText: Translation.tr("Launch this app once using the chosen GPU")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Set default to dGPU / iGPU")
+                            descText: Translation.tr("Change the default GPU for this app (no launch)")
+                        }
+
+                        HelpNote {
+                            text: Translation.tr("Available only on hybrid-GPU systems")
+                        }
+                    }
+
+                    HelpSection {
+                        title: Translation.tr("Context menu — Folder")
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Open folder")
+                            descText: Translation.tr("Open the folder view")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Rename")
+                            descText: Translation.tr("Rename this folder")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Delete folder")
+                            descText: Translation.tr("Delete the folder; apps stay in the launcher")
+                        }
+
+                        SubHeading {
+                            label: Translation.tr("More submenu")
+                        }
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Launch with dGPU / iGPU")
+                            descText: Translation.tr("Launch all apps in the folder once using the chosen GPU")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Set default to dGPU / iGPU")
+                            descText: Translation.tr("Change the default GPU for the folder (no launch)")
+                        }
+
+                        HelpNote {
+                            text: Translation.tr("Available only on hybrid-GPU systems")
+                        }
+                    }
+
+                    HelpSection {
+                        title: Translation.tr("Context menu — Empty area")
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Add application")
+                            descText: Translation.tr("Pick a binary to add as a launcher item")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Add folder")
+                            descText: Translation.tr("Create a new empty folder")
+                        }
+                    }
+
+                    HelpSection {
+                        title: Translation.tr("Folder view")
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Drag app into folder")
+                            descText: Translation.tr("Add app to this folder")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Drag app out of folder")
+                            descText: Translation.tr("Remove app from this folder")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Right-click on app")
+                            descText: Translation.tr("App context menu (Rename / Remove from folder / More)")
+                        }
+                    }
+
+                    HelpSection {
+                        title: Translation.tr("Selection mode")
+
+                        HelpRow {
+                            keyLabel: Translation.tr("Long-press")
+                            descText: Translation.tr("Enter selection mode")
+                        }
+                        HelpRow {
+                            keyLabel: Translation.tr("Tap")
+                            descText: Translation.tr("Toggle app selection")
+                        }
+                        HelpRow {
+                            keyLabel: "Esc"
+                            descText: Translation.tr("Exit selection mode")
                         }
                     }
 
