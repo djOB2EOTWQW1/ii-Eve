@@ -15,8 +15,11 @@ function handleKey(event, content, options) {
         return
     }
 
-    if (event.modifiers === (Qt.ControlModifier | Qt.ShiftModifier)
-        && event.key === Qt.Key_Slash) {
+    if ((event.modifiers & Qt.ControlModifier)
+        && (event.key === Qt.Key_Question
+            || event.key === Qt.Key_Slash
+            || event.text === "?"
+            || event.text === "/")) {
         if (options.onToggleHelp) options.onToggleHelp()
         event.accepted = true
         return
