@@ -3,6 +3,8 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
+import qs.modules.ii.appLauncher
+import qs.modules.ii.appLauncher.vimium
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

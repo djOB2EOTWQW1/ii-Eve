@@ -64,6 +64,7 @@ Rectangle {
         CustomApps.setEntryGpu(idx, gpu)
         root.hide()
         CustomApps.launch(CustomApps.entries[idx])
+        GlobalStates.appLauncherOpen = false
     }
 
     function _setDefaultGpu(gpu) {
