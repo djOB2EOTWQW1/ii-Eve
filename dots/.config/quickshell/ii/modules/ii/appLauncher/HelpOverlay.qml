@@ -188,7 +188,7 @@ Item {
                             descText: Translation.tr("Detach window")
                         }
                         HelpRow {
-                            keyLabel: "Ctrl + ?"
+                            keyLabel: "Ctrl + /"
                             descText: Translation.tr("Show this help")
                         }
                     }

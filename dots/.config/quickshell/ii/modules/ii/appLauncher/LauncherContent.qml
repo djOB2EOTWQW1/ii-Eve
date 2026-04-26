@@ -398,7 +398,7 @@ MouseArea {
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 24
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Translation.tr("Show help: Ctrl + ?")
+                text: Translation.tr("Show help: Ctrl + /")
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: Appearance.colors.colSubtext
                 opacity: 0.7
