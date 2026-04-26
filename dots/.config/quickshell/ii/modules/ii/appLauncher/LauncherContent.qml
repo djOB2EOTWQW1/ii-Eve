@@ -30,17 +30,9 @@ MouseArea {
     // True while an external file-manager drag (source === null) hovers over the launcher.
     property bool externalDragHover: false
 
-    readonly property var gridModel: {
-        const folders = (CustomApps.folders || []).map(f => ({
-            _isFolder: true,
-            id: f.id,
-            name: f.name,
-            icon: f.icon,
-            appIndices: f.appIndices
-        }))
-        const roots = CustomApps.rootEntries || []
-        return folders.concat(roots)
-    }
+    // Folder objects pass through unwrapped — the delegate identifies them by
+    // the presence of `appIndices` (folders have it, root entries don't).
+    readonly property var gridModel: (CustomApps.folders || []).concat(CustomApps.rootEntries || [])
 
     property bool vimiumActive: false
     property string vimiumTyped: ""
@@ -110,6 +102,10 @@ MouseArea {
         folderViewer.item?.exitSelectionMode()
     }
 
+    function closeFolder() {
+        folderViewer.close()
+    }
+
     onInSettingsChanged: if (inSettings) exitSelectionMode()
 
     onPressed: event => {
@@ -153,7 +149,7 @@ MouseArea {
         }
         const gm = gridModel[idx - 2]
         if (!gm) return
-        if (gm._isFolder) { folderViewer.open(gm); return }
+        if (gm.appIndices) { folderViewer.open(gm); return }
         if (selectionModeActive) {
             const eIdx = gm._originalIndex ?? -1
             if (eIdx >= 0) toggleAppSelection(eIdx)

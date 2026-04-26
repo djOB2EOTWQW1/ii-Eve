@@ -84,6 +84,11 @@ function _handleEscape(event, content, inSettings, options) {
         event.accepted = true
         return
     }
+    if (content.isFolderOpen) {
+        content.closeFolder()
+        event.accepted = true
+        return
+    }
     if (!inSettings && options.onEscapeDismissIfIdle) {
         options.onEscapeDismissIfIdle()
     }

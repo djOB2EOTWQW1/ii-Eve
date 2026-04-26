@@ -26,7 +26,7 @@ Item {
     signal contextMenuForAppRequested(int entryIndex, real launcherX, real launcherY)
     signal contextMenuForFolderRequested(string folderId, real launcherX, real launcherY)
 
-    readonly property bool isFolder: !!delegateRoot.modelData?._isFolder
+    readonly property bool isFolder: !!delegateRoot.modelData?.appIndices
     readonly property int entryIndex: delegateRoot.modelData?._originalIndex ?? -1
     readonly property string folderId: delegateRoot.modelData?.id ?? ""
     readonly property bool isSelected: !delegateRoot.isFolder
@@ -248,7 +248,6 @@ Item {
                 Layout.preferredHeight: delegateRoot.launcher?.iconSize ?? 64
                 fillMode: Image.PreserveAspectFit
                 asynchronous: true
-                cache: false
                 source: {
                     const icon = delegateRoot.modelData?.icon || ""
                     if (icon.startsWith("/")) return "file://" + icon

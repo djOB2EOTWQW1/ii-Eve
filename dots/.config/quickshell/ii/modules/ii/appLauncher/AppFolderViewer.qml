@@ -380,7 +380,6 @@ Item {
                                     Layout.preferredHeight: root.iconSize
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
-                                    cache: false
                                     source: {
                                         const icon = folderAppDelegate.modelData.icon || ""
                                         if (icon.startsWith("/")) return "file://" + icon
