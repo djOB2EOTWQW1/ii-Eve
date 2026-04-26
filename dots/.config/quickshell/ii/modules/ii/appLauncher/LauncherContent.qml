@@ -388,7 +388,6 @@ MouseArea {
             visible: appGrid.count === 0 && !root.externalDragHover
 
             PagePlaceholder {
-                anchors.fill: parent
                 icon: "apps"
                 title: Translation.tr("No applications yet")
                 description: Translation.tr("Right-click anywhere to add one")
