@@ -30,17 +30,9 @@ MouseArea {
     // True while an external file-manager drag (source === null) hovers over the launcher.
     property bool externalDragHover: false
 
-    readonly property var gridModel: {
-        const folders = (CustomApps.folders || []).map(f => ({
-            _isFolder: true,
-            id: f.id,
-            name: f.name,
-            icon: f.icon,
-            appIndices: f.appIndices
-        }))
-        const roots = CustomApps.rootEntries || []
-        return folders.concat(roots)
-    }
+    // Folder objects pass through unwrapped — the delegate identifies them by
+    // the presence of `appIndices` (folders have it, root entries don't).
+    readonly property var gridModel: (CustomApps.folders || []).concat(CustomApps.rootEntries || [])
 
     property bool vimiumActive: false
     property string vimiumTyped: ""
@@ -110,7 +102,18 @@ MouseArea {
         folderViewer.item?.exitSelectionMode()
     }
 
+    function closeFolder() {
+        folderViewer.close()
+    }
+
     onInSettingsChanged: if (inSettings) exitSelectionMode()
+
+    Connections {
+        target: GlobalStates
+        function onAppLauncherOpenChanged() {
+            if (!GlobalStates.appLauncherOpen) root.exitSelectionMode()
+        }
+    }
 
     onPressed: event => {
         if (settingsOverlay.shown) {
@@ -153,7 +156,7 @@ MouseArea {
         }
         const gm = gridModel[idx - 2]
         if (!gm) return
-        if (gm._isFolder) { folderViewer.open(gm); return }
+        if (gm.appIndices) { folderViewer.open(gm); return }
         if (selectionModeActive) {
             const eIdx = gm._originalIndex ?? -1
             if (eIdx >= 0) toggleAppSelection(eIdx)
@@ -398,7 +401,7 @@ MouseArea {
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 24
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Translation.tr("Show help: Ctrl + ?")
+                text: Translation.tr("Show help: Ctrl + /")
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: Appearance.colors.colSubtext
                 opacity: 0.7
@@ -525,16 +528,27 @@ MouseArea {
             anchors.fill: parent
             z: 20
             active: false
-            property var folder: null
+            // Track folder by id so `folder` re-resolves against the current
+            // CustomApps.folders snapshot — the cached object goes stale after
+            // rename / reorder when the model rebuilds entries.
+            property string folderId: ""
+            readonly property var folder: {
+                if (!folderId) return null
+                const folders = CustomApps.folders || []
+                for (let i = 0; i < folders.length; i++) {
+                    if (folders[i].id === folderId) return folders[i]
+                }
+                return null
+            }
 
             function open(f) {
-                folderViewer.folder = f
+                folderViewer.folderId = f?.id ?? ""
                 folderViewer.active = true
             }
 
             function close() {
                 folderViewer.active = false
-                folderViewer.folder = null
+                folderViewer.folderId = ""
             }
 
             onActiveChanged: {

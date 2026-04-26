@@ -32,9 +32,8 @@ Item {
     }
 
     function deleteSelectedApps() {
-        const indices = selectedAppIndices.slice();
-        for (let i = 0; i < indices.length; i++)
-            CustomApps.removeAppFromFolder(root.folder.id, indices[i]);
+        for (let i = 0; i < selectedAppIndices.length; i++)
+            CustomApps.removeAppFromFolder(root.folder.id, selectedAppIndices[i]);
         selectedAppIndices = [];
         selectionModeActive = false;
     }
@@ -380,7 +379,6 @@ Item {
                                     Layout.preferredHeight: root.iconSize
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
-                                    cache: false
                                     source: {
                                         const icon = folderAppDelegate.modelData.icon || ""
                                         if (icon.startsWith("/")) return "file://" + icon

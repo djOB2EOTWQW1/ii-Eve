@@ -27,7 +27,6 @@ Item {
                     anchors.margins: 1
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
-                    cache: false
                     source: {
                         const icon = modelData || ""
                         if (icon.startsWith("/")) return "file://" + icon

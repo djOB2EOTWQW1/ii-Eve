@@ -63,6 +63,14 @@ Scope {
         GlobalStates.binarySelectorOpen = !GlobalStates.binarySelectorOpen
     }
 
+    Connections {
+        target: GlobalStates
+        function onAppLauncherOpenChanged() {
+            if (!GlobalStates.appLauncherOpen && GlobalStates.binarySelectorOpen)
+                GlobalStates.binarySelectorOpen = false
+        }
+    }
+
     IpcHandler {
         target: "binarySelector"
 
