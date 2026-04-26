@@ -2,11 +2,13 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.appLauncher.settings
+import qs.modules.ii.appLauncher.vimium
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import "LauncherVimium.js" as LV
+import "vimium/LauncherVimium.js" as LV
 
 // Main launcher surface: header bar, app/folder grid, settings overlay,
 // folder viewer, context menu, rename dialog, external-drop receiver.
@@ -53,7 +55,18 @@ MouseArea {
     readonly property bool inSettings: settingsOverlay.shown
     readonly property bool isFolderOpen: folderViewer.active
     readonly property bool isFolderSelectionModeActive: folderViewer.item?.selectionModeActive ?? false
-    readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible
+    readonly property bool helpOverlayShown: helpOverlay.shown
+    readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !helpOverlay.shown
+
+    function toggleHelp() {
+        const opening = !helpOverlay.shown
+        if (opening) {
+            vimiumActive = false; vimiumTyped = ""
+            folderVimiumActive = false; folderVimiumTyped = ""
+            settingsVimiumActive = false; settingsVimiumTyped = ""
+        }
+        helpOverlay.shown = opening
+    }
 
     readonly property var vimiumHints: LV.generateHints(2 + gridModel.length)
 
@@ -370,12 +383,26 @@ MouseArea {
             }
         }
 
-        PagePlaceholder {
+        Item {
+            anchors.fill: parent
             visible: appGrid.count === 0 && !root.externalDragHover
-            icon: "apps"
-            title: Translation.tr("No applications yet")
-            description: Translation.tr("Right-click anywhere to add one")
-            descriptionHorizontalAlignment: Text.AlignHCenter
+
+            PagePlaceholder {
+                icon: "apps"
+                title: Translation.tr("No applications yet")
+                description: Translation.tr("Right-click anywhere to add one")
+                descriptionHorizontalAlignment: Text.AlignHCenter
+            }
+
+            StyledText {
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 24
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Translation.tr("Show help: Ctrl + ?")
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                color: Appearance.colors.colSubtext
+                opacity: 0.7
+            }
         }
 
         GridView {
@@ -525,6 +552,16 @@ MouseArea {
                 vimiumHints: root.folderVimiumHints
                 onClosed: folderViewer.close()
                 onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
+            }
+        }
+
+        FadeLoader {
+            id: helpOverlay
+            anchors.fill: parent
+            z: 21
+            shown: false
+            sourceComponent: HelpOverlay {
+                onClosed: helpOverlay.shown = false
             }
         }
     }
