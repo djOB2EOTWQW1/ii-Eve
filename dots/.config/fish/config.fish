@@ -11,20 +11,19 @@ if status is-interactive
         starship init fish | source
         enable_transience
     end
+
     # Colors
     if test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt
         cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
-    end
-
-    if status is-interactive
-        alias cat 'bat --paging=never'
     end
 
     if test "$TERM" != "linux"
         alias ls 'eza --icons'
     end
 
-    zoxide init fish | source
-    fastfetch
+    if test "$TERM" = "xterm-kitty"
+        alias ssh 'kitten ssh'
+    end
 
+    fastfetch
 end
