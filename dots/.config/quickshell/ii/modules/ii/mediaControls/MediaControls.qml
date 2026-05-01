@@ -34,10 +34,18 @@ Scope {
             let p1 = players[i];
             let group = [i];
 
-            // Find duplicates by trackTitle prefix
             for (let j = i + 1; j < players.length; ++j) {
+                if (used.has(j))
+                    continue;
                 let p2 = players[j];
-                if (p1.trackTitle && p2.trackTitle && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle)) || (p1.position - p2.position <= 2 && p1.length - p2.length <= 2)) {
+                const titlesMatch = p1.trackTitle && p2.trackTitle
+                    && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle));
+                // Length must be non-zero so freshly-appeared idle players
+                // don't all collapse into the first one.
+                const timingsMatch = p1.length > 0 && p2.length > 0
+                    && Math.abs(p1.length - p2.length) <= 2
+                    && Math.abs(p1.position - p2.position) <= 2;
+                if (titlesMatch || timingsMatch) {
                     group.push(j);
                 }
             }

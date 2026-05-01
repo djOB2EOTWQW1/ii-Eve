@@ -287,8 +287,14 @@ Item { // Player instance
                         TrackChangeButton {
                             iconName: "keep"
                             buttonSize: 18
-                            fill: MprisController.activePlayer == root.player
-                            downAction: () => MprisController.activePlayer = root.player
+                            // Filled when this player's app is the persistent
+                            // pin (priorityPlayer), not just the currently-
+                            // active one.
+                            fill: {
+                                const entry = root.player?.desktopEntry ?? "";
+                                return entry !== "" && MprisController.priorityPlayer === entry;
+                            }
+                            downAction: () => MprisController.setActivePlayer(root.player)
                         }
                     }
 
