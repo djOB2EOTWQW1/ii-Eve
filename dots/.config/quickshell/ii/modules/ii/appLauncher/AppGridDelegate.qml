@@ -35,6 +35,36 @@ Item {
         ? CustomApps.folderPreviewIcons(delegateRoot.modelData, 4)
         : []
 
+    // Live reorder shift. While another tile is dragged toward a drop target,
+    // every tile between the dragged source and the drop target slides one
+    // grid cell toward the source so the user sees the layout update in real
+    // time (Dock.DockFileButton uses the same idea, just in 1D).
+    readonly property int _shiftedIndex: {
+        const launcher = delegateRoot.launcher
+        if (!launcher) return delegateRoot.index
+        const dragIdx = launcher.draggedGridIndex
+        const dropIdx = launcher.dropGridIndex
+        if (dragIdx < 0 || dropIdx < 0 || dragIdx === dropIdx) return delegateRoot.index
+        if (delegateRoot.index === dragIdx) return delegateRoot.index
+        if (dragIdx < dropIdx && delegateRoot.index > dragIdx && delegateRoot.index <= dropIdx)
+            return delegateRoot.index - 1
+        if (dragIdx > dropIdx && delegateRoot.index >= dropIdx && delegateRoot.index < dragIdx)
+            return delegateRoot.index + 1
+        return delegateRoot.index
+    }
+
+    readonly property real _shiftDx: {
+        const cols = delegateRoot.launcher?.gridColumns ?? 1
+        const cellW = delegateRoot.launcher?.gridCellWidth ?? 0
+        return ((delegateRoot._shiftedIndex % cols) - (delegateRoot.index % cols)) * cellW
+    }
+
+    readonly property real _shiftDy: {
+        const cols = delegateRoot.launcher?.gridColumns ?? 1
+        const cellH = delegateRoot.launcher?.gridCellHeight ?? 0
+        return (Math.floor(delegateRoot._shiftedIndex / cols) - Math.floor(delegateRoot.index / cols)) * cellH
+    }
+
     Timer {
         id: longPressTimer
         interval: 500
@@ -46,13 +76,37 @@ Item {
         }
     }
 
-    VimiumHintLabel {
-        x: 12
-        y: 12
-        hintText: delegateRoot.launcher?.vimiumHints[delegateRoot.index + 2] ?? ""
-        typedText: delegateRoot.launcher?.vimiumTyped ?? ""
-        vimiumActive: delegateRoot.launcher?.vimiumActive ?? false
-    }
+    // Visuals (and the MouseAreas that drag them) live inside this wrapper so
+    // the live-shift Translate moves the visual but NOT the DropAreas declared
+    // as siblings below. Putting the DropArea inside the translated subtree
+    // would carry its hit zone along with the shift — the cursor would slide
+    // out of the DropArea immediately, fire onExited, the shift would revert,
+    // the cursor would re-enter, fire onEntered, and the cycle would oscillate
+    // every frame (the bug fixed in this commit).
+    Item {
+        id: visualWrapper
+        anchors.fill: parent
+
+        transform: Translate {
+            x: delegateRoot._shiftDx
+            y: delegateRoot._shiftDy
+            Behavior on x {
+                enabled: !(delegateRoot.launcher?.suppressAnim ?? false)
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
+            Behavior on y {
+                enabled: !(delegateRoot.launcher?.suppressAnim ?? false)
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
+        }
+
+        VimiumHintLabel {
+            x: 12
+            y: 12
+            hintText: delegateRoot.launcher?.vimiumHints[delegateRoot.index + 2] ?? ""
+            typedText: delegateRoot.launcher?.vimiumTyped ?? ""
+            vimiumActive: delegateRoot.launcher?.vimiumActive ?? false
+        }
 
     // Android 16 style folder tile: rounded-square preview container
     // with up to 4 mini app icons in a 2x2 grid.
@@ -70,6 +124,47 @@ Item {
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+        }
+
+        Drag.active: folderHoverArea.drag.active && !(delegateRoot.launcher?.selectionModeActive ?? false)
+        Drag.source: folderHoverArea
+        Drag.hotSpot.x: width / 2
+        Drag.hotSpot.y: height / 2
+        Drag.supportedActions: Qt.MoveAction
+
+        states: State {
+            name: "dragging"
+            when: folderTileItem.Drag.active
+            PropertyChanges {
+                target: folderTileItem
+                anchors.fill: undefined
+                anchors.margins: 0
+                opacity: 0.88
+                scale: 1.04
+                z: 50
+            }
+            ParentChange {
+                target: folderTileItem
+                parent: delegateRoot.innerLayer
+            }
+        }
+
+        Behavior on scale {
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            visible: delegateRoot.isFolder
+                && delegateRoot.launcher?.reorderTargetFolderId === delegateRoot.folderId
+                && delegateRoot.launcher?.draggedFolderId !== delegateRoot.folderId
+            color: Appearance.colors.colPrimaryContainer
+            opacity: 0.35
+
+            Behavior on opacity {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
         }
 
         ColumnLayout {
@@ -125,35 +220,51 @@ Item {
             }
         }
 
-        // Drop target covers the whole tile (icon + label) so it's
-        // reachable even at the smallest icon sizes.
-        DropArea {
-            id: folderDropArea
-            anchors.fill: parent
-            onEntered: (drag) => {
-                if ((delegateRoot.launcher?.draggedEntryIndex ?? -1) < 0) return
-                delegateRoot.launcher.hoverFolderId = delegateRoot.folderId
-                drag.accept(Qt.MoveAction)
-            }
-            onExited: {
-                if (delegateRoot.launcher?.hoverFolderId === delegateRoot.folderId) {
-                    delegateRoot.launcher.hoverFolderId = ""
-                }
-            }
-        }
-
         MouseArea {
             id: folderHoverArea
             anchors.fill: parent
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            drag.target: (delegateRoot.launcher?.selectionModeActive ?? false) ? null : folderTileItem
+            drag.threshold: 8
+            preventStealing: true
+
+            onPressed: (mouse) => {
+                if (mouse.button === Qt.LeftButton) {
+                    delegateRoot.launcher.draggedFolderId = delegateRoot.folderId
+                }
+            }
             onClicked: (mouse) => {
                 if (mouse.button === Qt.RightButton) {
                     const pos = folderHoverArea.mapToItem(delegateRoot.launcher, mouse.x, mouse.y)
                     delegateRoot.contextMenuForFolderRequested(delegateRoot.folderId, pos.x, pos.y)
                     return
                 }
+                if (folderTileItem.Drag.active) return
                 delegateRoot.openFolderRequested(delegateRoot.modelData)
+            }
+            onReleased: {
+                const launcher = delegateRoot.launcher
+                const reorderTargetId = launcher.reorderTargetFolderId
+                const sourceId = delegateRoot.folderId
+                launcher.suppressAnim = true
+                launcher.draggedFolderId = ""
+                launcher.reorderTargetFolderId = ""
+                if (reorderTargetId.length > 0 && reorderTargetId !== sourceId) {
+                    const fromIdx = CustomApps._folderIndexOfId(sourceId)
+                    const toIdx = CustomApps._folderIndexOfId(reorderTargetId)
+                    if (fromIdx >= 0 && toIdx >= 0) {
+                        CustomApps.moveFolder(fromIdx, toIdx)
+                    }
+                }
+                Qt.callLater(() => launcher.suppressAnim = false)
+            }
+            onCanceled: {
+                const launcher = delegateRoot.launcher
+                launcher.suppressAnim = true
+                launcher.draggedFolderId = ""
+                launcher.reorderTargetFolderId = ""
+                Qt.callLater(() => launcher.suppressAnim = false)
             }
         }
     }
@@ -240,6 +351,20 @@ Item {
             }
         }
 
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            visible: !delegateRoot.isFolder
+                && delegateRoot.launcher?.reorderTargetEntryIndex === delegateRoot.entryIndex
+                && delegateRoot.launcher?.draggedEntryIndex !== delegateRoot.entryIndex
+            color: Appearance.colors.colPrimaryContainer
+            opacity: 0.35
+
+            Behavior on opacity {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
+        }
+
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 10
@@ -316,18 +441,95 @@ Item {
             }
             onReleased: {
                 longPressTimer.stop()
-                const targetFolder = delegateRoot.launcher.hoverFolderId
+                const launcher = delegateRoot.launcher
+                const targetFolder = launcher.hoverFolderId
+                const reorderTarget = launcher.reorderTargetEntryIndex
                 const idx = delegateRoot.entryIndex
-                delegateRoot.launcher.hoverFolderId = ""
-                delegateRoot.launcher.draggedEntryIndex = -1
-                if (!delegateRoot.launcher.selectionModeActive && targetFolder.length > 0 && idx >= 0) {
-                    CustomApps.addAppToFolder(targetFolder, idx)
+                const inSelection = launcher.selectionModeActive
+                launcher.suppressAnim = true
+                launcher.hoverFolderId = ""
+                launcher.draggedEntryIndex = -1
+                launcher.reorderTargetEntryIndex = -1
+                if (!inSelection && idx >= 0) {
+                    if (targetFolder.length > 0) {
+                        CustomApps.addAppToFolder(targetFolder, idx)
+                    } else if (reorderTarget >= 0 && reorderTarget !== idx) {
+                        CustomApps.moveAppInEntries(idx, reorderTarget)
+                    }
                 }
+                Qt.callLater(() => launcher.suppressAnim = false)
             }
             onCanceled: {
                 longPressTimer.stop()
-                delegateRoot.launcher.hoverFolderId = ""
-                delegateRoot.launcher.draggedEntryIndex = -1
+                const launcher = delegateRoot.launcher
+                launcher.suppressAnim = true
+                launcher.hoverFolderId = ""
+                launcher.draggedEntryIndex = -1
+                launcher.reorderTargetEntryIndex = -1
+                Qt.callLater(() => launcher.suppressAnim = false)
+            }
+        }
+
+    }
+    } // visualWrapper
+
+    // Drop targets sit OUTSIDE visualWrapper so the live-shift Translate does
+    // not move the hit zone with the visual. Their `enabled` clauses gate them
+    // by tile kind so each delegate exposes only the drop logic that matches
+    // the visible tile.
+
+    // Folder drop target. Accepts both folder-reorder drags (sets
+    // reorderTargetFolderId) and app-into-folder drags (sets hoverFolderId).
+    // Splitting these into two stacked DropAreas would let the topmost one
+    // swallow the event without accepting it, so this handles both cases.
+    DropArea {
+        id: folderDropArea
+        anchors.fill: parent
+        enabled: delegateRoot.isFolder && !folderTileItem.Drag.active
+        onEntered: (drag) => {
+            const launcher = delegateRoot.launcher
+            if (!launcher) return
+            const draggingFolder = (launcher.draggedFolderId ?? "") !== ""
+            const draggingApp = (launcher.draggedEntryIndex ?? -1) >= 0
+            if (draggingFolder) {
+                if (launcher.draggedFolderId === delegateRoot.folderId) return
+                launcher.reorderTargetFolderId = delegateRoot.folderId
+                drag.accept(Qt.MoveAction)
+            } else if (draggingApp) {
+                launcher.hoverFolderId = delegateRoot.folderId
+                drag.accept(Qt.MoveAction)
+            }
+        }
+        onExited: {
+            const launcher = delegateRoot.launcher
+            if (!launcher) return
+            if (launcher.reorderTargetFolderId === delegateRoot.folderId) {
+                launcher.reorderTargetFolderId = ""
+            }
+            if (launcher.hoverFolderId === delegateRoot.folderId) {
+                launcher.hoverFolderId = ""
+            }
+        }
+    }
+
+    // App reorder drop target.
+    DropArea {
+        id: reorderDropArea
+        anchors.fill: parent
+        enabled: !delegateRoot.isFolder && !appTile.Drag.active
+        onEntered: (drag) => {
+            const launcher = delegateRoot.launcher
+            if (!launcher) return
+            if ((launcher.draggedEntryIndex ?? -1) < 0) return     // not dragging an app
+            if ((launcher.draggedFolderId ?? "") !== "") return   // dragging a folder
+            if (launcher.draggedEntryIndex === delegateRoot.entryIndex) return  // onto itself
+            launcher.reorderTargetEntryIndex = delegateRoot.entryIndex
+            drag.accept(Qt.MoveAction)
+        }
+        onExited: {
+            const launcher = delegateRoot.launcher
+            if (launcher && launcher.reorderTargetEntryIndex === delegateRoot.entryIndex) {
+                launcher.reorderTargetEntryIndex = -1
             }
         }
     }

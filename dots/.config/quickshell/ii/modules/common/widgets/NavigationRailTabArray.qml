@@ -7,7 +7,7 @@ Item {
     id: root
     property int currentIndex: 0
     property bool expanded: false
-    default property alias data: tabBarColumn.data
+    default property alias content: tabBarColumn.data
     property bool _isInitialized: false
     Component.onCompleted: _isInitialized = true
 

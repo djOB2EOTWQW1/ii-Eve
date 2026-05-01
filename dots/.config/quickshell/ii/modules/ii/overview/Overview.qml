@@ -120,14 +120,6 @@ Scope {
                     }
                 }
 
-                Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Escape) {
-                        GlobalStates.overviewOpen = false;
-                    }
-                }
-
-                
-
                 Timer {
                     id: delayedGrabTimer
                     interval: Config.options.hacks.arbitraryRaceConditionDelay
@@ -155,6 +147,13 @@ Scope {
                 Item {
                     id: contentItem
                     anchors.fill: parent
+                    focus: true
+
+                    Keys.onPressed: event => {
+                        if (event.key === Qt.Key_Escape) {
+                            GlobalStates.overviewOpen = false;
+                        }
+                    }
 
                     MouseArea { // We could have used PanelWindow.mask to detect this, but this is more stable
                         anchors.fill: parent

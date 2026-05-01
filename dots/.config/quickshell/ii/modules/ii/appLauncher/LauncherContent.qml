@@ -27,12 +27,67 @@ MouseArea {
     // Cleared on drop/release. Uses folder id to survive model updates.
     property string hoverFolderId: ""
     property int draggedEntryIndex: -1
+    // Active folder-drag id; "" when no folder is being dragged.
+    property string draggedFolderId: ""
+    // Reorder target — entryIndex of the app tile being hovered, or -1.
+    property int reorderTargetEntryIndex: -1
+    // Reorder target — folderId of the folder tile being hovered, or "".
+    property string reorderTargetFolderId: ""
     // True while an external file-manager drag (source === null) hovers over the launcher.
     property bool externalDragHover: false
+
+    // Suppresses the per-delegate shift Behaviors during the brief window
+    // around model reorders so nothing animates between snapping the drag
+    // state to idle and the model rebuild settling.
+    property bool suppressAnim: false
 
     // Folder objects pass through unwrapped — the delegate identifies them by
     // the presence of `appIndices` (folders have it, root entries don't).
     readonly property var gridModel: (CustomApps.folders || []).concat(CustomApps.rootEntries || [])
+
+    readonly property int gridColumns: appGrid.columns
+    readonly property real gridCellWidth: appGrid.cellWidth
+    readonly property real gridCellHeight: appGrid.cellHeight
+
+    // Position in gridModel of the currently dragged tile (app or folder), or -1.
+    readonly property int draggedGridIndex: {
+        const arr = root.gridModel
+        if (root.draggedEntryIndex >= 0) {
+            for (let i = 0; i < arr.length; i++) {
+                const it = arr[i]
+                if (it && !it.appIndices && it._originalIndex === root.draggedEntryIndex) return i
+            }
+            return -1
+        }
+        if (root.draggedFolderId.length > 0) {
+            for (let i = 0; i < arr.length; i++) {
+                const it = arr[i]
+                if (it && it.appIndices && it.id === root.draggedFolderId) return i
+            }
+        }
+        return -1
+    }
+
+    // Position in gridModel of the current reorder target, or -1. Folder
+    // add-targets (hoverFolderId without reorderTarget*) intentionally don't
+    // count — they don't reorder the grid.
+    readonly property int dropGridIndex: {
+        const arr = root.gridModel
+        if (root.reorderTargetEntryIndex >= 0) {
+            for (let i = 0; i < arr.length; i++) {
+                const it = arr[i]
+                if (it && !it.appIndices && it._originalIndex === root.reorderTargetEntryIndex) return i
+            }
+            return -1
+        }
+        if (root.reorderTargetFolderId.length > 0) {
+            for (let i = 0; i < arr.length; i++) {
+                const it = arr[i]
+                if (it && it.appIndices && it.id === root.reorderTargetFolderId) return i
+            }
+        }
+        return -1
+    }
 
     property bool vimiumActive: false
     property string vimiumTyped: ""
@@ -423,6 +478,21 @@ MouseArea {
             ScrollBar.vertical: StyledScrollBar {}
 
             model: root.gridModel
+
+            move: Transition {
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+            moveDisplaced: Transition {
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             delegate: AppGridDelegate {
                 width: appGrid.cellWidth

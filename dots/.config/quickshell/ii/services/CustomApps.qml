@@ -357,6 +357,55 @@ Singleton {
         return true
     }
 
+    function moveFolder(fromIdx, toIdx) {
+        if (fromIdx < 0 || fromIdx >= root.folders.length) return false
+        if (toIdx < 0 || toIdx >= root.folders.length) return false
+        if (fromIdx === toIdx) return false
+        const next = Array.from(root.folders)
+        const [item] = next.splice(fromIdx, 1)
+        next.splice(toIdx, 0, item)
+        customAppsAdapter.folders = next
+        root.changed()
+        return true
+    }
+
+    function moveAppInEntries(fromIdx, toIdx) {
+        if (fromIdx < 0 || fromIdx >= root.entries.length) return false
+        if (toIdx < 0 || toIdx >= root.entries.length) return false
+        if (fromIdx === toIdx) return false
+        if (root._isEntryInAnyFolder(fromIdx)) {
+            console.warn("[CustomApps] moveAppInEntries called on a foldered index; refusing")
+            return false
+        }
+
+        const nextEntries = Array.from(root.entries)
+        const [item] = nextEntries.splice(fromIdx, 1)
+        nextEntries.splice(toIdx, 0, item)
+
+        // The moved entry lives in the root by invariant, so its own index
+        // does not appear in any folder's appIndices — we only need to shift
+        // the other indices that fall in the [lo, hi] range.
+        const lo = Math.min(fromIdx, toIdx)
+        const hi = Math.max(fromIdx, toIdx)
+        const dir = (fromIdx < toIdx) ? -1 : +1
+        const nextFolders = Array.from(root.folders)
+        for (let i = 0; i < nextFolders.length; i++) {
+            const f = Object.assign({}, nextFolders[i])
+            const arr = Array.from(f.appIndices || [])
+            for (let j = 0; j < arr.length; j++) {
+                const v = arr[j]
+                if (v >= lo && v <= hi) arr[j] = v + dir
+            }
+            f.appIndices = arr
+            nextFolders[i] = f
+        }
+
+        customAppsAdapter.entries = nextEntries
+        customAppsAdapter.folders = nextFolders
+        root.changed()
+        return true
+    }
+
     function renameFolder(folderId, newName) {
         const fi = root._folderIndexOfId(folderId)
         if (fi < 0) return false
@@ -467,6 +516,28 @@ Singleton {
             customAppsAdapter.entries = nextEntries
         }
 
+        root.changed()
+        return true
+    }
+
+    function moveAppInFolder(folderId, fromPos, toPos) {
+        const fi = root._folderIndexOfId(folderId)
+        if (fi < 0) return false
+        const folder = root.folders[fi]
+        const appIndices = folder.appIndices || []
+        if (fromPos < 0 || fromPos >= appIndices.length) return false
+        if (toPos < 0 || toPos >= appIndices.length) return false
+        if (fromPos === toPos) return false
+
+        const newAppIndices = Array.from(appIndices)
+        const [item] = newAppIndices.splice(fromPos, 1)
+        newAppIndices.splice(toPos, 0, item)
+
+        const nextFolders = Array.from(root.folders)
+        const f = Object.assign({}, nextFolders[fi])
+        f.appIndices = newAppIndices
+        nextFolders[fi] = f
+        customAppsAdapter.folders = nextFolders
         root.changed()
         return true
     }

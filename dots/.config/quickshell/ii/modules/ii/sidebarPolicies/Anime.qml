@@ -493,16 +493,15 @@ Item {
                             }
                         }
                     }
+                }
 
-                    PagePlaceholder {
-                        Layout.alignment: Qt.AlignCenter
-                        visible: (Persistent.states.booru.searchHistory ?? []).length === 0
-                        shown: (Persistent.states.booru.searchHistory ?? []).length === 0
-                        icon: "manage_search"
-                        title: Translation.tr("No history yet")
-                        description: ""
-                        shape: MaterialShape.Shape.Cookie7Sided
-                    }
+                PagePlaceholder {
+                    visible: (Persistent.states.booru.searchHistory ?? []).length === 0
+                    shown: (Persistent.states.booru.searchHistory ?? []).length === 0
+                    icon: "manage_search"
+                    title: Translation.tr("No history yet")
+                    description: ""
+                    shape: MaterialShape.Shape.Cookie7Sided
                 }
             }
             // HISTORY BLOCK

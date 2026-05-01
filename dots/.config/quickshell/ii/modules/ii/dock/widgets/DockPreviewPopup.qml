@@ -162,14 +162,16 @@ PopupWindow {
                         ButtonGroup {
                             contentWidth: parent.width - anchors.margins * 2
 
-                            WrapperRectangle {
+                            Rectangle {
                                 Layout.fillWidth: true
                                 color: ColorUtils.transparentize(Appearance.colors.colSurfaceContainer)
                                 radius: Appearance.rounding.small
-                                margin: 5
+                                implicitHeight: titleText.implicitHeight + 10
 
                                 StyledText {
-                                    Layout.fillWidth: true
+                                    id: titleText
+                                    anchors.fill: parent
+                                    anchors.margins: 5
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     text: windowButton.modelData?.title ?? ""
                                     elide: Text.ElideRight
