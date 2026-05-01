@@ -38,7 +38,10 @@ MouseArea {
             activePlayer.next();
         } else if (event.button === Qt.LeftButton) {
             var globalPos = root.mapToItem(null, 0, 0);
-            Persistent.states.media.popupRect = Qt.rect(globalPos.x, globalPos.y, root.width, root.height);
+            Persistent.states.media.popupRect.x = globalPos.x;
+            Persistent.states.media.popupRect.y = globalPos.y;
+            Persistent.states.media.popupRect.width = root.width;
+            Persistent.states.media.popupRect.height = root.height;
             GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
         }
     }

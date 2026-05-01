@@ -34,7 +34,7 @@ Singleton {
 			activePlayer = nextPlayer;
 			return;
 		} else {
-			activePlayer = players[0];
+			activePlayer = players[0] ?? null;
 		}
 	}
 

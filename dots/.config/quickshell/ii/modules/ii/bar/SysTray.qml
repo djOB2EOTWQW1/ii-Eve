@@ -25,10 +25,11 @@ Item {
 
     function updateVisibility() {
         const hasAnyItems = pinnedItems.length > 0 || unpinnedItems.length > 0;
-        rootItem.toggleVisible(hasAnyItems);
+        if (typeof rootItem !== "undefined" && rootItem)
+            rootItem.toggleVisible(hasAnyItems);
 
-        if (unpinnedItems.length === 0) {
-            root.closeOverflowMenu();
+        if (unpinnedItems.length === 0 && focusGrab) {
+            focusGrab.active = false;
         }
     }
 

@@ -206,7 +206,12 @@ Singleton {
                 }
             }
             property JsonObject media: JsonObject {
-                property rect popupRect: Qt.rect(0, 0, 0, 0)
+                property JsonObject popupRect: JsonObject {
+                    property real x: 0
+                    property real y: 0
+                    property real width: 0
+                    property real height: 0
+                }
             }
 
             property JsonObject wallpaper: JsonObject {

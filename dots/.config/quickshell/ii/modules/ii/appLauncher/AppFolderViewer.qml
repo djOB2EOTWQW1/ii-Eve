@@ -22,6 +22,15 @@ Item {
     property bool selectionModeActive: false
     property var selectedAppIndices: []
 
+    // Folder-internal drag-reorder state. Positions are indexes into
+    // folder.appIndices, not entries indexes.
+    property int draggedFolderAppPos: -1
+    property int reorderTargetFolderAppPos: -1
+
+    // Suppresses per-delegate shift Behaviors during the model-reorder snap
+    // on release; same trick as Dock and the main launcher grid.
+    property bool suppressAnim: false
+
     function toggleAppSelection(originalIndex) {
         const arr = selectedAppIndices.slice();
         const pos = arr.indexOf(originalIndex);
@@ -245,6 +254,21 @@ Item {
                     return root.folder ? CustomApps.appsInFolder(root.folder.id) : []
                 }
 
+                move: Transition {
+                    NumberAnimation {
+                        properties: "x,y"
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                moveDisplaced: Transition {
+                    NumberAnimation {
+                        properties: "x,y"
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
                 delegate: Item {
                     id: folderAppDelegate
                     required property var modelData
@@ -253,6 +277,29 @@ Item {
                     height: folderAppsGrid.cellHeight
 
                     readonly property bool isSelected: root.selectedAppIndices.indexOf(folderAppDelegate.modelData._originalIndex) >= 0
+
+                    // Live reorder shift: tiles between the dragged source
+                    // and the current drop target slide one cell toward the
+                    // source so the layout reflows in real time.
+                    readonly property int _shiftedIndex: {
+                        const dragIdx = root.draggedFolderAppPos
+                        const dropIdx = root.reorderTargetFolderAppPos
+                        if (dragIdx < 0 || dropIdx < 0 || dragIdx === dropIdx) return folderAppDelegate.index
+                        if (folderAppDelegate.index === dragIdx) return folderAppDelegate.index
+                        if (dragIdx < dropIdx && folderAppDelegate.index > dragIdx && folderAppDelegate.index <= dropIdx)
+                            return folderAppDelegate.index - 1
+                        if (dragIdx > dropIdx && folderAppDelegate.index >= dropIdx && folderAppDelegate.index < dragIdx)
+                            return folderAppDelegate.index + 1
+                        return folderAppDelegate.index
+                    }
+                    readonly property real _shiftDx: {
+                        const cols = folderAppsGrid.columns
+                        return ((_shiftedIndex % cols) - (folderAppDelegate.index % cols)) * folderAppsGrid.cellWidth
+                    }
+                    readonly property real _shiftDy: {
+                        const cols = folderAppsGrid.columns
+                        return (Math.floor(_shiftedIndex / cols) - Math.floor(folderAppDelegate.index / cols)) * folderAppsGrid.cellHeight
+                    }
 
                     Timer {
                         id: folderLongPressTimer
@@ -265,12 +312,160 @@ Item {
                         }
                     }
 
-                    VimiumHintLabel {
-                        x: 4
-                        y: 4
-                        hintText: root.vimiumHints[folderAppDelegate.index + 2] ?? ""
-                        typedText: root.vimiumTyped
-                        vimiumActive: root.vimiumActive
+                    // Visuals (and the MouseArea that drags them) live inside this
+                    // wrapper so the live-shift Translate moves the visual but
+                    // NOT the DropArea declared as a sibling below. With the
+                    // DropArea inside the translated subtree, hovering a target
+                    // tile would shift it left, slide its DropArea out from
+                    // under the cursor, fire onExited, revert the shift, and
+                    // oscillate every frame.
+                    Item {
+                        id: visualWrapper
+                        anchors.fill: parent
+
+                        transform: Translate {
+                            x: folderAppDelegate._shiftDx
+                            y: folderAppDelegate._shiftDy
+                            Behavior on x {
+                                enabled: !root.suppressAnim
+                                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+                            Behavior on y {
+                                enabled: !root.suppressAnim
+                                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+                        }
+
+                        VimiumHintLabel {
+                            x: 4
+                            y: 4
+                            hintText: root.vimiumHints[folderAppDelegate.index + 2] ?? ""
+                            typedText: root.vimiumTyped
+                            vimiumActive: root.vimiumActive
+                        }
+
+                    Rectangle {
+                        id: folderAppTile
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        radius: Appearance.rounding.normal
+                        color: folderAppArea.pressed
+                            ? Appearance.colors.colLayer2Active
+                            : folderAppArea.containsMouse
+                                ? Appearance.colors.colLayer2Hover
+                                : "transparent"
+
+                        Drag.active: folderAppArea.drag.active && !root.selectionModeActive
+                        Drag.source: folderAppArea
+                        Drag.hotSpot.x: width / 2
+                        Drag.hotSpot.y: height / 2
+                        Drag.supportedActions: Qt.MoveAction
+
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
+
+                        states: State {
+                            name: "dragging"
+                            when: folderAppTile.Drag.active
+                            PropertyChanges {
+                                target: folderAppTile
+                                anchors.fill: undefined
+                                anchors.margins: 0
+                                opacity: 0.88
+                                scale: 1.04
+                                z: 50
+                            }
+                            ParentChange {
+                                target: folderAppTile
+                                parent: folderPanel
+                            }
+                        }
+
+                        Behavior on scale {
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            visible: folderAppDelegate.isSelected
+                            color: Appearance.colors.colPrimary
+                            opacity: 0.15
+                            z: 1
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            visible: folderAppDelegate.isSelected
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Appearance.colors.colPrimary
+                            z: 2
+                        }
+
+                        Rectangle {
+                            visible: folderAppDelegate.isSelected
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 4
+                            anchors.rightMargin: 4
+                            width: 20
+                            height: 20
+                            radius: 10
+                            color: Appearance.colors.colPrimary
+                            z: 3
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "check"
+                                iconSize: 13
+                                color: Appearance.colors.colOnPrimary
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            visible: root.reorderTargetFolderAppPos === folderAppDelegate.index
+                                && root.draggedFolderAppPos !== folderAppDelegate.index
+                            color: Appearance.colors.colPrimaryContainer
+                            opacity: 0.35
+
+                            Behavior on opacity {
+                                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+                        }
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            spacing: 4
+
+                            Image {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: root.iconSize
+                                Layout.preferredHeight: root.iconSize
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                source: {
+                                    const icon = folderAppDelegate.modelData.icon || ""
+                                    if (icon.startsWith("/")) return "file://" + icon
+                                    return Quickshell.iconPath(icon, "application-x-executable")
+                                }
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Text.ElideRight
+                                maximumLineCount: 2
+                                wrapMode: Text.Wrap
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                text: folderAppDelegate.modelData.name
+                            }
+                        }
                     }
 
                     MouseArea {
@@ -280,20 +475,42 @@ Item {
                         anchors.margins: 4
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        drag.target: root.selectionModeActive ? null : folderAppTile
+                        drag.threshold: 8
+                        preventStealing: true
 
                         onPressed: (mouse) => {
                             if (mouse.button === Qt.LeftButton) {
                                 longPressActivated = false;
+                                root.draggedFolderAppPos = folderAppDelegate.index;
                                 if (!root.selectionModeActive)
                                     folderLongPressTimer.start();
                             }
                         }
                         onPositionChanged: {
-                            if (folderLongPressTimer.running)
+                            if (drag.active && folderLongPressTimer.running)
                                 folderLongPressTimer.stop();
                         }
-                        onReleased: folderLongPressTimer.stop()
-                        onCanceled: folderLongPressTimer.stop()
+                        onReleased: {
+                            folderLongPressTimer.stop();
+                            const reorderTarget = root.reorderTargetFolderAppPos;
+                            const fromPos = folderAppDelegate.index;
+                            const inSelection = root.selectionModeActive;
+                            root.suppressAnim = true;
+                            root.draggedFolderAppPos = -1;
+                            root.reorderTargetFolderAppPos = -1;
+                            if (!inSelection && reorderTarget >= 0 && reorderTarget !== fromPos && root.folder) {
+                                CustomApps.moveAppInFolder(root.folder.id, fromPos, reorderTarget);
+                            }
+                            Qt.callLater(() => root.suppressAnim = false);
+                        }
+                        onCanceled: {
+                            folderLongPressTimer.stop();
+                            root.suppressAnim = true;
+                            root.draggedFolderAppPos = -1;
+                            root.reorderTargetFolderAppPos = -1;
+                            Qt.callLater(() => root.suppressAnim = false);
+                        }
 
                         onClicked: (mouse) => {
                             if (longPressActivated) {
@@ -311,90 +528,28 @@ Item {
                                 root.toggleAppSelection(folderAppDelegate.modelData._originalIndex);
                                 return;
                             }
+                            if (folderAppTile.Drag.active) return;
                             CustomApps.launch(folderAppDelegate.modelData)
                             GlobalStates.appLauncherOpen = false
                             root.closed()
                         }
+                    }
+                    } // visualWrapper
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Appearance.rounding.normal
-                            color: folderAppArea.pressed
-                                ? Appearance.colors.colLayer2Active
-                                : folderAppArea.containsMouse
-                                    ? Appearance.colors.colLayer2Hover
-                                    : "transparent"
-
-                            Behavior on color {
-                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                            }
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: parent.radius
-                                visible: folderAppDelegate.isSelected
-                                color: Appearance.colors.colPrimary
-                                opacity: 0.15
-                                z: 1
-                            }
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: parent.radius
-                                visible: folderAppDelegate.isSelected
-                                color: "transparent"
-                                border.width: 2
-                                border.color: Appearance.colors.colPrimary
-                                z: 2
-                            }
-
-                            Rectangle {
-                                visible: folderAppDelegate.isSelected
-                                anchors.top: parent.top
-                                anchors.right: parent.right
-                                anchors.topMargin: 4
-                                anchors.rightMargin: 4
-                                width: 20
-                                height: 20
-                                radius: 10
-                                color: Appearance.colors.colPrimary
-                                z: 3
-
-                                MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    text: "check"
-                                    iconSize: 13
-                                    color: Appearance.colors.colOnPrimary
-                                }
-                            }
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                spacing: 4
-
-                                Image {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: root.iconSize
-                                    Layout.preferredHeight: root.iconSize
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    source: {
-                                        const icon = folderAppDelegate.modelData.icon || ""
-                                        if (icon.startsWith("/")) return "file://" + icon
-                                        return Quickshell.iconPath(icon, "application-x-executable")
-                                    }
-                                }
-
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    horizontalAlignment: Text.AlignHCenter
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 2
-                                    wrapMode: Text.Wrap
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    text: folderAppDelegate.modelData.name
-                                }
+                    DropArea {
+                        id: folderReorderDropArea
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        enabled: !folderAppTile.Drag.active
+                        onEntered: (drag) => {
+                            if (root.draggedFolderAppPos < 0) return
+                            if (root.draggedFolderAppPos === folderAppDelegate.index) return
+                            root.reorderTargetFolderAppPos = folderAppDelegate.index
+                            drag.accept(Qt.MoveAction)
+                        }
+                        onExited: {
+                            if (root.reorderTargetFolderAppPos === folderAppDelegate.index) {
+                                root.reorderTargetFolderAppPos = -1
                             }
                         }
                     }

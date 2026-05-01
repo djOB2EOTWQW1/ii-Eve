@@ -23,9 +23,11 @@ Item {
 
     function toggleVisible(visibility) {
         visible = visibility
-        if (barSection == 0) Config.options.bar.layouts.left[originalIndex].visible = visibility
-        else if (barSection == 1) Config.options.bar.layouts.center[originalIndex].visible = visibility
-        else if (barSection == 2) Config.options.bar.layouts.right[originalIndex].visible = visibility
+        let entry = null
+        if (barSection == 0) entry = Config.options.bar.layouts.left[originalIndex]
+        else if (barSection == 1) entry = Config.options.bar.layouts.center[originalIndex]
+        else if (barSection == 2) entry = Config.options.bar.layouts.right[originalIndex]
+        if (entry && entry.visible !== visibility) entry.visible = visibility
     }
 
     property var compMap: ({ // [horizontal, vertical]
@@ -89,8 +91,8 @@ Item {
         id: wrapper
         vertical: rootItem.vertical
         anchors {
-            verticalCenter: root.vertical ? rootItem.verticalCenter : undefined
-            horizontalCenter: root.vertical ? undefined : rootItem.horizontalCenter
+            verticalCenter: rootItem.vertical ? rootItem.verticalCenter : undefined
+            horizontalCenter: rootItem.vertical ? undefined : rootItem.horizontalCenter
         }
         
         startRadius: rootItem.startRadius
