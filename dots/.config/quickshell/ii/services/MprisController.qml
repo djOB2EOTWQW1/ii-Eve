@@ -18,35 +18,45 @@ Singleton {
 	id: root;
 	property list<MprisPlayer> allPlayers: Mpris.players.values;
 	property list<MprisPlayer> players: Mpris.players.values.filter(player => isRealPlayer(player));
-	property MprisPlayer trackedPlayer: null;
-	property MprisPlayer activePlayer: trackedPlayer ?? Mpris.players.values[0] ?? null;
-	signal trackChanged(reverse: bool);
 
+	// Desktop-entry name (e.g. "spotify") of the user-pinned app. Persisted
+	// via Config so the pin survives shell reloads. Empty = no manual pin.
 	property string priorityPlayer: Config.options.media.priorityPlayer;
+
+	// The currently-attached player whose desktopEntry matches priorityPlayer.
+	readonly property MprisPlayer pinnedPlayer: priorityPlayer
+		? (Mpris.players.values.find(p => p.desktopEntry === priorityPlayer) ?? null)
+		: null;
+
+	// Last player observed in the playing state — sticky on pause so the bar
+	// keeps showing the track you last played instead of jumping around.
+	// Cleared if the player disappears.
+	property MprisPlayer trackedPlayer: null;
+
+	// activePlayer is a pure derivation. Do NOT assign to it imperatively —
+	// that breaks the binding chain and freezes selection on whatever was
+	// last written (the old onAllPlayersChanged handler did this and was the
+	// reason the active player wouldn't auto-pin after a shell reload).
+	readonly property MprisPlayer activePlayer: pinnedPlayer
+		?? trackedPlayer
+		?? players.find(p => p.isPlaying)
+		?? players[0]
+		?? Mpris.players.values[0]
+		?? null;
+
+	signal trackChanged(reverse: bool);
 
 	property bool __reverse: false;
 
 	property var activeTrack;
 
-	onAllPlayersChanged: {
-		const nextPlayer = allPlayers.find(player => player.desktopEntry === root.priorityPlayer);
-		if (nextPlayer) {
-			activePlayer = nextPlayer;
-			return;
-		} else {
-			activePlayer = players[0] ?? null;
-		}
-	}
+	// True only when a plasma-browser-integration MPRIS bus is currently
+	// advertised on D-Bus — not merely when the host binary is installed.
+	// Without this, distros that ship plasma-browser-integration as a
+	// transitive dependency (e.g. CachyOS) hide native Firefox/Chromium
+	// players when the browser extension isn't installed.
+	property bool hasActivePlasmaIntegration: Mpris.players.values.some(p => p.dbusName?.startsWith('org.mpris.MediaPlayer2.plasma-browser-integration'))
 
-	property bool hasActivePlasmaIntegration: false
-    Process {
-        id: plasmaIntegrationAvailabilityCheckProc
-        running: true
-        command: ["bash", "-c", "command -v plasma-browser-integration-host"]
-        onExited: (exitCode, exitStatus) => {
-            root.hasActivePlasmaIntegration = (exitCode === 0);
-        }
-    }
 	function isRealPlayer(player) {
         if (!Config.options.media.filterDuplicatePlayers) {
             return true;
@@ -60,7 +70,11 @@ Singleton {
             !(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd')));
     }
 
-	// Original stuff from fox below
+	// Update trackedPlayer only when a player actually starts playing — never
+	// on pause. The activePlayer binding fans out the rest (pin > tracked >
+	// any-playing > first). Previously this handler reassigned trackedPlayer
+	// on every playbackState change, including pauses, which kept stealing
+	// focus to whatever paused last.
 	Instantiator {
 		model: Mpris.players;
 
@@ -69,28 +83,24 @@ Singleton {
 			target: modelData;
 
 			Component.onCompleted: {
-				if (root.trackedPlayer == null || modelData.isPlaying) {
+				// Capture players that were already playing when the shell
+				// (re)started — otherwise nothing seeds trackedPlayer until
+				// the user pauses/plays something manually.
+				if (modelData.isPlaying) {
 					root.trackedPlayer = modelData;
 				}
 			}
 
 			Component.onDestruction: {
-				if (root.trackedPlayer == null || !root.trackedPlayer.isPlaying) {
-					for (const player of Mpris.players.values) {
-						if (player.playbackState.isPlaying) {
-							root.trackedPlayer = player;
-							break;
-						}
-					}
-
-					if (trackedPlayer == null && Mpris.players.values.length != 0) {
-						trackedPlayer = Mpris.players.values[0];
-					}
+				if (root.trackedPlayer === modelData) {
+					root.trackedPlayer = null;
 				}
 			}
 
 			function onPlaybackStateChanged() {
-				if (root.trackedPlayer !== modelData) root.trackedPlayer = modelData;
+				if (modelData.isPlaying) {
+					root.trackedPlayer = modelData;
+				}
 			}
 		}
 	}
@@ -174,17 +184,29 @@ Singleton {
 		}
 	}
 
+	// User-initiated pin. Persists the choice via Config.options.media.priorityPlayer
+	// so the same app is selected automatically after a shell reload.
+	// Calling this on the player that's already pinned un-pins it.
 	function setActivePlayer(player: MprisPlayer) {
-		const targetPlayer = player ?? Mpris.players[0];
+		const targetPlayer = player ?? null;
 		console.log(`[Mpris] Active player ${targetPlayer} << ${activePlayer}`)
 
 		if (targetPlayer && this.activePlayer) {
-			this.__reverse = Mpris.players.indexOf(targetPlayer) < Mpris.players.indexOf(this.activePlayer);
+			const oldIdx = Mpris.players.values.indexOf(this.activePlayer);
+			const newIdx = Mpris.players.values.indexOf(targetPlayer);
+			this.__reverse = newIdx < oldIdx;
 		} else {
 			// always animate forward if going to null
 			this.__reverse = false;
 		}
 
+		const entry = targetPlayer?.desktopEntry ?? "";
+		if (entry !== "") {
+			Config.options.media.priorityPlayer =
+				(Config.options.media.priorityPlayer === entry) ? "" : entry;
+		}
+		// Drive trackedPlayer too so the change is visible immediately,
+		// without waiting for the Config write debounce.
 		this.trackedPlayer = targetPlayer;
 	}
 
