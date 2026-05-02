@@ -653,7 +653,8 @@ Singleton {
     function _buildLaunchPrefix(path) {
         const lp = Persistent.states.appLauncher?.launchParams
         if (!lp) return ""
-        const map = lp.perApp || {}
+        let map = {}
+        try { map = JSON.parse(lp.perAppJson || "{}") } catch (e) {}
         const entry = map[path]
         if (!entry) return ""
         const local = String(entry.params || "").trim()

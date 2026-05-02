@@ -124,20 +124,22 @@ ContentPage {
         }
 
         readonly property var selectedEntry: {
-            const map = page.lp?.perApp || {}
+            let map = {}
+            try { map = JSON.parse(page.lp?.perAppJson || "{}") } catch (e) {}
             return map[perAppSection.selectedPath] || null
         }
 
         function _writePerApp(path, params, useDefaults) {
             if (!page.lp || !path) return
             const trimmed = String(params || "").trim()
-            const next = Object.assign({}, page.lp.perApp || {})
+            let next = {}
+            try { next = JSON.parse(page.lp.perAppJson || "{}") } catch (e) {}
             if (trimmed.length === 0 && !useDefaults) {
                 delete next[path]
             } else {
                 next[path] = { params: trimmed, useDefaults: !!useDefaults }
             }
-            page.lp.perApp = next
+            page.lp.perAppJson = JSON.stringify(next)
         }
 
         component BinaryPicker: Item {

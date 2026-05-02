@@ -69,9 +69,10 @@ Singleton {
                     property bool defaultsObsVkCapture: false
                     property string defaultsExtra: ""
 
-                    // Per-binary overrides keyed by absolute path.
+                    // Per-binary overrides keyed by absolute path, serialized as JSON.
                     // Shape: { "/abs/path/to/bin": { params: "X=1 prefix", useDefaults: true } }
-                    property var perApp: ({})
+                    // Stored as a string because JsonAdapter can't serialize a `var` JS object.
+                    property string perAppJson: "{}"
                 }
             }
 
