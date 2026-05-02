@@ -61,6 +61,18 @@ Singleton {
             property JsonObject appLauncher: JsonObject {
                 property int iconSize: 64
                 property string windowSize: "settings"
+
+                property JsonObject launchParams: JsonObject {
+                    // Default parameters: fixed toggles + free-form extra prefix.
+                    property bool defaultsMangohud: false
+                    property bool defaultsGamemoderun: false
+                    property bool defaultsObsVkCapture: false
+                    property string defaultsExtra: ""
+
+                    // Per-binary overrides keyed by absolute path.
+                    // Shape: { "/abs/path/to/bin": { params: "X=1 prefix", useDefaults: true } }
+                    property var perApp: ({})
+                }
             }
 
             property JsonObject ai: JsonObject {
