@@ -650,6 +650,26 @@ Singleton {
         return `'${String(s).replace(/'/g, `'\\''`)}'`
     }
 
+    function _buildLaunchPrefix(path) {
+        const lp = Persistent.states.appLauncher?.launchParams
+        if (!lp) return ""
+        const map = lp.perApp || {}
+        const entry = map[path]
+        if (!entry) return ""
+        const local = String(entry.params || "").trim()
+        let defaults = ""
+        if (entry.useDefaults) {
+            const segs = []
+            if (lp.defaultsMangohud)     segs.push("MANGOHUD=1")
+            if (lp.defaultsGamemoderun)  segs.push("gamemoderun")
+            if (lp.defaultsObsVkCapture) segs.push("OBS_VKCAPTURE=1")
+            const extra = String(lp.defaultsExtra || "").trim()
+            if (extra.length > 0) segs.push(extra)
+            defaults = segs.join(" ")
+        }
+        return [defaults, local].filter(s => s.length > 0).join(" ")
+    }
+
     function launch(entry) {
         if (!entry || !entry.path) return
         const useDGpu = entry.gpu === "dGPU" && GpuInfo.hybrid
@@ -672,9 +692,15 @@ Singleton {
             return
         }
 
-        // Native binary / .AppImage / script — ensure +x, then exec directly
+        // Native binary / .AppImage / script — ensure +x, then exec directly.
+        // Optionally prepend per-app and default launch parameters.
+        const prefix = root._buildLaunchPrefix(path)
+        const quoted = root.shellQuote(path)
+        const cmdBody = prefix.length > 0
+            ? `${prefix} exec ${quoted}`
+            : `exec ${quoted}`
         Quickshell.execDetached({
-            command: [...envPrefix, "bash", "-c", `chmod +x ${root.shellQuote(path)} 2>/dev/null; exec ${root.shellQuote(path)}`]
+            command: [...envPrefix, "bash", "-c", `chmod +x ${quoted} 2>/dev/null; ${cmdBody}`]
         })
     }
 
