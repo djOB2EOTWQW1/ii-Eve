@@ -29,6 +29,11 @@ Item {
             name: Translation.tr("Quick"),
             icon: "instant_mix",
             component: "AppLauncherQuickConfig.qml"
+        },
+        {
+            name: Translation.tr("Launch Parameters"),
+            icon: "terminal",
+            component: "AppLauncherLaunchParamsConfig.qml"
         }
     ]
 
