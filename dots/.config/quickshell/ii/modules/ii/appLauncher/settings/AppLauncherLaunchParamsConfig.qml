@@ -297,5 +297,59 @@ ContentPage {
         BinaryPicker {
             id: binaryPicker
         }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: paramsInput.implicitHeight + 16
+            radius: Appearance.rounding.normal
+            color: Appearance.colors.colLayer1
+            opacity: perAppSection.selectedPath.length > 0 ? 1 : 0.4
+            enabled: perAppSection.selectedPath.length > 0
+
+            StyledTextInput {
+                id: paramsInput
+                anchors.fill: parent
+                anchors.margins: 8
+                verticalAlignment: TextInput.AlignVCenter
+                clip: true
+                text: perAppSection.selectedEntry?.params ?? ""
+                onEditingFinished: {
+                    perAppSection._writePerApp(
+                        perAppSection.selectedPath,
+                        text,
+                        perAppSection.selectedEntry?.useDefaults ?? false
+                    )
+                }
+            }
+
+            StyledText {
+                anchors.left: parent.left
+                anchors.leftMargin: 8 + (paramsInput.padding ?? 0)
+                anchors.verticalCenter: parent.verticalCenter
+                visible: paramsInput.text.length === 0 && !paramsInput.activeFocus
+                text: Translation.tr("Local parameters for this binary")
+                color: Appearance.colors.colSubtext
+                opacity: 0.7
+                font.pixelSize: paramsInput.font.pixelSize
+            }
+        }
+
+        ConfigSwitch {
+            Layout.fillWidth: true
+            enabled: perAppSection.selectedPath.length > 0
+            buttonIcon: "auto_fix"
+            text: Translation.tr("Also apply default parameters")
+            checked: perAppSection.selectedEntry?.useDefaults ?? false
+            onCheckedChanged: {
+                if (perAppSection.selectedPath.length === 0) return
+                const cur = perAppSection.selectedEntry?.useDefaults ?? false
+                if (cur === checked) return
+                perAppSection._writePerApp(
+                    perAppSection.selectedPath,
+                    perAppSection.selectedEntry?.params ?? "",
+                    checked
+                )
+            }
+        }
     }
 }
