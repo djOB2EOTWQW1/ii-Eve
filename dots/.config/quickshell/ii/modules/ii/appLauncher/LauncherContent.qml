@@ -117,9 +117,18 @@ MouseArea {
 
     readonly property var vimiumHints: LV.generateHints(2 + gridModel.length)
 
+    readonly property var _settingsRef: settingsOverlay.item?.settingsRef ?? null
+    readonly property int _settingsPagesCount: _settingsRef?.pages?.length ?? 0
+    readonly property int _settingsActiveActionCount: _settingsRef?.activeVimiumActionCount ?? 0
+
+    // Hint slot layout:
+    //   0                          → back (close settings)
+    //   1                          → toggle nav-rail expansion
+    //   2 .. 1 + pagesCount        → switch to page i (i = idx - 2)
+    //   2 + pagesCount .. end      → forwarded to active page's
+    //                                dispatchVimiumAction(localIdx)
     readonly property var settingsVimiumHints: {
-        const foldersLen = CustomApps.folders ? CustomApps.folders.length : 0
-        return LV.generateHints(5 + foldersLen)
+        return LV.generateHints(2 + _settingsPagesCount + _settingsActiveActionCount)
     }
 
     readonly property var folderVimiumHints: {
@@ -237,31 +246,23 @@ MouseArea {
     }
 
     function _dispatchSettingsVimium(idx) {
+        const ref = _settingsRef
         if (idx === 0) {
             settingsOverlay.shown = false
             return
         }
         if (idx === 1) {
-            if (settingsOverlay.item && settingsOverlay.item.settingsRef)
-                settingsOverlay.item.settingsRef.toggleNavExpand()
+            ref?.toggleNavExpand()
             return
         }
-        if (idx === 2) {
-            if (settingsOverlay.item && settingsOverlay.item.settingsRef)
-                settingsOverlay.item.settingsRef.currentPage = 0
+        const pagesCount = _settingsPagesCount
+        const pageIdx = idx - 2
+        if (pageIdx < pagesCount) {
+            if (ref) ref.currentPage = pageIdx
             return
         }
-        if (idx === 3) {
-            if (Persistent.states.appLauncher)
-                Persistent.states.appLauncher.windowSize = "current"
-            return
-        }
-        if (idx === 4) {
-            if (Persistent.states.appLauncher)
-                Persistent.states.appLauncher.windowSize = "settings"
-            return
-        }
-        CustomApps.removeFolderAt(idx - 5)
+        const localIdx = pageIdx - pagesCount
+        ref?.dispatchActiveVimium(localIdx)
     }
 
     onFolderVimiumTypedChanged: {

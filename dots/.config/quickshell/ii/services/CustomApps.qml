@@ -650,6 +650,39 @@ Singleton {
         return `'${String(s).replace(/'/g, `'\\''`)}'`
     }
 
+    function _buildLaunchPrefix(path) {
+        const lp = Persistent.states.appLauncher?.launchParams
+        if (!lp) return ""
+        let map = {}
+        try { map = JSON.parse(lp.perAppJson || "{}") } catch (e) {}
+        const entry = map[path] || null
+        // Defaults apply to every native binary unless the user has explicitly
+        // disabled them via a per-app entry with `useDefaults: false`.
+        const useDefaults = entry ? entry.useDefaults !== false : true
+        const local = entry ? String(entry.params || "").trim() : ""
+
+        let defaults = ""
+        if (useDefaults) {
+            const segs = []
+            // Wrapper order matches what works from a shell:
+            //   `mangohud gamemoderun /path/to/game`
+            // mangohud sets LD_PRELOAD then execs gamemoderun, which adds
+            // libgamemodeauto and execs the game.
+            if (lp.defaultsMangohud) {
+                const cfg = String(lp.defaultsMangohudConfig || "").trim()
+                if (lp.defaultsUseMangohudConfig && cfg.length > 0) {
+                    segs.push(`MANGOHUD_CONFIG='${cfg.replace(/'/g, `'\\''`)}'`)
+                }
+                segs.push("mangohud")
+            }
+            if (lp.defaultsGamemoderun) segs.push("gamemoderun")
+            const extra = String(lp.defaultsExtra || "").trim()
+            if (extra.length > 0) segs.push(extra)
+            defaults = segs.join(" ")
+        }
+        return [defaults, local].filter(s => s.length > 0).join(" ")
+    }
+
     function launch(entry) {
         if (!entry || !entry.path) return
         const useDGpu = entry.gpu === "dGPU" && GpuInfo.hybrid
@@ -672,9 +705,16 @@ Singleton {
             return
         }
 
-        // Native binary / .AppImage / script — ensure +x, then exec directly
+        // Native binary / .AppImage / script — ensure +x, cd to the binary's
+        // directory (Unity / .x86_64 games and .sh wrappers often expect
+        // resources relative to cwd), then run with optional launch prefix.
+        const prefix = root._buildLaunchPrefix(path)
+        const quoted = root.shellQuote(path)
+        const dir = root.shellQuote(path.substring(0, path.lastIndexOf('/')) || '/')
+        const cmdBody = prefix.length > 0 ? `${prefix} ${quoted}` : `exec ${quoted}`
         Quickshell.execDetached({
-            command: [...envPrefix, "bash", "-c", `chmod +x ${root.shellQuote(path)} 2>/dev/null; exec ${root.shellQuote(path)}`]
+            command: [...envPrefix, "bash", "-c",
+                `chmod +x ${quoted} 2>/dev/null; cd ${dir} 2>/dev/null; ${cmdBody}`]
         })
     }
 
