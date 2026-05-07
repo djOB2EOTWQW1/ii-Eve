@@ -52,6 +52,11 @@ Item {
         selectionModeActive = false;
     }
 
+    // Exposed to LauncherKeys for stack-style Escape dismissal: closing the
+    // per-item menu must take priority over closing the folder itself.
+    readonly property bool itemMenuVisible: folderItemMenu.visible
+    function closeItemMenu() { folderItemMenu.hide() }
+
     Rectangle {
         anchors.fill: parent
         color: Appearance.colors.colScrim
@@ -685,6 +690,7 @@ Item {
 
                 MenuButton {
                     Layout.fillWidth: true
+                    symbolName: "drive_file_rename_outline"
                     buttonText: Translation.tr("Rename")
                     onClicked: {
                         const idx = folderItemMenu.targetAppIndex
@@ -696,6 +702,7 @@ Item {
 
                 MenuButton {
                     Layout.fillWidth: true
+                    symbolName: "playlist_remove"
                     buttonText: Translation.tr("Remove from folder")
                     onClicked: {
                         const idx = folderItemMenu.targetAppIndex

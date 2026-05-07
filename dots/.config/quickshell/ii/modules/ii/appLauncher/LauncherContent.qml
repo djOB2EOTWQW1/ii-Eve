@@ -105,6 +105,13 @@ MouseArea {
     readonly property bool helpOverlayShown: helpOverlay.shown
     readonly property bool canActivateVimium: !contextMenu.visible && !renameDialog.visible && !helpOverlay.shown
 
+    // Surface popup-menu visibility for LauncherKeys so Escape can dismiss the
+    // menu first instead of cascading straight into closeFolder/launcher hide.
+    readonly property bool contextMenuVisible: contextMenu.visible
+    readonly property bool folderItemMenuVisible: folderViewer.item?.itemMenuVisible ?? false
+    function closeContextMenu() { contextMenu.hide() }
+    function closeFolderItemMenu() { folderViewer.item?.closeItemMenu() }
+
     function toggleHelp() {
         const opening = !helpOverlay.shown
         if (opening) {
@@ -707,8 +714,12 @@ MouseArea {
             const targetFolderId = folderViewer.active ? (folderViewer.folder?.id ?? "") : ""
             for (let i = 0; i < urls.length; i++) {
                 const filePath = urls[i].trim()
-                CustomApps.addApp(filePath)
-                if (targetFolderId.length > 0) {
+                // Only auto-place into the open folder when the drop creates a
+                // genuinely new entry. Otherwise an external drop would silently
+                // move an existing app between folders, which surprises users
+                // who expect file drops to behave purely as additions.
+                const added = CustomApps.addApp(filePath)
+                if (added && targetFolderId.length > 0) {
                     const idx = CustomApps.indexOfPath(filePath)
                     if (idx >= 0) CustomApps.addAppToFolder(targetFolderId, idx)
                 }

@@ -42,10 +42,9 @@ function handleKey(event, content, options) {
         return
     }
 
-    if (event.modifiers === Qt.ControlModifier) {
-        if (event.key === Qt.Key_D && options.onToggleDetach) {
-            options.onToggleDetach()
-        }
+    if (event.modifiers === Qt.ControlModifier
+        && event.key === Qt.Key_D && options.onToggleDetach) {
+        options.onToggleDetach()
         event.accepted = true
     }
 }
@@ -53,6 +52,18 @@ function handleKey(event, content, options) {
 function _handleEscape(event, content, inSettings, options) {
     if (content.helpOverlayShown) {
         content.toggleHelp()
+        event.accepted = true
+        return
+    }
+    // Stack-style dismissal: a popup menu must close on its own first so that a
+    // single Escape doesn't tear down the folder or launcher around it.
+    if (content.folderItemMenuVisible) {
+        content.closeFolderItemMenu()
+        event.accepted = true
+        return
+    }
+    if (content.contextMenuVisible) {
+        content.closeContextMenu()
         event.accepted = true
         return
     }
