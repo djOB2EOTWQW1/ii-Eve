@@ -366,6 +366,7 @@ Singleton {
                     property string city: "" // When 'enableGPS' is false
                     property bool useUSCS: false // Instead of metric (SI) units
                     property int fetchInterval: 10 // minutes
+                    property string provider: "wttr" // "wttr" | "open-meteo"
                 }
                 property JsonObject indicators: JsonObject {
                     property JsonObject notifications: JsonObject {

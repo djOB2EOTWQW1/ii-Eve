@@ -346,6 +346,31 @@ ContentPage {
     ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Weather")
+
+        ContentSubsection {
+            title: Translation.tr("Provider")
+            tooltip: Translation.tr("wttr.in is the default; switch to Open-Meteo if weather data looks wrong for your country.")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.weather.provider
+                onSelected: newValue => {
+                    Config.options.bar.weather.provider = newValue;
+                }
+                options: [
+                    {
+                        displayName: "wttr.in",
+                        icon: "cloud",
+                        value: "wttr"
+                    },
+                    {
+                        displayName: "Open-Meteo",
+                        icon: "public",
+                        value: "open-meteo"
+                    }
+                ]
+            }
+        }
+
         ConfigRow {
             ConfigSwitch {
                 buttonIcon: "assistant_navigation"
@@ -367,7 +392,7 @@ ContentPage {
                 }
             }
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("City name")
