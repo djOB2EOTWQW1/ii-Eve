@@ -650,12 +650,19 @@ Singleton {
         return `'${String(s).replace(/'/g, `'\\''`)}'`
     }
 
+    // Cached parse of Persistent.states.appLauncher.launchParams.perAppJson.
+    // Re-evaluates only when the JSON source string changes, so callers (this
+    // service's launch path and the settings UI) can index it as a plain object.
+    readonly property var perAppMap: {
+        const lp = Persistent.states.appLauncher?.launchParams
+        if (!lp) return ({})
+        try { return JSON.parse(lp.perAppJson || "{}") } catch (e) { return ({}) }
+    }
+
     function _buildLaunchPrefix(path) {
         const lp = Persistent.states.appLauncher?.launchParams
         if (!lp) return ""
-        let map = {}
-        try { map = JSON.parse(lp.perAppJson || "{}") } catch (e) {}
-        const entry = map[path] || null
+        const entry = root.perAppMap[path] || null
         // Defaults apply to every native binary unless the user has explicitly
         // disabled them via a per-app entry with `useDefaults: false`.
         const useDefaults = entry ? entry.useDefaults !== false : true

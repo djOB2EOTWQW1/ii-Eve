@@ -206,11 +206,7 @@ ContentPage {
             return out
         }
 
-        readonly property var selectedEntry: {
-            let map = {}
-            try { map = JSON.parse(page.lp?.perAppJson || "{}") } catch (e) {}
-            return map[perAppSection.selectedPath] || null
-        }
+        readonly property var selectedEntry: CustomApps.perAppMap[perAppSection.selectedPath] || null
 
         function _writePerApp(path, params, useDefaults) {
             if (!page.lp || !path) return
@@ -424,21 +420,42 @@ ContentPage {
                 verticalAlignment: TextInput.AlignVCenter
                 clip: true
                 text: perAppSection.selectedEntry?.params ?? ""
-                onEditingFinished: {
+
+                // Debounced auto-save: editingFinished only fires on Enter or
+                // graceful focus-loss, so an abrupt unload (launcher close, page
+                // switch) would otherwise drop unsaved keystrokes. Skip the
+                // write when text matches the stored value, otherwise re-binds
+                // from `selectedEntry` would needlessly create entries (and
+                // accidentally opt the binary out of defaults via the fallback).
+                function _flushSave() {
+                    saveDebounce.stop()
+                    if (perAppSection.selectedPath.length === 0) return
+                    const cur = perAppSection.selectedEntry
+                    const curParams = String(cur?.params ?? "").trim()
+                    const newParams = String(paramsInput.text || "").trim()
+                    if (newParams === curParams) return
                     perAppSection._writePerApp(
                         perAppSection.selectedPath,
-                        text,
-                        perAppSection.selectedEntry?.useDefaults ?? false
+                        paramsInput.text,
+                        cur?.useDefaults ?? true
                     )
                 }
+                Timer {
+                    id: saveDebounce
+                    interval: 250
+                    repeat: false
+                    onTriggered: paramsInput._flushSave()
+                }
+                onTextChanged: {
+                    if (perAppSection.selectedPath.length === 0) return
+                    saveDebounce.restart()
+                }
+                onEditingFinished: paramsInput._flushSave()
                 Keys.onEscapePressed: {
-                    perAppSection._writePerApp(
-                        perAppSection.selectedPath,
-                        text,
-                        perAppSection.selectedEntry?.useDefaults ?? false
-                    )
+                    paramsInput._flushSave()
                     paramsInput.focus = false
                 }
+                Component.onDestruction: paramsInput._flushSave()
             }
 
             StyledText {
