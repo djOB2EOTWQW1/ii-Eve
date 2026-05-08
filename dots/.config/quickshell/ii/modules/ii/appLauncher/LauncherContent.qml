@@ -19,6 +19,10 @@ MouseArea {
 
     anchors.fill: parent
     acceptedButtons: Qt.RightButton
+    // Right-click on the empty grid area must reach this MouseArea even
+    // when an inner element (GridView, Rectangle) sits between us and the
+    // cursor; without this Qt may swallow the press silently.
+    propagateComposedEvents: true
 
     readonly property int iconSize: Persistent.states.appLauncher?.iconSize ?? 64
 

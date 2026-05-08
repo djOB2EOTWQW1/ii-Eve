@@ -38,16 +38,20 @@ Rectangle {
     signal renameFolderRequested(string folderId, string currentName)
 
     function openAt() {
-        // ColumnLayout settles its implicitHeight on the next tick; force a
-        // layout pass so root.height reflects the current visible items
-        // before we clamp against the viewport — otherwise the menu can
-        // overshoot the bottom edge when opened near the screen edge.
-        menuColumn.forceLayout();
-        const maxX = parent.width - root.width - 8;
-        const maxY = parent.height - root.height - 8;
+        // Make the menu visible first so QtQuick.Layouts gets a chance to
+        // settle implicitHeight against the current visible items, then
+        // clamp on the next tick when root.height/width are valid. This
+        // avoids overshooting the viewport edge on the first open.
+        root.visible = true;
+        Qt.callLater(_clampPosition);
+    }
+
+    function _clampPosition() {
+        if (!root.parent || !root.visible) return;
+        const maxX = root.parent.width - root.width - 8;
+        const maxY = root.parent.height - root.height - 8;
         root.x = Math.max(8, Math.min(root.x, maxX));
         root.y = Math.max(8, Math.min(root.y, maxY));
-        root.visible = true;
     }
 
     // When the submenu was opened by a click on `More`, keep it open even if
