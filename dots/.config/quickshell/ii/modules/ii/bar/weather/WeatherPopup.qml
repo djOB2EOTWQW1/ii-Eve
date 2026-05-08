@@ -21,10 +21,21 @@ StyledPopup {
     property int maxHourlyBars: 5
 
     property var filteredHourlyData: {
-        const now = new Date();
-        const currentHr = now.getHours();
-        // Round down to nearest 3-hour slot (API intervals: 0, 3, 6, 9, 12, 15, 18, 21)
-        const currentSlot = Math.floor(currentHr / 3) * 3;
+        if (hourlyData.length === 0) return [];
+
+        // Detect the source's time step from the first two entries — wttr.in
+        // returns 3-hour slots, open-meteo returns 1-hour slots. Falling back
+        // to 3 keeps behavior unchanged for single-entry payloads.
+        let stepHours = 3;
+        if (hourlyData.length >= 2) {
+            const h0 = Math.floor(parseInt(hourlyData[0].time) / 100);
+            const h1 = Math.floor(parseInt(hourlyData[1].time) / 100);
+            const diff = (h1 - h0 + 24) % 24;
+            if (diff > 0) stepHours = diff;
+        }
+
+        const currentHr = new Date().getHours();
+        const currentSlot = Math.floor(currentHr / stepHours) * stepHours;
         let futureHours = [];
         let passedMidnight = false;
 
@@ -68,7 +79,9 @@ StyledPopup {
         const temps = data.map(h => Weather.useUSCS ? parseInt(h.tempF) : parseInt(h.tempC));
         const min = Math.min(...temps);
         const max = Math.max(...temps);
-        // Add 20% padding (minimum 2°) to make small differences more visible
+        // 20% padding (minimum 2°) — chosen so that a near-flat day (e.g.
+        // 22→23°C) still produces a visually meaningful bar height delta
+        // without exaggerating already-large swings.
         const padding = Math.max(2, (max - min) * 0.2);
         return {
             min: min - padding,
@@ -86,9 +99,9 @@ StyledPopup {
             Layout.minimumWidth: 320
             margins: 20
             iconSize: 100
-            icon: Icons.getWeatherIcon(Weather.data.wCode)
+            icon: Icons.getWeatherIcon(Weather.data.wCode) || "cloud_off"
             pillText: Weather.data.city || "--"
-            pillIcon: Weather.data.city ? "location_on" : ""
+            pillIcon: (Weather.data.city || "").length > 0 ? "location_on" : ""
             title: Weather.data.temp
             subtitle: Weather.data.wDesc
         }
@@ -103,7 +116,7 @@ StyledPopup {
             showDivider: false
             title: Translation.tr("Hourly")
             icon: "schedule"
-            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--").slice(0, 20)
+            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--")
         }
 
         MetricsGrid {

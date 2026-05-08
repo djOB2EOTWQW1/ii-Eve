@@ -10,6 +10,7 @@ SectionCard {
     property int hourlyChartHeight: 145
 
     Item {
+        id: chartArea
         Layout.fillWidth: true
         Layout.preferredHeight: hourlyForecastCard.hourlyChartHeight
         visible: !root.forecastLoading && root.filteredHourlyData.length > 0
@@ -34,8 +35,8 @@ SectionCard {
                     property int hourValue: Math.floor(parseInt(modelData.time) / 100)
                     property bool isCurrentHour: index === 0
                     property real temp: Weather.useUSCS ? parseInt(modelData.tempF) : parseInt(modelData.tempC)
-                    property var parentTempRange: root.getHourlyTempRange()
-                    property real parentTempSpan: Math.max(parentTempRange.max - parentTempRange.min, 1)
+                    property var parentTempRange: chartArea.tempRange
+                    property real parentTempSpan: chartArea.tempSpan
                     property real normalized: (temp - parentTempRange.min) / parentTempSpan
                     // Bar height: 45% min to 100% max for better visual contrast
                     property real availableBarSpace: parent.height - timeLabel.height + 10
@@ -74,7 +75,7 @@ SectionCard {
 
                             MaterialSymbol {
                                 Layout.alignment: Qt.AlignHCenter
-                                text: Icons.getWeatherIcon(modelData.code)
+                                text: Icons.getWeatherIcon(modelData.code) || "cloud_off"
                                 iconSize: Appearance.font.pixelSize.large
                                 color: isCurrentHour ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSecondaryContainer
                             }
