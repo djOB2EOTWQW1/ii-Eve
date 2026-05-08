@@ -24,6 +24,10 @@ Singleton {
     property alias dirs: customAppsAdapter.dirs
     property alias folders: customAppsAdapter.folders
     property bool ready: false
+    // Set to true while a multi-write transaction is in flight (e.g.
+    // removeAppAt, which has to update entries and folders together).
+    // Folder-derived readers should bail out quickly during the window.
+    property bool _suspendDerivedReads: false
 
     property bool winePresent: false
     property bool portprotonPresent: false
@@ -286,9 +290,14 @@ Singleton {
 
     function removeAppAt(index) {
         if (index < 0 || index >= root.entries.length) return false
-        const next = Array.from(root.entries)
-        next.splice(index, 1)
-        customAppsAdapter.entries = next
+
+        // Build both shrunken `entries` and re-indexed `folders` before
+        // touching the adapter so consumers (appsInFolder, gridModel) never
+        // observe an intermediate state where `entries` has been spliced
+        // but `folders.appIndices` still reference pre-splice positions —
+        // that briefly displays the wrong app under each folder slot.
+        const nextEntries = Array.from(root.entries)
+        nextEntries.splice(index, 1)
 
         const nextFolders = Array.from(root.folders)
         for (let i = 0; i < nextFolders.length; i++) {
@@ -303,7 +312,14 @@ Singleton {
             f.appIndices = patched
             nextFolders[i] = f
         }
+
+        // Suspend derived reads across both writes so any binding that
+        // re-evaluates between the two assignments returns an empty/safe
+        // value rather than mismatched (entries, folders).
+        root._suspendDerivedReads = true
+        customAppsAdapter.entries = nextEntries
         customAppsAdapter.folders = nextFolders
+        root._suspendDerivedReads = false
 
         root.changed()
         return true
@@ -591,6 +607,7 @@ Singleton {
     }
 
     function appsInFolder(folderId) {
+        if (root._suspendDerivedReads) return []
         const fi = root._folderIndexOfId(folderId)
         if (fi < 0) return []
         const appIndices = root.folders[fi].appIndices || []
@@ -659,6 +676,16 @@ Singleton {
         try { return JSON.parse(lp.perAppJson || "{}") } catch (e) { return ({}) }
     }
 
+    // Builds the wrapper-prefix that prepends `path` in the bash invocation
+    // assembled by launch().
+    //
+    // NOTE: defaultsExtra and per-app `params` are pasted verbatim into a
+    // `bash -c` command line. This is intentional — users routinely need
+    // shell features there (env-var expansions like `--data-dir "$HOME/x"`,
+    // multiple flags, glob patterns). The trade-off is that any `;`, `&&`,
+    // `` ` ``, `$(...)` in those fields *will* be interpreted by the shell.
+    // Treat both fields as user-trusted shell input; never feed external /
+    // untrusted text into them.
     function _buildLaunchPrefix(path) {
         const lp = Persistent.states.appLauncher?.launchParams
         if (!lp) return ""

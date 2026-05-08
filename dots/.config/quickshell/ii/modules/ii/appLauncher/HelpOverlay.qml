@@ -269,10 +269,6 @@ Item {
                         }
 
                         HelpRow {
-                            keyLabel: Translation.tr("Launch with dGPU / iGPU")
-                            descText: Translation.tr("Launch all apps in the folder once using the chosen GPU")
-                        }
-                        HelpRow {
                             keyLabel: Translation.tr("Set default to dGPU / iGPU")
                             descText: Translation.tr("Change the default GPU for the folder (no launch)")
                         }

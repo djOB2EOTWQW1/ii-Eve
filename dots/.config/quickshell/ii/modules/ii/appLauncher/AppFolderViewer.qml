@@ -619,6 +619,9 @@ Item {
 
             property int targetAppIndex: -1
             property string targetAppName: ""
+            // Same sticky-open trick as AppContextMenu: a click-opened submenu
+            // must not be auto-dismissed by the hover-out timer.
+            property bool _submenuStickyOpen: false
 
             readonly property string currentGpu: {
                 const e = CustomApps.entries[targetAppIndex]
@@ -637,6 +640,7 @@ Item {
                 folderItemOpenSubmenuTimer.stop()
                 folderItemCloseSubmenuTimer.stop()
                 folderItemSubmenu.visible = false
+                folderItemMenu._submenuStickyOpen = false
                 folderItemMenu.visible = false
             }
 
@@ -644,6 +648,7 @@ Item {
                 folderItemOpenSubmenuTimer.stop()
                 folderItemCloseSubmenuTimer.stop()
                 folderItemSubmenu.visible = !folderItemSubmenu.visible
+                folderItemMenu._submenuStickyOpen = folderItemSubmenu.visible
             }
 
             function _launchWithGpu(gpu) {
@@ -727,7 +732,8 @@ Item {
                                 if (!folderItemSubmenu.visible) folderItemOpenSubmenuTimer.start()
                             } else {
                                 folderItemOpenSubmenuTimer.stop()
-                                if (!folderItemSubmenuHover.hovered) folderItemCloseSubmenuTimer.start()
+                                if (!folderItemSubmenuHover.hovered && !folderItemMenu._submenuStickyOpen)
+                                    folderItemCloseSubmenuTimer.start()
                             }
                         }
                     }
@@ -755,7 +761,11 @@ Item {
                 }
 
                 y: {
-                    const desired = folderItemMoreButton.y
+                    // folderItemMoreButton.y is in folderItemMenuColumn's
+                    // space; submenu.y is in folderItemMenu's. Add the
+                    // column's top margin so the submenu lines up with the
+                    // anchor row instead of sitting above it.
+                    const desired = folderItemMoreButton.y + folderItemMenuColumn.anchors.margins
                     const maxY = folderPanel.height - folderItemMenu.y - folderItemSubmenu.height - 8
                     return Math.max(0, Math.min(desired, maxY))
                 }
@@ -775,7 +785,7 @@ Item {
                     onHoveredChanged: {
                         if (folderItemSubmenuHover.hovered) {
                             folderItemCloseSubmenuTimer.stop()
-                        } else if (!folderItemMoreHover.hovered) {
+                        } else if (!folderItemMoreHover.hovered && !folderItemMenu._submenuStickyOpen) {
                             folderItemCloseSubmenuTimer.start()
                         }
                     }

@@ -3,6 +3,7 @@
 // vimium/selection/settings state; `options` carries window-specific hooks:
 //   onEscapeDismissIfIdle: close the attached window when Escape is pressed
 //                          and no modal state is active (omitted in detached).
+//   onCloseSettings:       close the in-launcher settings overlay on Esc.
 //   onToggleDetach:        toggle detach on Ctrl+D.
 //   onToggleHelp:          toggle the help overlay on Ctrl+/.
 
@@ -15,9 +16,21 @@ function handleKey(event, content, options) {
         return
     }
 
+    // Ctrl+/ (and Shift-variants like Ctrl+? on layouts where `/` requires
+    // Shift) toggles the help overlay.
     if ((event.modifiers & Qt.ControlModifier)
-        && (event.key === Qt.Key_Slash || event.text === "/")) {
+        && (event.key === Qt.Key_Slash || event.key === Qt.Key_Question
+            || event.text === "/" || event.text === "?")) {
         if (options.onToggleHelp) options.onToggleHelp()
+        event.accepted = true
+        return
+    }
+
+    // Ctrl-modified shortcuts must be checked before vimium typing so the
+    // typing handler doesn't swallow them while a hint mode is active.
+    if (event.modifiers === Qt.ControlModifier
+        && event.key === Qt.Key_D && options.onToggleDetach) {
+        options.onToggleDetach()
         event.accepted = true
         return
     }
@@ -41,17 +54,19 @@ function handleKey(event, content, options) {
         _handleTyping(event, content, "settingsVimiumTyped")
         return
     }
-
-    if (event.modifiers === Qt.ControlModifier
-        && event.key === Qt.Key_D && options.onToggleDetach) {
-        options.onToggleDetach()
-        event.accepted = true
-    }
 }
 
 function _handleEscape(event, content, inSettings, options) {
     if (content.helpOverlayShown) {
         content.toggleHelp()
+        event.accepted = true
+        return
+    }
+    // Rename dialog wins over the folder/launcher around it — the TextField
+    // also has its own Esc handler, but if focus drifted away the dialog
+    // would otherwise leak through into closeFolder / dismissIfIdle.
+    if (content.renameDialogVisible) {
+        content.cancelRenameDialog()
         event.accepted = true
         return
     }
@@ -92,6 +107,11 @@ function _handleEscape(event, content, inSettings, options) {
     }
     if (content.selectionModeActive) {
         content.exitSelectionMode()
+        event.accepted = true
+        return
+    }
+    if (inSettings && options.onCloseSettings) {
+        options.onCloseSettings()
         event.accepted = true
         return
     }

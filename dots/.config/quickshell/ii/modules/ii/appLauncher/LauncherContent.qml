@@ -19,7 +19,6 @@ MouseArea {
 
     anchors.fill: parent
     acceptedButtons: Qt.RightButton
-    propagateComposedEvents: true
 
     readonly property int iconSize: Persistent.states.appLauncher?.iconSize ?? 64
 
@@ -109,8 +108,11 @@ MouseArea {
     // menu first instead of cascading straight into closeFolder/launcher hide.
     readonly property bool contextMenuVisible: contextMenu.visible
     readonly property bool folderItemMenuVisible: folderViewer.item?.itemMenuVisible ?? false
+    readonly property bool renameDialogVisible: renameDialog.visible
     function closeContextMenu() { contextMenu.hide() }
     function closeFolderItemMenu() { folderViewer.item?.closeItemMenu() }
+    function cancelRenameDialog() { renameDialog.cancel() }
+    function closeSettings() { settingsOverlay.shown = false }
 
     function toggleHelp() {
         const opening = !helpOverlay.shown
@@ -182,7 +184,16 @@ MouseArea {
     Connections {
         target: GlobalStates
         function onAppLauncherOpenChanged() {
-            if (!GlobalStates.appLauncherOpen) root.exitSelectionMode()
+            if (GlobalStates.appLauncherOpen) return
+            // Hard-reset every transient mode when the launcher is dismissed
+            // so the next open starts clean — otherwise vimium hints, partial
+            // typed prefixes and an open rename dialog all bleed across
+            // sessions when closed via global shortcut / dismiss-on-blur.
+            root.exitSelectionMode()
+            root.vimiumActive = false; root.vimiumTyped = ""
+            root.folderVimiumActive = false; root.folderVimiumTyped = ""
+            root.settingsVimiumActive = false; root.settingsVimiumTyped = ""
+            renameDialog.cancel()
         }
     }
 
@@ -191,17 +202,14 @@ MouseArea {
             event.accepted = false
             return
         }
-        if (event.button === Qt.RightButton) {
-            contextMenu.selectedAppIndex = -1
-            contextMenu.selectedFolderId = ""
-            contextMenu.openFolderId = folderViewer.active ? (folderViewer.folder?.id ?? "") : ""
-            contextMenu.x = event.x - contextMenu.width / 2
-            contextMenu.y = event.y
-            contextMenu.openAt()
-            event.accepted = true
-        } else {
-            event.accepted = false
-        }
+        // acceptedButtons restricts us to RightButton, so this is unconditional.
+        contextMenu.selectedAppIndex = -1
+        contextMenu.selectedFolderId = ""
+        contextMenu.openFolderId = folderViewer.active ? (folderViewer.folder?.id ?? "") : ""
+        contextMenu.x = event.x - contextMenu.width / 2
+        contextMenu.y = event.y
+        contextMenu.openAt()
+        event.accepted = true
     }
 
     onVimiumTypedChanged: {
@@ -221,13 +229,23 @@ MouseArea {
             return
         }
         if (idx === 1) {
+            // The "add" / settings buttons that own this hint are hidden in
+            // selection mode, so honoring the hint would trigger an action
+            // with no visible affordance.
+            if (selectionModeActive) return
             GlobalStates.binarySelectorTargetFolderId = ""
             GlobalStates.binarySelectorOpen = true
             return
         }
         const gm = gridModel[idx - 2]
         if (!gm) return
-        if (gm.appIndices) { folderViewer.open(gm); return }
+        if (gm.appIndices) {
+            // Mouse semantics: clicking a folder while in selection mode is a
+            // no-op (folders aren't selectable). Mirror that for hints.
+            if (selectionModeActive) return
+            folderViewer.open(gm)
+            return
+        }
         if (selectionModeActive) {
             const eIdx = gm._originalIndex ?? -1
             if (eIdx >= 0) toggleAppSelection(eIdx)
@@ -696,9 +714,18 @@ MouseArea {
         anchors.fill: parent
         keys: ["text/uri-list"]
 
+        // Any modal overlay (settings / help / rename / context menu) hides
+        // the launcher's drop affordance — accepting drops while the user
+        // can't see the destination would silently shove items into the
+        // root grid out from under whatever they were doing.
+        readonly property bool _modalOpen: settingsOverlay.shown
+            || helpOverlay.shown
+            || renameDialog.visible
+            || contextMenu.visible
+
         onEntered: (drag) => {
             if (drag.source !== null) return
-            if (settingsOverlay.shown) return
+            if (_modalOpen) return
             root.externalDragHover = true
             drag.accept(Qt.CopyAction)
         }
@@ -707,7 +734,7 @@ MouseArea {
         }
         onDropped: (drop) => {
             root.externalDragHover = false
-            if (settingsOverlay.shown) return
+            if (_modalOpen) return
             const raw = drop.getDataAsString("text/uri-list")
             if (!raw) return
             const urls = raw.split(/\r?\n/).filter(u => u.trim().length > 0)
