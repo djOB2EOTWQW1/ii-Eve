@@ -415,6 +415,18 @@ ContentPage {
                 Config.options.tray.monochromeIcons = checked;
             }
         }
+
+        ConfigSwitch {
+            buttonIcon: "push_pin"
+            text: Translation.tr('Hide Pin button')
+            checked: Config.options.tray.hidePinButton
+            onCheckedChanged: {
+                Config.options.tray.hidePinButton = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Hide the Pin/Unpin entry in tray item right-click menu")
+            }
+        }
     }
 
     ContentSection {

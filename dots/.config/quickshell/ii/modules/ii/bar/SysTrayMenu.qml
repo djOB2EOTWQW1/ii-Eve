@@ -174,7 +174,7 @@ PopupWindow {
             Layout.bottomMargin: 0
             Layout.fillWidth: true
 
-            visible: root.trayItemId !== undefined && root.trayItemId.length > 0 && stackView.depth === 1
+            visible: !Config.options.tray.hidePinButton && root.trayItemId !== undefined && root.trayItemId.length > 0 && stackView.depth === 1
             releaseAction: () => TrayService.togglePin(root.trayItemId);
 
             contentItem: RowLayout {
@@ -205,6 +205,7 @@ PopupWindow {
             color: Appearance.colors.colSubtext
             Layout.topMargin: 4
             Layout.bottomMargin: 4
+            visible: pinEntry.visible
         }
 
         Repeater {
