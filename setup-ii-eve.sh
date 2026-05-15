@@ -98,67 +98,35 @@ log_verbose() {
     fi
 }
 
-setup_hyprland_source() {
-    local II_EVE_DIR="$HOME/.local/share/ii-eve"
-    local II_EVE_CONF="$II_EVE_DIR/hyprland.conf"
-    local MAIN_HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
-    local REPO_HYPR_CONF="$SCRIPT_DIR/dots/.local/share/ii-eve/hyprland.conf"
-    local HYPRMERGE="$SCRIPT_DIR/sdata/cli/lib/hyprmerge.sh"
- 
-    local II_EVE_DIR="$HOME/.local/share/ii-eve"
-    local II_EVE_CONF="$II_EVE_DIR/hyprland.conf"
-    local MAIN_HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
-    local REPO_HYPR_CONF="$SCRIPT_DIR/dots/.local/share/ii-eve/hyprland.conf"
-    local HYPRMERGE="$SCRIPT_DIR/sdata/cli/lib/hyprmerge.sh"
- 
-    echo -e "${NC}• Checking for custom ii-eve config in Hyprland config file 'source' settings...${NC}"
- 
-    if [ ! -d "$II_EVE_DIR" ]; then
-        log_verbose "Creating directory: $II_EVE_DIR"
-        mkdir -p "$II_EVE_DIR"
+setup_hyprland_overrides() {
+    local OVERRIDES_DIR="$HOME/.config/hypr/hyprland/shellOverrides"
+    local OVERRIDES_FILE="$OVERRIDES_DIR/main.lua"
+    local REPO_DEFAULTS="$SCRIPT_DIR/dots/.config/hypr/hyprland/shellOverrides/repo-defaults.lua"
+    local HYPRSET="$SCRIPT_DIR/sdata/cli/lib/hyprset.lua"
+
+    echo -e "${NC}• Setting up Hyprland Lua overrides...${NC}"
+
+    if [ ! -d "$OVERRIDES_DIR" ]; then
+        mkdir -p "$OVERRIDES_DIR"
     fi
- 
-    if [ ! -f "$REPO_HYPR_CONF" ]; then
-        echo -e "${RED}⚠ Error: Couldn't find Hyprland config ($REPO_HYPR_CONF), please report this bug!${NC}"
+
+    if [ ! -f "$REPO_DEFAULTS" ]; then
+        echo -e "${RED}⚠ Error: Couldn't find repo defaults ($REPO_DEFAULTS), please report this bug!${NC}"
         return 1
     fi
- 
-    # Fresh install: local config doesn't exist yet → just copy
-    if [ ! -f "$II_EVE_CONF" ]; then
-        cp "$REPO_HYPR_CONF" "$II_EVE_CONF"
-        echo -e "${GREEN}✓ Fresh install: copied hyprland.conf${NC}"
-        log_verbose "Copied $REPO_HYPR_CONF to $II_EVE_CONF"
-    else
-        # Update: merge repo config into existing local config
-        echo -e "${BLUE}• Merging hyprland.conf (preserving local changes)...${NC}"
-        if [ -f "$HYPRMERGE" ]; then
-            
-            if [ "$VERBOSE" = true ]; then
-                log_verbose "Firing hyprmerge with full verbose power..."
-                export VERBOSE=true
-                bash "$HYPRMERGE" "$REPO_HYPR_CONF" "$II_EVE_CONF" -v
-            else
-                export VERBOSE=false
-                bash "$HYPRMERGE" "$REPO_HYPR_CONF" "$II_EVE_CONF"
-            fi
 
-        else
-            echo -e "${YELLOW}⚠ hyprmerge.sh not found at $HYPRMERGE, falling back to cp${NC}"
-            cp "$REPO_HYPR_CONF" "$II_EVE_CONF"
-            echo -e "${GREEN}✓ Copied hyprland.conf (fallback)${NC}"
-        fi
-    fi
- 
-    if [ -f "$MAIN_HYPR_CONF" ]; then
-        if grep -q "$II_EVE_CONF" "$MAIN_HYPR_CONF"; then
-            log_verbose "Source already exists in $MAIN_HYPR_CONF, skipping append."
-        else
-            cp "$MAIN_HYPR_CONF" "${MAIN_HYPR_CONF}.bak"
-            echo -e "\n# ii-eve\nsource = $II_EVE_CONF" >> "$MAIN_HYPR_CONF"
-            echo -e "${GREEN}✓ Successfully appended source to $MAIN_HYPR_CONF.${NC}"
-        fi
+    if [ ! -f "$OVERRIDES_FILE" ]; then
+        cp "$REPO_DEFAULTS" "$OVERRIDES_FILE"
+        echo -e "${GREEN}✓ Fresh install: copied repo defaults to shellOverrides${NC}"
     else
-        echo -e "${YELLOW}⚠ Warning: Couldn't find Hyprland config ($MAIN_HYPR_CONF). WTF IS THIS? ${NC}"
+        echo -e "${BLUE}• Merging repo defaults (preserving local changes)...${NC}"
+        if [ -f "$HYPRSET" ]; then
+            lua "$HYPRSET" merge "$REPO_DEFAULTS"
+            echo -e "${GREEN}✓ Merge complete${NC}"
+        else
+            echo -e "${YELLOW}⚠ hyprset.lua not found, falling back to cp${NC}"
+            cp "$REPO_DEFAULTS" "$OVERRIDES_FILE"
+        fi
     fi
 }
 
@@ -237,7 +205,7 @@ install_cli() {
 
     chmod +x "$SCRIPT_DIR/setup-ii-eve.sh"
     if [ -d "$SCRIPT_DIR/sdata/cli/lib" ]; then
-        chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh
+        chmod +x "$SCRIPT_DIR/sdata/cli/lib/"*.sh "$SCRIPT_DIR/sdata/cli/lib/"*.lua 2>/dev/null || true
     fi
 
     ln -sf "$SCRIPT_DIR/setup-ii-eve.sh" "$TARGET"
@@ -406,7 +374,7 @@ cp -r "$SOURCE_DIR/." "$TARGET_DIR/"
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Successfully copied: $TARGET_DIR${NC}"
     sleep 1.0
-    setup_hyprland_source
+    setup_hyprland_overrides
 else
     echo -e "${RED}✗ An error occurred while copying!${NC}"
     exit 1
