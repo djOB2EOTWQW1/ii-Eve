@@ -1,6 +1,8 @@
 import QtQuick
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.services
+import Quickshell.Services.Mpris
 
 ButtonGroup {
     id: root
@@ -8,13 +10,12 @@ ButtonGroup {
     property int baseButtonHeight: 50
     property real playPauseButtonWidthScale: 1.5
 
-
-    property var player: MprisController.activePlayer
+    property MprisPlayer player: MprisController.activePlayer
 
     GroupButton { // Previous button
         baseWidth: baseButtonWidth
         baseHeight: baseButtonHeight
-        
+        enabled: root.player?.canGoPrevious ?? false
 
         MaterialSymbol {
             anchors.centerIn: parent
@@ -33,6 +34,7 @@ ButtonGroup {
     GroupButton { // Play/Pause button
         baseWidth: baseButtonWidth * playPauseButtonWidthScale
         baseHeight: baseButtonHeight
+        enabled: root.player?.canTogglePlaying ?? false
 
         buttonRadius: Appearance.rounding.full
         buttonRadiusPressed: Appearance.rounding.full
@@ -60,6 +62,7 @@ ButtonGroup {
     GroupButton { // Next button
         baseWidth: baseButtonWidth
         baseHeight: baseButtonHeight
+        enabled: root.player?.canGoNext ?? false
 
         MaterialSymbol {
             anchors.centerIn: parent

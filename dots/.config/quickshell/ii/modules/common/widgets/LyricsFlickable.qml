@@ -15,12 +15,8 @@ Item {
 
     property bool hasSyncedLines: LyricsService.syncedLines.length > 0
 
-    Timer {
-        running: root.player?.playbackState == MprisPlaybackState.Playing && hasSyncedLines
-        interval: 250
-        repeat: true
-        onTriggered: root.player.positionChanged()
-    }
+    // Position pulses are emitted by MprisController.positionTick — no need
+    // for a per-widget timer.
 
     MaterialLoadingIndicator {
         anchors.left: parent.left
@@ -48,14 +44,16 @@ Item {
         property bool isSyncing: true
 
         readonly property real rawTargetY: {
+            if (!root.player || !(root.player.length > 0)) return 0;
             var lines = root.geniusLyricsString.split('\n')
             var totalLines = lines.length
-            
+            if (totalLines === 0) return 0;
+
             var currentLineIndex = (root.player.position / root.player.length) * totalLines
-            
+
             var averageLineHeight = contentHeight / totalLines
             var targetY = (currentLineIndex * averageLineHeight)
-            
+
             return Math.max(0, targetY - (geniusFlickable.height / 2))
         }
 

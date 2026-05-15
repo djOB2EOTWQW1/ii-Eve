@@ -19,30 +19,26 @@ MouseArea {
     implicitHeight: mediaCircProg.implicitHeight + 10 // +10 for padding it looks so small if we dont add it
     implicitWidth: Appearance.sizes.verticalBarWidth
 
-    Timer {
-        running: activePlayer?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.resources.updateInterval
-        repeat: true
-        onTriggered: activePlayer.positionChanged()
-    }
-
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
     onPressed: (event) => {
-        if (event.button === Qt.MiddleButton) {
-            activePlayer.togglePlaying();
-        } else if (event.button === Qt.BackButton) {
-            activePlayer.previous();
-        } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
-            activePlayer.next();
-        } else if (event.button === Qt.LeftButton) {
+        if (event.button === Qt.LeftButton) {
             var globalPos = root.mapToItem(null, 0, 0);
             Persistent.states.media.popupRect.x = globalPos.x;
             Persistent.states.media.popupRect.y = globalPos.y;
             Persistent.states.media.popupRect.width = root.width;
             Persistent.states.media.popupRect.height = root.height;
             GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
+            return;
+        }
+        if (!activePlayer) return;
+        if (event.button === Qt.MiddleButton) {
+            activePlayer.togglePlaying();
+        } else if (event.button === Qt.BackButton) {
+            activePlayer.previous();
+        } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
+            activePlayer.next();
         }
     }
 

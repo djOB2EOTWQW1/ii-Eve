@@ -23,10 +23,21 @@ Singleton {
 	// via Config so the pin survives shell reloads. Empty = no manual pin.
 	property string priorityPlayer: Config.options.media.priorityPlayer;
 
-	// The currently-attached player whose desktopEntry matches priorityPlayer.
+	// The currently-attached player whose desktopEntry (or dbusName fallback,
+	// for players that ship no .desktop file like raw MPD/MPRIS bridges)
+	// matches priorityPlayer. Looked up only in `players` (the filtered
+	// list) so the pin can never resolve to a duplicate that the UI hides.
 	readonly property MprisPlayer pinnedPlayer: priorityPlayer
-		? (Mpris.players.values.find(p => p.desktopEntry === priorityPlayer) ?? null)
+		? (root.players.find(p => p.desktopEntry === priorityPlayer || p.dbusName === priorityPlayer) ?? null)
 		: null;
+
+	// Returns true if the given player is the currently persisted pin —
+	// matched via desktopEntry first, then dbusName as a fallback.
+	function isPinned(player: MprisPlayer): bool {
+		if (!player || !root.priorityPlayer) return false;
+		return player.desktopEntry === root.priorityPlayer
+			|| player.dbusName === root.priorityPlayer;
+	}
 
 	// Last player observed in the playing state — sticky on pause so the bar
 	// keeps showing the track you last played instead of jumping around.
@@ -44,8 +55,6 @@ Singleton {
 		?? Mpris.players.values[0]
 		?? null;
 
-	signal trackChanged(reverse: bool);
-
 	property bool __reverse: false;
 
 	property var activeTrack;
@@ -58,17 +67,17 @@ Singleton {
 	property bool hasActivePlasmaIntegration: Mpris.players.values.some(p => p.dbusName?.startsWith('org.mpris.MediaPlayer2.plasma-browser-integration'))
 
 	function isRealPlayer(player) {
-        if (!Config.options.media.filterDuplicatePlayers) {
-            return true;
-        }
-        return (
-            // Remove native browser buses only if plasma-browser-integration is actually active on D-Bus
-            !(root.hasActivePlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.firefox')) && !(root.hasActivePlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.chromium')) &&
-            // playerctld just copies other buses and we don't need duplicates
-            !player.dbusName?.startsWith('org.mpris.MediaPlayer2.playerctld') &&
-            // Non-instance mpd bus
-            !(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd')));
-    }
+		if (!Config.options.media.filterDuplicatePlayers) {
+			return true;
+		}
+		return (
+			// Remove native browser buses only if plasma-browser-integration is actually active on D-Bus
+			!(root.hasActivePlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.firefox')) && !(root.hasActivePlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.chromium')) &&
+			// playerctld just copies other buses and we don't need duplicates
+			!player.dbusName?.startsWith('org.mpris.MediaPlayer2.playerctld') &&
+			// Non-instance mpd bus
+			!(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd')));
+	}
 
 	// Update trackedPlayer only when a player actually starts playing — never
 	// on pause. The activePlayer binding fans out the rest (pin > tracked >
@@ -113,15 +122,16 @@ Singleton {
 		}
 
 		function onTrackArtUrlChanged() {
-			// console.log("arturl:", activePlayer.trackArtUrl)
-			// root.updateTrack();
+			// activeTrack is initialised lazily by updateTrack() — guard the
+			// first cover-art tick that can fire before activePlayer settles
+			// and updateTrack has populated activeTrack.
+			if (!root.activePlayer || !root.activeTrack) return;
 			if (root.activePlayer.uniqueId == root.activeTrack.uniqueId && root.activePlayer.trackArtUrl != root.activeTrack.artUrl) {
 				// cantata likes to send cover updates *BEFORE* updating the track info.
 				// as such, art url changes shouldn't be able to break the reverse animation
 				const r = root.__reverse;
 				root.updateTrack();
 				root.__reverse = r;
-
 			}
 		}
 	}
@@ -140,7 +150,6 @@ Singleton {
 			album: this.activePlayer?.trackAlbum || Translation.tr("Unknown Album"),
 		};
 
-		this.trackChanged(__reverse);
 		this.__reverse = false;
 	}
 
@@ -168,19 +177,19 @@ Singleton {
 
 	property bool canChangeVolume: this.activePlayer && this.activePlayer.volumeSupported && this.activePlayer.canControl;
 
-	property bool loopSupported: this.activePlayer && this.activePlayer.loopSupported && this.activePlayer.canControl;
-	property var loopState: this.activePlayer?.loopState ?? MprisLoopState.None;
-	function setLoopState(loopState: var) {
-		if (this.loopSupported) {
-			this.activePlayer.loopState = loopState;
-		}
-	}
-
-	property bool shuffleSupported: this.activePlayer && this.activePlayer.shuffleSupported && this.activePlayer.canControl;
-	property bool hasShuffle: this.activePlayer?.shuffle ?? false;
-	function setShuffle(shuffle: bool) {
-		if (this.shuffleSupported) {
-			this.activePlayer.shuffle = shuffle;
+	// Shared position tick. MPRIS only pushes position updates over D-Bus on
+	// discontinuous seeks, so QML bindings on `position` would freeze between
+	// updates. Firing positionChanged() at a steady cadence makes every
+	// position-derived binding (sliders, lyrics, progress dots, ...) refresh
+	// without each one having to host its own Timer.
+	Timer {
+		running: Mpris.players.values.some(p => p.isPlaying)
+		interval: Config.options.resources.updateInterval
+		repeat: true
+		onTriggered: {
+			for (const p of Mpris.players.values) {
+				if (p.isPlaying) p.positionChanged();
+			}
 		}
 	}
 
@@ -200,10 +209,21 @@ Singleton {
 			this.__reverse = false;
 		}
 
-		const entry = targetPlayer?.desktopEntry ?? "";
-		if (entry !== "") {
+		// Resolve a stable identifier for the pin, falling back to dbusName
+		// when no .desktop entry is exposed (raw MPD/MPRIS bridges).
+		const entry = targetPlayer?.desktopEntry || targetPlayer?.dbusName || "";
+		if (targetPlayer === null) {
+			// Explicit unpin (e.g. pause-everything path) — clear the
+			// persisted pin so the activePlayer fallback chain takes over.
+			Config.options.media.priorityPlayer = "";
+		} else if (entry !== "") {
 			Config.options.media.priorityPlayer =
 				(Config.options.media.priorityPlayer === entry) ? "" : entry;
+		} else {
+			// Player has no stable identifier we can persist — clear any
+			// existing pin instead of silently leaving it pointing at
+			// something else.
+			Config.options.media.priorityPlayer = "";
 		}
 		// Drive trackedPlayer too so the change is visible immediately,
 		// without waiting for the Config write debounce.

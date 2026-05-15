@@ -73,7 +73,14 @@ Singleton {
 
     function changeDurationToIndex(index) { // for lrclib, called by LyricsSyllable
         if (!hasSyncedLines) return;
-        root.activePlayer.position = root.syncedLines[index].time
+        // activePlayer can vanish between the hasSyncedLines check and this
+        // line (player closed mid-click); index may also point past the end
+        // of an updated syncedLines array (track changed while clicking).
+        if (!root.activePlayer) return;
+        if (index < 0 || index >= root.syncedLines.length) return;
+        const line = root.syncedLines[index];
+        if (!line) return;
+        root.activePlayer.position = line.time
     }
     
     // https://quickshell.org/docs/master/types/Quickshell.Services.Mpris/MprisPlayer/#position
@@ -84,7 +91,15 @@ Singleton {
         onTriggered: root.activePlayer.positionChanged()
     }
 
-    Component.onCompleted: geniusFirstFetchDelay.restart()
+    Component.onCompleted: {
+        // Only schedule the one-shot first-fetch if Genius is actually wanted
+        // — restart() unconditionally fires a network request even when the
+        // user has the integration disabled, because the timer's onTriggered
+        // gate runs after initiliazeLyrics() may have flipped state.
+        if (geniusEnabled && lyricsEnabled) {
+            geniusFirstFetchDelay.restart()
+        }
+    }
     Timer {
         id: geniusFirstFetchDelay
         running: false

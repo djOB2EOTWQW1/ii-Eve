@@ -29,14 +29,27 @@ AbstractBackgroundWidget {
 
     readonly property var playerList: MprisController.players
 
-    // not using for now, but could be useful in the future 
-    property var filteredPlayerList: playerList.filter(player => player != null && player.trackAlbum != "")
-    
-    property MprisPlayer currentPlayer : MprisController.activePlayer
+    // Local cycle offset on top of MprisController.activePlayer. Keeps the
+    // binding chain intact (don't assign to currentPlayer imperatively — that
+    // freezes selection on whatever was last written; MprisController.qml has
+    // the same warning). Reset whenever the underlying active player changes
+    // so the cycle starts from the new "default" each time.
+    property int playerCycleOffset: 0
+    readonly property MprisPlayer currentPlayer: {
+        if (!root.playerList || root.playerList.length === 0) return MprisController.activePlayer ?? null;
+        const baseIdx = Math.max(0, root.playerList.indexOf(MprisController.activePlayer));
+        return root.playerList[(baseIdx + root.playerCycleOffset) % root.playerList.length] ?? null;
+    }
+
+    Connections {
+        target: MprisController
+        function onActivePlayerChanged() { root.playerCycleOffset = 0; }
+    }
+
     property var artUrl: currentPlayer?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
-    property string artFileName: Qt.md5(artUrl)
-    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+    property string artFileName: artUrl ? Qt.md5(artUrl) : ""
+    property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
 
     property real widgetSize: 200
     property real controlsSize: 55
@@ -95,13 +108,15 @@ AbstractBackgroundWidget {
     onArtFilePathChanged: updateArt()
 
     function nextPlayer() {
-        root.currentPlayer = root.playerList[(root.playerList.indexOf(root.currentPlayer) + 1) % root.playerList.length]
+        if (!root.playerList || root.playerList.length <= 1) return;
+        root.playerCycleOffset = (root.playerCycleOffset + 1) % root.playerList.length;
     }
 
     function updateArt() {
-        coverArtDownloader.targetFile = root.artUrl 
-        coverArtDownloader.artFilePath = root.artFilePath
         root.downloaded = false
+        if (!root.artUrl || root.artUrl.length === 0) return;
+        coverArtDownloader.targetFile = root.artUrl
+        coverArtDownloader.artFilePath = root.artFilePath
         coverArtDownloader.running = true
     }
 
@@ -109,7 +124,8 @@ AbstractBackgroundWidget {
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: [ "bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'` ]
+        // Pass paths as positional args to avoid shell injection from MPRIS-supplied URLs.
+        command: ["sh", "-c", '[ -f "$1" ] || curl -4 -sSL --max-time 30 "$2" -o "$1"', "coverart", artFilePath, targetFile]
         onExited: (exitCode, exitStatus) => {
             root.downloaded = true
         }
@@ -287,8 +303,9 @@ AbstractBackgroundWidget {
                 colRipple: root.dynamicColors.colSecondaryRipple
                 symbolText: root.currentPlayer?.isPlaying ? "pause" : "play_arrow"
                 symbolColor: useAlbumColors ?  blendedColors.colTertiary : Appearance.colors.colTertiary
+                enabled: root.currentPlayer?.canTogglePlaying ?? false
                 onClicked: {
-                    root.currentPlayer.togglePlaying()
+                    root.currentPlayer?.togglePlaying()
                 }
             }
         }
@@ -324,22 +341,24 @@ AbstractBackgroundWidget {
                         colRipple: root.dynamicColors.colTertiaryRipple
                         symbolColor: root.dynamicColors.colSecondary
                         symbolText: "skip_previous"
+                        enabled: root.currentPlayer?.canGoPrevious ?? false
                         onClicked: {
-                            currentPlayer.previous()
+                            root.currentPlayer?.previous()
                         }
                     }
                 }
 
                 ControlButton {
-                    anchors.right: parent.right 
+                    anchors.right: parent.right
 
                     colBackground: root.dynamicColors.colTertiaryBackground
                     colBackgroundHover: root.dynamicColors.colTertiaryBackgroundHover
                     colRipple: root.dynamicColors.colTertiaryRipple
                     symbolColor: root.dynamicColors.colSecondary
                     symbolText: "skip_next"
+                    enabled: root.currentPlayer?.canGoNext ?? false
                     onClicked: {
-                        currentPlayer.next()
+                        root.currentPlayer?.next()
                     }
                 }
 

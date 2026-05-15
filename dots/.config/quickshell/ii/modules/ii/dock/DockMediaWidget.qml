@@ -55,14 +55,14 @@ Item {
         onExited: root.mediaHovered = false
         
         onClicked: (mouse) => {
+            const p = root.currentPlayer;
+            if (!p) return;
             if (mouse.button === Qt.MiddleButton || mouse.button === Qt.LeftButton) {
-                root.currentPlayer?.togglePlaying();
-            } else if (mouse.button === Qt.RightButton) {
-                root.currentPlayer?.next();
+                if (p.canTogglePlaying) p.togglePlaying();
+            } else if (mouse.button === Qt.RightButton || mouse.button === Qt.ForwardButton) {
+                if (p.canGoNext) p.next();
             } else if (mouse.button === Qt.BackButton) {
-                root.currentPlayer?.previous();
-            } else if (mouse.button === Qt.ForwardButton) {
-                root.currentPlayer?.next();
+                if (p.canGoPrevious) p.previous();
             }
         }
     }

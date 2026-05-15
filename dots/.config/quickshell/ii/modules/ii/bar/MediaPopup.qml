@@ -15,7 +15,9 @@ StyledPopup {
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
-    animate: false // We have to disable the animation if we have only one card
+    // Popup only ever hosts a single HeroCard, so there's nothing to animate
+    // between.
+    animate: false
     contentItem: HeroCard {
         id: mediaHero
         compactMode: true
