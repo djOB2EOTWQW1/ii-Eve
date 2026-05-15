@@ -11,6 +11,7 @@ StyledPopup {
     id: root
     popupRadius: Appearance.rounding.large
 
+    required property bool compact
     property bool compactMode: Config.options.bar.tooltips.compactPopups
     property int cardMargins: 14
 
@@ -107,19 +108,25 @@ StyledPopup {
         }
         
         HourlyForecast {
-            Layout.minimumWidth: 360
-            margins: root.cardMargins
+            visible: !root.compact
+            showDivider: false
             spacing: 6
+
+            icon: "schedule"
+            title: Translation.tr("Hourly")
+            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--")
+
             shapeString: "Clover4Leaf"
             shapeColor: Appearance.colors.colSecondaryContainer
             symbolColor: Appearance.colors.colOnSecondaryContainer
-            showDivider: false
-            title: Translation.tr("Hourly")
-            icon: "schedule"
-            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--")
+
+            Layout.minimumWidth: 360
+            margins: root.cardMargins
         }
 
         MetricsGrid {
+            visible: !root.compact
+
             Layout.fillWidth: true
             columns: 2
             rowSpacing: 8
@@ -128,6 +135,8 @@ StyledPopup {
         }
 
         InDayForecast {
+            visible: !root.compact
+
             Layout.minimumWidth: 360
             margins: root.cardMargins
             spacing: 8

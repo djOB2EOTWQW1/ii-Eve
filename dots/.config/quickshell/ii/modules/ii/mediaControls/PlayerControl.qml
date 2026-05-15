@@ -112,12 +112,10 @@ Item { // Player instance
             }
         }
 
-        Image {
+        StyledImage {
             id: blurredArt
             anchors.fill: parent
             source: root.displayedArtFilePath
-            sourceSize.width: background.width
-            sourceSize.height: background.height
             fillMode: Image.PreserveAspectCrop
             cache: false
             antialiasing: true
@@ -178,8 +176,6 @@ Item { // Player instance
 
                     width: size
                     height: size
-                    sourceSize.width: size
-                    sourceSize.height: size
                 }
             }
 

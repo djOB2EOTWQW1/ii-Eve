@@ -7,6 +7,10 @@
 
 ![](https://img.shields.io/github/last-commit/djOB2EOTWQW1/ii-eve?&style=for-the-badge&color=8ad7eb&logo=git&logoColor=D9E0EE&labelColor=1E202B)
 
+> [!WARNING]  
+> Hyprland 0.55 update:
+> If you are still on the versions before 0.55, you should not update the shell, or use the pre-luaification release on the releases page.
+
 </div>
 
 <div align="center">
@@ -77,6 +81,8 @@ I keep this fork up to date with ii-vynx's changes, so you're not missing out on
 | Media mode | Sharp style |
 | ----------- | ----------- |
 | <img width="1920" height="1077" alt="image" src="https://github.com/user-attachments/assets/a966c5ca-ef0a-4ecf-882b-e7ef55dde74e" /> | <img width="1918" height="1078" alt="image" src="https://github.com/user-attachments/assets/745aafcd-246e-4433-a81f-37a88ac5c1ee" /> |
+
+</div>
 
 <div align="center">
     <h2>• Heads up •</h2>

@@ -55,26 +55,8 @@ MouseArea {
         }
     }
 
-    property bool compactMode: Config.options.bar.tooltips.compactPopups
-
-    Loader {
-        active: true
-        sourceComponent: root.compactMode ? weatherPopupCompact : weatherPopup
-    }
-    
-    Component {
-        id: weatherPopupCompact
-
-        WeatherPopupCompact {
-            hoverTarget: root
-        }
-    }
-    
-    Component {
-        id: weatherPopup
-
-        WeatherPopup {
-            hoverTarget: root
-        }
+    WeatherPopup {
+        compact: Config.options.bar.tooltips.compactPopups
+        hoverTarget: root
     }
 }
