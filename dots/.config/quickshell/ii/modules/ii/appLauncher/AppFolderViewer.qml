@@ -18,6 +18,11 @@ Item {
     property var vimiumHints: []
     signal closed()
     signal renameAppRequested(int appIndex, string currentName)
+    // Right-click on the dimmed backdrop or on empty space inside the folder
+    // panel. Coordinates are in `root`'s item space; LauncherContent uses them
+    // to position its launcher-wide AppContextMenu (so the user can add apps
+    // to the open folder without having to close it first).
+    signal emptyAreaRightClicked(real x, real y)
 
     property bool selectionModeActive: false
     property var selectedAppIndices: []
@@ -64,7 +69,19 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: root.closed()
+            // Swallow RightButton too — otherwise right-clicks on the dimmed
+            // backdrop fall through to the AppGridDelegate underneath and
+            // open a context menu for whichever app/folder happens to sit
+            // behind the scrim. Re-emit as emptyAreaRightClicked so the
+            // launcher can still show its "Add to folder" menu here.
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.LeftButton) {
+                    root.closed()
+                } else if (mouse.button === Qt.RightButton) {
+                    root.emptyAreaRightClicked(mouse.x, mouse.y)
+                }
+            }
         }
     }
 
@@ -80,6 +97,10 @@ Item {
 
         MouseArea {
             anchors.fill: parent
+            // Left-only on purpose: keeps left-clicks on the panel from
+            // closing the folder, while letting right-clicks fall through
+            // to the scrim's MouseArea which surfaces the launcher's
+            // empty-context menu (Add application / Add folder).
             onPressed: (mouse) => mouse.accepted = true
         }
 

@@ -666,6 +666,21 @@ MouseArea {
                 vimiumHints: root.folderVimiumHints
                 onClosed: folderViewer.close()
                 onRenameAppRequested: (appIndex, currentName) => renameDialog.openForApp(appIndex, currentName)
+                // The viewer swallows backdrop / empty-panel right-clicks so they
+                // don't trigger a context menu for whichever AppGridDelegate sits
+                // behind the scrim. We still want the launcher's empty-context
+                // menu (Add application / Add folder, scoped to the open folder)
+                // to appear at the click position, so re-open it here from the
+                // signaled coordinates.
+                onEmptyAreaRightClicked: (x, y) => {
+                    const pos = folderViewer.item.mapToItem(root, x, y)
+                    contextMenu.selectedAppIndex = -1
+                    contextMenu.selectedFolderId = ""
+                    contextMenu.openFolderId = folderViewer.folder?.id ?? ""
+                    contextMenu.x = pos.x - contextMenu.width / 2
+                    contextMenu.y = pos.y
+                    contextMenu.openAt()
+                }
             }
         }
 
