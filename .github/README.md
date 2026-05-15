@@ -9,7 +9,7 @@
 
 > [!WARNING]  
 > Hyprland 0.55 update:
-> If you are still on the versions before 0.55, you should not update the shell, or use the pre-luaification release on the releases page.
+> If you are still on the versions before 0.55, you should not update the shell
 
 </div>
 
