@@ -132,7 +132,15 @@ Item {
     Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
     Component { id: clockComp; ClockWidget {} }
 
-    Component { id: systemTrayComp; SysTray { vertical: rootItem.vertical } }
+    Component {
+        id: systemTrayComp
+        SysTray {
+            id: sysTrayInstance
+            vertical: rootItem.vertical
+            Component.onCompleted: rootItem.toggleVisible(hasAnyItems)
+            onHasAnyItemsChanged: rootItem.toggleVisible(hasAnyItems)
+        }
+    }
 
     Component { id: dateCompVert; Vertical.VerticalDateWidget {} }
 

@@ -28,22 +28,18 @@ Singleton {
     function pin(itemId) {
         var pins = Config.options.tray.pinnedItems;
         if (pins.includes(itemId)) return;
-        Config.options.tray.pinnedItems.push(itemId);
+        Config.options.tray.pinnedItems = [...pins, itemId];
     }
     function unpin(itemId) {
         Config.options.tray.pinnedItems = Config.options.tray.pinnedItems.filter(id => id !== itemId);
     }
     function isPinned(itemId) {
-        for (var i = 0; i < root.pinnedItems.length; i++) {
-            if (root.pinnedItems[i].id === itemId)
-                return true;
-        }
-        return false;
+        const inList = Config.options.tray.pinnedItems.includes(itemId);
+        return Config.options.tray.invertPinnedItems ? !inList : inList;
     }
 
     function togglePin(itemId) {
-        var pins = Config.options.tray.pinnedItems;
-        if (pins.includes(itemId)) {
+        if (Config.options.tray.pinnedItems.includes(itemId)) {
             unpin(itemId)
         } else {
             pin(itemId)
