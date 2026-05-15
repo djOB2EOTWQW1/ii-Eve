@@ -17,9 +17,9 @@ StyledPopup {
         Layout.minimumWidth: 320
         margins: 20
         iconSize: 100
-        icon: Icons.getWeatherIcon(Weather.data.wCode)
+        icon: Icons.getWeatherIcon(Weather.data.wCode) || "cloud_off"
         pillText: Weather.data.city || "--"
-        pillIcon: Weather.data.city ? "location_on" : ""
+        pillIcon: (Weather.data.city || "").length > 0 ? "location_on" : ""
         title: Weather.data.temp
         subtitle: Weather.data.wDesc
     }

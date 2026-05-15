@@ -38,17 +38,32 @@ Rectangle {
     signal renameFolderRequested(string folderId, string currentName)
 
     function openAt() {
-        const maxX = parent.width - root.width - 8;
-        const maxY = parent.height - root.height - 8;
+        // Make the menu visible first so QtQuick.Layouts gets a chance to
+        // settle implicitHeight against the current visible items, then
+        // clamp on the next tick when root.height/width are valid. This
+        // avoids overshooting the viewport edge on the first open.
+        root.visible = true;
+        Qt.callLater(_clampPosition);
+    }
+
+    function _clampPosition() {
+        if (!root.parent || !root.visible) return;
+        const maxX = root.parent.width - root.width - 8;
+        const maxY = root.parent.height - root.height - 8;
         root.x = Math.max(8, Math.min(root.x, maxX));
         root.y = Math.max(8, Math.min(root.y, maxY));
-        root.visible = true;
     }
+
+    // When the submenu was opened by a click on `More`, keep it open even if
+    // the cursor briefly leaves the button — the hover-close timer would
+    // otherwise dismiss what the user just deliberately opened.
+    property bool _submenuStickyOpen: false
 
     function hide() {
         openSubmenuTimer.stop()
         closeSubmenuTimer.stop()
         submenu.visible = false
+        root._submenuStickyOpen = false
         root.visible = false
     }
 
@@ -56,6 +71,7 @@ Rectangle {
         openSubmenuTimer.stop()
         closeSubmenuTimer.stop()
         submenu.visible = !submenu.visible
+        root._submenuStickyOpen = submenu.visible
     }
 
     function _launchWithGpu(gpu) {
@@ -212,7 +228,7 @@ Rectangle {
                         if (!submenu.visible) openSubmenuTimer.start()
                     } else {
                         openSubmenuTimer.stop()
-                        if (!submenuHover.hovered) closeSubmenuTimer.start()
+                        if (!submenuHover.hovered && !root._submenuStickyOpen) closeSubmenuTimer.start()
                     }
                 }
             }
@@ -240,7 +256,10 @@ Rectangle {
         }
 
         y: {
-            const desired = moreButton.y
+            // moreButton.y is in menuColumn's coordinate space; submenu.y is in
+            // root's. Add the column's top margin so the submenu lines up with
+            // the moreButton row instead of sitting above it.
+            const desired = moreButton.y + menuColumn.anchors.margins
             const parentHeight = root.parent ? root.parent.height : 0
             const maxY = parentHeight - root.y - submenu.height - 8
             return Math.max(0, Math.min(desired, maxY))
@@ -261,7 +280,7 @@ Rectangle {
             onHoveredChanged: {
                 if (submenuHover.hovered) {
                     closeSubmenuTimer.stop()
-                } else if (!moreHover.hovered) {
+                } else if (!moreHover.hovered && !root._submenuStickyOpen) {
                     closeSubmenuTimer.start()
                 }
             }

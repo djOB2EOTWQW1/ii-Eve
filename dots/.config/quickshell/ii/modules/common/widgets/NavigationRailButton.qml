@@ -162,6 +162,11 @@ TabButton {
             text: buttonText
             font.pixelSize: 14
             color: Appearance.colors.colOnLayer1
+            // Collapsed rail uses a fixed-width slot — clip long labels so
+            // they can't bleed into siblings or overflow the rail.
+            width: root.expanded ? implicitWidth : root.baseSize
+            elide: Text.ElideRight
+            horizontalAlignment: root.expanded ? Text.AlignLeft : Text.AlignHCenter
         }
     }
 

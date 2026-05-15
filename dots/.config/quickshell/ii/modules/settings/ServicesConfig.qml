@@ -5,7 +5,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 ContentPage {
-    id: page
+    id: page;
     readonly property int index: 5
     property bool register: parent.register ?? false
     forceWidth: true
@@ -166,7 +166,7 @@ ContentPage {
     ContentSection {
         icon: "file_open"
         title: Translation.tr("Save paths")
-
+        
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("Video Recording Path")
@@ -184,6 +184,49 @@ ContentPage {
             wrapMode: TextEdit.Wrap
             onTextChanged: {
                 Config.options.screenSnip.savePath = text;
+            }
+        }
+    }
+
+    ContentSection {
+        icon: "devices"
+        title: Translation.tr("LocalSend")
+        tooltip: Translation.tr("You must have the localsend-cli installed\nCheck repo wiki for more information")
+
+        ConfigSwitch {
+            buttonIcon: "power_settings_new"
+            text: Translation.tr("Auto-start server")
+            checked: Config.options.localsend.autoStart
+            enabled: LocalSend.available
+            onCheckedChanged: {
+                Config.options.localsend.autoStart = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Automatically start LocalSend server when shell starts")
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "notifications"
+            text: Translation.tr("Show notifications")
+            checked: Config.options.localsend.showNotifications
+            enabled: LocalSend.available
+            onCheckedChanged: {
+                Config.options.localsend.showNotifications = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Show notifications for incoming transfers and completed downloads")
+            }
+        }
+
+        MaterialTextArea {
+            Layout.fillWidth: true
+            placeholderText: Translation.tr("Download path")
+            text: Config.options.localsend.downloadPath
+            wrapMode: TextEdit.Wrap
+            enabled: LocalSend.available
+            onTextChanged: {
+                Config.options.localsend.downloadPath = text;
             }
         }
     }
@@ -346,6 +389,31 @@ ContentPage {
     ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Weather")
+
+        ContentSubsection {
+            title: Translation.tr("Provider")
+            tooltip: Translation.tr("wttr.in is the default; switch to Open-Meteo if weather data looks wrong for your country.")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.weather.provider
+                onSelected: newValue => {
+                    Config.options.bar.weather.provider = newValue;
+                }
+                options: [
+                    {
+                        displayName: "wttr.in",
+                        icon: "cloud",
+                        value: "wttr"
+                    },
+                    {
+                        displayName: "Open-Meteo",
+                        icon: "public",
+                        value: "open-meteo"
+                    }
+                ]
+            }
+        }
+
         ConfigRow {
             ConfigSwitch {
                 buttonIcon: "assistant_navigation"
@@ -367,7 +435,7 @@ ContentPage {
                 }
             }
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("City name")

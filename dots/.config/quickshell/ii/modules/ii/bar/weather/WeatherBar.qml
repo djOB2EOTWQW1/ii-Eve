@@ -21,11 +21,12 @@ MouseArea {
     onPressed: {
         if (mouse.button === Qt.RightButton) {
             Weather.getData();
-            Quickshell.execDetached(["notify-send", 
-                Translation.tr("Weather"), 
+            Quickshell.execDetached(["notify-send",
+                Translation.tr("Weather"),
                 Translation.tr("Refreshing (manually triggered)")
                 , "-a", "Shell"
             ])
+            // Bubble RMB up so the bar's context menu still opens.
             mouse.accepted = false
         }
     }
@@ -39,7 +40,7 @@ MouseArea {
 
         MaterialSymbol {
             fill: 0
-            text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+            text: Icons.getWeatherIcon(Weather.data.wCode) || "cloud_off"
             iconSize: Appearance.font.pixelSize.large
             color: Appearance.colors.colOnLayer1
             Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
@@ -54,26 +55,8 @@ MouseArea {
         }
     }
 
-    property bool compactMode: Config.options.bar.tooltips.compactPopups
-
-    Loader {
-        active: true
-        sourceComponent: root.compactMode ? weatherPopupCompact : weatherPopup
-    }
-    
-    Component {
-        id: weatherPopupCompact
-
-        WeatherPopupCompact {
-            hoverTarget: root
-        }
-    }
-    
-    Component {
-        id: weatherPopup
-
-        WeatherPopup {
-            hoverTarget: root
-        }
+    WeatherPopup {
+        compact: Config.options.bar.tooltips.compactPopups
+        hoverTarget: root
     }
 }

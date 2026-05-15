@@ -5,27 +5,38 @@ import "../cards"
 
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 import qs.modules.ii.bar
 
 StyledPopup {
     id: root
     popupRadius: Appearance.rounding.large
 
+    required property bool compact
     property bool compactMode: Config.options.bar.tooltips.compactPopups
     property int cardMargins: 14
 
-    // Forecast data model
-    property var forecastData: []
-    property var hourlyData: []
-    property bool forecastLoading: true
+    // Forecast data model — bound to the Weather service (single source of truth)
+    readonly property var forecastData: Weather.forecastDaily
+    readonly property var hourlyData: Weather.forecastHourly
+    readonly property bool forecastLoading: Weather.forecastLoading
     property int maxHourlyBars: 5
 
     property var filteredHourlyData: {
-        const now = new Date();
-        const currentHr = now.getHours();
-        // Round down to nearest 3-hour slot (API intervals: 0, 3, 6, 9, 12, 15, 18, 21)
-        const currentSlot = Math.floor(currentHr / 3) * 3;
+        if (hourlyData.length === 0) return [];
+
+        // Detect the source's time step from the first two entries — wttr.in
+        // returns 3-hour slots, open-meteo returns 1-hour slots. Falling back
+        // to 3 keeps behavior unchanged for single-entry payloads.
+        let stepHours = 3;
+        if (hourlyData.length >= 2) {
+            const h0 = Math.floor(parseInt(hourlyData[0].time) / 100);
+            const h1 = Math.floor(parseInt(hourlyData[1].time) / 100);
+            const diff = (h1 - h0 + 24) % 24;
+            if (diff > 0) stepHours = diff;
+        }
+
+        const currentHr = new Date().getHours();
+        const currentSlot = Math.floor(currentHr / stepHours) * stepHours;
         let futureHours = [];
         let passedMidnight = false;
 
@@ -42,21 +53,6 @@ StyledPopup {
             }
         }
         return futureHours.slice(0, maxHourlyBars);
-    }
-
-    readonly property string city: Config.options.bar.weather.city
-    onCityChanged: {
-        if (Config.options.bar.weather.city)
-            root.fetchForecast();
-    }
-
-    function fetchForecast() {
-        forecastLoading = true;
-        let city = Config.options.bar.weather.city || "auto";
-        //console.log(`[WeatherPopup] Fetching forecast for city: ${city}`);
-        city = city.trim().split(/\s+/).join('+');
-        forecastFetcher.command[2] = `curl -s "wttr.in/${city}?format=j1" | jq '{daily: [.weather[] | {date: .date, maxC: .maxtempC, minC: .mintempC, maxF: .maxtempF, minF: .mintempF, code: .hourly[4].weatherCode}], hourly: [.weather[0].hourly[], .weather[1].hourly[] | {time: .time, tempC: .tempC, tempF: .tempF, code: .weatherCode}]}'`;
-        forecastFetcher.running = true;
     }
 
     function getDayName(dateStr, index) {
@@ -84,7 +80,9 @@ StyledPopup {
         const temps = data.map(h => Weather.useUSCS ? parseInt(h.tempF) : parseInt(h.tempC));
         const min = Math.min(...temps);
         const max = Math.max(...temps);
-        // Add 20% padding (minimum 2°) to make small differences more visible
+        // 20% padding (minimum 2°) — chosen so that a near-flat day (e.g.
+        // 22→23°C) still produces a visually meaningful bar height delta
+        // without exaggerating already-large swings.
         const padding = Math.max(2, (max - min) * 0.2);
         return {
             min: min - padding,
@@ -92,60 +90,43 @@ StyledPopup {
         };
     }
 
-    Component.onCompleted: fetchForecast()
-
     contentItem: ColumnLayout {
         id: contentLayout
         anchors.centerIn: parent
         spacing: 12
-
-        Process {
-            id: forecastFetcher
-            command: ["bash", "-c", ""]
-            stdout: StdioCollector {
-                onStreamFinished: {
-                    if (text.length === 0) {
-                        root.forecastLoading = false;
-                        return;
-                    }
-                    try {
-                        const data = JSON.parse(text);
-                        root.forecastData = data.daily || [];
-                        root.hourlyData = data.hourly || [];
-                    } catch (e) {
-                        console.error(`[WeatherPopup] Forecast parse error: ${e.message}`);
-                    }
-                    root.forecastLoading = false;
-                }
-            }
-        }
 
         HeroCard {
             id: weatherHero
             Layout.minimumWidth: 320
             margins: 20
             iconSize: 100
-            icon: Icons.getWeatherIcon(Weather.data.wCode)
+            icon: Icons.getWeatherIcon(Weather.data.wCode) || "cloud_off"
             pillText: Weather.data.city || "--"
-            pillIcon: Weather.data.city ? "location_on" : ""
+            pillIcon: (Weather.data.city || "").length > 0 ? "location_on" : ""
             title: Weather.data.temp
             subtitle: Weather.data.wDesc
         }
         
         HourlyForecast {
-            Layout.minimumWidth: 360
-            margins: root.cardMargins
+            visible: !root.compact
+            showDivider: false
             spacing: 6
+
+            icon: "schedule"
+            title: Translation.tr("Hourly")
+            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--")
+
             shapeString: "Clover4Leaf"
             shapeColor: Appearance.colors.colSecondaryContainer
             symbolColor: Appearance.colors.colOnSecondaryContainer
-            showDivider: false
-            title: Translation.tr("Hourly")
-            icon: "schedule"
-            headerExtraText: Translation.tr("Last refresh: %1").arg(Weather.data.lastRefresh || "--").slice(0, 20)
+
+            Layout.minimumWidth: 360
+            margins: root.cardMargins
         }
 
         MetricsGrid {
+            visible: !root.compact
+
             Layout.fillWidth: true
             columns: 2
             rowSpacing: 8
@@ -154,6 +135,8 @@ StyledPopup {
         }
 
         InDayForecast {
+            visible: !root.compact
+
             Layout.minimumWidth: 360
             margins: root.cardMargins
             spacing: 8

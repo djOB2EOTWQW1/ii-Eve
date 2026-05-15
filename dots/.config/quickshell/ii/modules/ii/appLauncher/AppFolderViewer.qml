@@ -18,6 +18,11 @@ Item {
     property var vimiumHints: []
     signal closed()
     signal renameAppRequested(int appIndex, string currentName)
+    // Right-click on the dimmed backdrop or on empty space inside the folder
+    // panel. Coordinates are in `root`'s item space; LauncherContent uses them
+    // to position its launcher-wide AppContextMenu (so the user can add apps
+    // to the open folder without having to close it first).
+    signal emptyAreaRightClicked(real x, real y)
 
     property bool selectionModeActive: false
     property var selectedAppIndices: []
@@ -52,6 +57,11 @@ Item {
         selectionModeActive = false;
     }
 
+    // Exposed to LauncherKeys for stack-style Escape dismissal: closing the
+    // per-item menu must take priority over closing the folder itself.
+    readonly property bool itemMenuVisible: folderItemMenu.visible
+    function closeItemMenu() { folderItemMenu.hide() }
+
     Rectangle {
         anchors.fill: parent
         color: Appearance.colors.colScrim
@@ -59,7 +69,19 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: root.closed()
+            // Swallow RightButton too — otherwise right-clicks on the dimmed
+            // backdrop fall through to the AppGridDelegate underneath and
+            // open a context menu for whichever app/folder happens to sit
+            // behind the scrim. Re-emit as emptyAreaRightClicked so the
+            // launcher can still show its "Add to folder" menu here.
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.LeftButton) {
+                    root.closed()
+                } else if (mouse.button === Qt.RightButton) {
+                    root.emptyAreaRightClicked(mouse.x, mouse.y)
+                }
+            }
         }
     }
 
@@ -75,6 +97,10 @@ Item {
 
         MouseArea {
             anchors.fill: parent
+            // Left-only on purpose: keeps left-clicks on the panel from
+            // closing the folder, while letting right-clicks fall through
+            // to the scrim's MouseArea which surfaces the launcher's
+            // empty-context menu (Add application / Add folder).
             onPressed: (mouse) => mouse.accepted = true
         }
 
@@ -614,6 +640,9 @@ Item {
 
             property int targetAppIndex: -1
             property string targetAppName: ""
+            // Same sticky-open trick as AppContextMenu: a click-opened submenu
+            // must not be auto-dismissed by the hover-out timer.
+            property bool _submenuStickyOpen: false
 
             readonly property string currentGpu: {
                 const e = CustomApps.entries[targetAppIndex]
@@ -632,6 +661,7 @@ Item {
                 folderItemOpenSubmenuTimer.stop()
                 folderItemCloseSubmenuTimer.stop()
                 folderItemSubmenu.visible = false
+                folderItemMenu._submenuStickyOpen = false
                 folderItemMenu.visible = false
             }
 
@@ -639,6 +669,7 @@ Item {
                 folderItemOpenSubmenuTimer.stop()
                 folderItemCloseSubmenuTimer.stop()
                 folderItemSubmenu.visible = !folderItemSubmenu.visible
+                folderItemMenu._submenuStickyOpen = folderItemSubmenu.visible
             }
 
             function _launchWithGpu(gpu) {
@@ -685,6 +716,7 @@ Item {
 
                 MenuButton {
                     Layout.fillWidth: true
+                    symbolName: "drive_file_rename_outline"
                     buttonText: Translation.tr("Rename")
                     onClicked: {
                         const idx = folderItemMenu.targetAppIndex
@@ -696,6 +728,7 @@ Item {
 
                 MenuButton {
                     Layout.fillWidth: true
+                    symbolName: "playlist_remove"
                     buttonText: Translation.tr("Remove from folder")
                     onClicked: {
                         const idx = folderItemMenu.targetAppIndex
@@ -720,7 +753,8 @@ Item {
                                 if (!folderItemSubmenu.visible) folderItemOpenSubmenuTimer.start()
                             } else {
                                 folderItemOpenSubmenuTimer.stop()
-                                if (!folderItemSubmenuHover.hovered) folderItemCloseSubmenuTimer.start()
+                                if (!folderItemSubmenuHover.hovered && !folderItemMenu._submenuStickyOpen)
+                                    folderItemCloseSubmenuTimer.start()
                             }
                         }
                     }
@@ -748,7 +782,11 @@ Item {
                 }
 
                 y: {
-                    const desired = folderItemMoreButton.y
+                    // folderItemMoreButton.y is in folderItemMenuColumn's
+                    // space; submenu.y is in folderItemMenu's. Add the
+                    // column's top margin so the submenu lines up with the
+                    // anchor row instead of sitting above it.
+                    const desired = folderItemMoreButton.y + folderItemMenuColumn.anchors.margins
                     const maxY = folderPanel.height - folderItemMenu.y - folderItemSubmenu.height - 8
                     return Math.max(0, Math.min(desired, maxY))
                 }
@@ -768,7 +806,7 @@ Item {
                     onHoveredChanged: {
                         if (folderItemSubmenuHover.hovered) {
                             folderItemCloseSubmenuTimer.stop()
-                        } else if (!folderItemMoreHover.hovered) {
+                        } else if (!folderItemMoreHover.hovered && !folderItemMenu._submenuStickyOpen) {
                             folderItemCloseSubmenuTimer.start()
                         }
                     }

@@ -28,17 +28,18 @@ StyledOverlayWidget {
 
     property var artUrl: currentPlayer?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
-    property string artFileName: Qt.md5(artUrl)
-    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+    property string artFileName: artUrl ? Qt.md5(artUrl) : ""
+    property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
 
     onArtFilePathChanged: updateArt()
 
     readonly property bool showSlider: Config.options.overlay.media.showSlider
 
     function updateArt() {
-        coverArtDownloader.targetFile = root.artUrl 
-        coverArtDownloader.artFilePath = root.artFilePath
         root.downloaded = false
+        if (!root.artUrl || root.artUrl.length === 0) return;
+        coverArtDownloader.targetFile = root.artUrl
+        coverArtDownloader.artFilePath = root.artFilePath
         coverArtDownloader.running = true
     }
 
@@ -46,7 +47,8 @@ StyledOverlayWidget {
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: [ "bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'` ]
+        // Pass paths as positional args to avoid shell injection from MPRIS-supplied URLs.
+        command: ["sh", "-c", '[ -f "$1" ] || curl -4 -sSL --max-time 30 "$2" -o "$1"', "coverart", artFilePath, targetFile]
         onExited: (exitCode, exitStatus) => {
             root.downloaded = true
         }

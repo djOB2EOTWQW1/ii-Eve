@@ -15,7 +15,7 @@ MouseArea {
     property bool targetMenuOpen: false
 
     signal menuOpened(qsWindow: var)
-    signal menuClosed()
+    signal menuClosed(qsWindow: var)
 
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -26,24 +26,25 @@ MouseArea {
         switch (event.button) {
         case Qt.LeftButton:
             item.activate();
+            event.accepted = true;
             break;
         case Qt.RightButton:
-            if (item.hasMenu)
+            if (item.hasMenu) {
                 if (menu.active && menu.item && typeof menu.item.close === "function")
                     menu.item.close();
-                else 
-                    menu.open();
+                else
+                    menu.activate();
+                event.accepted = true;
+            } else {
+                event.accepted = false;
+            }
             break;
         }
-        event.accepted = true;
-    }
-    onEntered: {
-        tooltip.text = TrayService.getTooltipForItem(root.item);
     }
 
     Loader {
         id: menu
-        function open() { menu.active = true; }
+        function activate() { menu.active = true; }
         active: false
 
         sourceComponent: SysTrayMenu {
@@ -93,8 +94,8 @@ MouseArea {
             }
 
             onMenuOpened: (window) => root.menuOpened(window);
-            onMenuClosed: {
-                root.menuClosed();
+            onMenuClosed: (window) => {
+                root.menuClosed(window);
                 menu.active = false;
             }
         }
@@ -131,8 +132,8 @@ MouseArea {
 
     PopupToolTip {
         id: tooltip
+        text: TrayService.getTooltipForItem(root.item)
         extraVisibleCondition: root.containsMouse
-        alternativeVisibleCondition: extraVisibleCondition
         anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top
     }
 

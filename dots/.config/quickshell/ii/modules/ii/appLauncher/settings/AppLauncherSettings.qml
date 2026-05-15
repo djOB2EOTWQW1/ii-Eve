@@ -29,8 +29,20 @@ Item {
             name: Translation.tr("Quick"),
             icon: "instant_mix",
             component: "AppLauncherQuickConfig.qml"
+        },
+        {
+            name: Translation.tr("Launch param"),
+            icon: "terminal",
+            component: "AppLauncherLaunchParamsConfig.qml"
         }
     ]
+
+    readonly property var activePageItem: pageLoader.item
+    readonly property int activeVimiumActionCount: activePageItem?.vimiumActionCount ?? 0
+    function dispatchActiveVimium(localIdx) {
+        if (activePageItem && typeof activePageItem.dispatchVimiumAction === "function")
+            activePageItem.dispatchVimiumAction(localIdx)
+    }
 
     ColumnLayout {
         anchors {

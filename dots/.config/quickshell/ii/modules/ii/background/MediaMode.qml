@@ -18,12 +18,12 @@ Item { // MediaMode instance
     property MprisPlayer player: MprisController.activePlayer
     property var artUrl: player?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
-    property string artFileName: Qt.md5(artUrl)
-    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+    property string artFileName: artUrl ? Qt.md5(artUrl) : ""
+    property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
     property bool downloaded: false
     property string displayedArtFilePath: ""
 
-    readonly property string trackTitle: root.player.trackTitle || ""
+    readonly property string trackTitle: root.player?.trackTitle || ""
     Component.onCompleted: Persistent.states.background.mediaMode.userScrollOffset = 0
     onTrackTitleChanged: Persistent.states.background.mediaMode.userScrollOffset = 0
 
@@ -50,7 +50,8 @@ Item { // MediaMode instance
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: ["bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
+        // Pass paths as positional args to avoid shell injection from MPRIS-supplied URLs.
+        command: ["sh", "-c", '[ -f "$1" ] || curl -4 -sSL --max-time 30 "$2" -o "$1"', "coverart", artFilePath, targetFile]
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 0) {
                 root.displayedArtFilePath = Qt.resolvedUrl(root.artFilePath);

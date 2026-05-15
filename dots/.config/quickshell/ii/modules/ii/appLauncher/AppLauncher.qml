@@ -13,13 +13,17 @@ Scope {
     id: root
     property bool detach: false
 
+    // Toggling detach only makes sense while the launcher is actually open —
+    // firing it from the closed state would just leave a hidden FloatingWindow
+    // around and surprise the user the next time they open the launcher.
     function toggleDetach() {
+        if (!GlobalStates.appLauncherOpen) return
         root.detach = !root.detach
     }
 
     onDetachChanged: {
         if (root.detach) {
-            GlobalFocusGrab.removeDismissable(launcherLoader.item)
+            if (launcherLoader.item) GlobalFocusGrab.removeDismissable(launcherLoader.item)
             launcherLoader.active = false
             detachedLoader.active = true
         } else {
@@ -102,6 +106,7 @@ Scope {
 
                 Keys.onPressed: (event) => LK.handleKey(event, launcherContent, {
                     onEscapeDismissIfIdle: () => panelWindow.hide(),
+                    onCloseSettings: () => launcherContent.closeSettings(),
                     onToggleDetach: () => root.toggleDetach(),
                     onToggleHelp: () => launcherContent.toggleHelp()
                 })
@@ -141,6 +146,7 @@ Scope {
                 }
 
                 Keys.onPressed: (event) => LK.handleKey(event, launcherContent, {
+                    onCloseSettings: () => launcherContent.closeSettings(),
                     onToggleDetach: () => root.toggleDetach(),
                     onToggleHelp: () => launcherContent.toggleHelp()
                 })

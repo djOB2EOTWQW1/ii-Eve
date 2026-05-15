@@ -24,7 +24,13 @@ if status is-interactive
         alias ls 'eza --icons'
     end
 
+<<<<<<< HEAD
     zoxide init fish | source
     fastfetch
+=======
+    if test "$TERM" = "xterm-kitty"
+        alias ssh 'kitten ssh'
+    end
+>>>>>>> origin/main
 
 end

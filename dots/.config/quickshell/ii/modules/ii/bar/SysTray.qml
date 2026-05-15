@@ -20,16 +20,12 @@ Item {
 
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
-    onPinnedItemsChanged: updateVisibility()
-    onUnpinnedItemsChanged: updateVisibility()
+    readonly property bool hasAnyItems: pinnedItems.length > 0 || unpinnedItems.length > 0
 
-    function updateVisibility() {
-        const hasAnyItems = pinnedItems.length > 0 || unpinnedItems.length > 0;
-        if (typeof rootItem !== "undefined" && rootItem)
-            rootItem.toggleVisible(hasAnyItems);
-
-        if (unpinnedItems.length === 0 && focusGrab) {
-            focusGrab.active = false;
+    onUnpinnedItemsChanged: {
+        if (unpinnedItems.length === 0 && root.trayOverflowOpen) {
+            root.trayOverflowOpen = false;
+            root.releaseFocus();
         }
     }
 
@@ -38,21 +34,25 @@ Item {
     }
 
     function setExtraWindowAndGrabFocus(window) {
-        if (root.activeMenu && root.activeMenu !== window) {
-            if (typeof root.activeMenu.close === "function")
-                root.activeMenu.close();
-            root.activeMenu = null;
-        }
+        const previousMenu = root.activeMenu;
         root.activeMenu = window;
+        if (previousMenu && previousMenu !== window && typeof previousMenu.close === "function") {
+            previousMenu.close();
+        }
         root.grabFocus();
     }
 
-    function releaseFocus() {
-        focusGrab.active = false;
+    function handleMenuClosed(window) {
+        if (root.activeMenu === window || !window) {
+            root.activeMenu = null;
+        }
+        root.releaseFocus();
     }
 
-    function closeOverflowMenu() {
-        focusGrab.active = false;
+    function releaseFocus() {
+        if (!root.trayOverflowOpen && !root.activeMenu) {
+            focusGrab.active = false;
+        }
     }
 
     onTrayOverflowOpenChanged: {
@@ -64,7 +64,7 @@ Item {
     HyprlandFocusGrab {
         id: focusGrab
         active: false
-        windows: [trayOverflowLayout.QsWindow?.window, root.activeMenu]
+        windows: [trayOverflowLayout?.QsWindow?.window, root.activeMenu]
         onCleared: {
             root.trayOverflowOpen = false;
             if (root.activeMenu) {
@@ -85,7 +85,6 @@ Item {
             id: trayOverflowButton
             visible: root.showOverflowMenu && root.unpinnedItems.length > 0
             toggled: root.trayOverflowOpen
-            property bool containsMouse: hovered
 
             downAction: () => root.trayOverflowOpen = !root.trayOverflowOpen
 
@@ -130,7 +129,7 @@ Item {
                             item: modelData
                             Layout.fillHeight: !root.vertical
                             Layout.fillWidth: root.vertical
-                            onMenuClosed: root.releaseFocus();
+                            onMenuClosed: (qsWindow) => root.handleMenuClosed(qsWindow);
                             onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow);
                         }
                     }
@@ -148,7 +147,7 @@ Item {
                 item: modelData
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical
-                onMenuClosed: root.releaseFocus();
+                onMenuClosed: (qsWindow) => root.handleMenuClosed(qsWindow);
                 onMenuOpened: (qsWindow) => {
                     root.setExtraWindowAndGrabFocus(qsWindow);
                 }

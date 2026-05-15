@@ -17,8 +17,8 @@ Item { // Player instance
     required property MprisPlayer player
     property var artUrl: player?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
-    property string artFileName: Qt.md5(artUrl)
-    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+    property string artFileName: artUrl ? Qt.md5(artUrl) : ""
+    property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
     property color artDominantColor: ColorUtils.mix((colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary), Appearance.colors.colPrimaryContainer, 0.8) || Appearance.m3colors.m3secondaryContainer
     property bool downloaded: false
     property list<real> visualizerPoints: []
@@ -54,26 +54,20 @@ Item { // Player instance
         }
     }
 
-    Timer { // Force update for revision
-        running: root.player?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.resources.updateInterval
-        repeat: true
-        onTriggered: {
-            root.player.positionChanged()
-        }
-    }
-
     onArtFilePathChanged: {
-        if (root.artUrl.length == 0) {
+        // Reset before deciding whether to fetch — otherwise a transient empty
+        // artUrl keeps the previously-cached image marked as "downloaded" and
+        // displayedArtFilePath ends up pointing at a stale (or md5-of-empty)
+        // file from an unrelated track.
+        root.downloaded = false
+        if (!root.artUrl || root.artUrl.length == 0) {
             root.artDominantColor = Appearance.m3colors.m3secondaryContainer
             return;
         }
 
         // Binding does not work in Process
-        coverArtDownloader.targetFile = root.artUrl 
+        coverArtDownloader.targetFile = root.artUrl
         coverArtDownloader.artFilePath = root.artFilePath
-        // Download
-        root.downloaded = false
         coverArtDownloader.running = true
     }
 
@@ -81,7 +75,8 @@ Item { // Player instance
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: [ "bash", "-c", `[ -f ${artFilePath} ] || curl -4 -sSL '${targetFile}' -o '${artFilePath}'` ]
+        // Pass paths as positional args to avoid shell injection from MPRIS-supplied URLs.
+        command: ["sh", "-c", '[ -f "$1" ] || curl -4 -sSL --max-time 30 "$2" -o "$1"', "coverart", artFilePath, targetFile]
         onExited: (exitCode, exitStatus) => {
             root.downloaded = true
         }
@@ -117,12 +112,10 @@ Item { // Player instance
             }
         }
 
-        Image {
+        StyledImage {
             id: blurredArt
             anchors.fill: parent
             source: root.displayedArtFilePath
-            sourceSize.width: background.width
-            sourceSize.height: background.height
             fillMode: Image.PreserveAspectCrop
             cache: false
             antialiasing: true
@@ -183,8 +176,6 @@ Item { // Player instance
 
                     width: size
                     height: size
-                    sourceSize.width: size
-                    sourceSize.height: size
                 }
             }
 
@@ -289,11 +280,9 @@ Item { // Player instance
                             buttonSize: 18
                             // Filled when this player's app is the persistent
                             // pin (priorityPlayer), not just the currently-
-                            // active one.
-                            fill: {
-                                const entry = root.player?.desktopEntry ?? "";
-                                return entry !== "" && MprisController.priorityPlayer === entry;
-                            }
+                            // active one. isPinned matches on desktopEntry
+                            // with a dbusName fallback.
+                            fill: MprisController.isPinned(root.player)
                             downAction: () => MprisController.setActivePlayer(root.player)
                         }
                     }
@@ -308,7 +297,7 @@ Item { // Player instance
                         property real size: 44
                         implicitWidth: size
                         implicitHeight: size
-                        downAction: () => root.player.togglePlaying();
+                        downAction: () => root.player?.togglePlaying();
 
                         buttonRadius: root.player?.isPlaying ? Appearance?.rounding.normal : size / 2
                         colBackground: root.player?.isPlaying ? blendedColors.colPrimary : blendedColors.colSecondaryContainer

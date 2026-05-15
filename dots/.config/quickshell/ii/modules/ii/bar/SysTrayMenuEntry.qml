@@ -31,19 +31,15 @@ RippleButton {
     Layout.bottomMargin: menuEntry.isSeparator ? 4 : 0
     Layout.fillWidth: true
 
-    Component.onCompleted: {
-        if (menuEntry.isSeparator) {
-            root.buttonColor = root.colBackground;
-        }
-    }
-
-    releaseAction: () => { 
+    releaseAction: () => {
         if (menuEntry.hasChildren) {
             root.openSubmenu(root.menuEntry);
             return;
         }
         menuEntry.triggered();
-        root.dismiss(); 
+        if (menuEntry.buttonType === QsMenuButtonType.None) {
+            root.dismiss();
+        }
     }
     altAction: (event) => { // Not hog right-click
         event.accepted = false;

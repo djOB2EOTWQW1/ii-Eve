@@ -14,26 +14,14 @@ PopupWindow {
     property string trayItemId: ""
     property real popupBackgroundMargin: 0
 
-    signal menuClosed
+    signal menuClosed(qsWindow: var)
     signal menuOpened(qsWindow: var) // Correct type is QsWindow, but QML does not like that
 
     color: "transparent"
     property real padding: Appearance.sizes.elevationMargin
 
-    implicitHeight: {
-        let result = 0;
-        for (let child of stackView.children) {
-            result = Math.max(child.implicitHeight, result);
-        }
-        return result + popupBackground.padding * 2 + root.padding * 2;
-    }
-    implicitWidth: {
-        let result = 0;
-        for (let child of stackView.children) {
-            result = Math.max(child.implicitWidth, result);
-        }
-        return result + popupBackground.padding * 2 + root.padding * 2;
-    }
+    implicitHeight: (stackView.currentItem?.implicitHeight ?? 0) + popupBackground.padding * 2 + root.padding * 2
+    implicitWidth: (stackView.currentItem?.implicitWidth ?? 0) + popupBackground.padding * 2 + root.padding * 2
 
     function open() {
         root.visible = true;
@@ -44,7 +32,7 @@ PopupWindow {
         root.visible = false;
         while (stackView.depth > 1)
             stackView.pop();
-        root.menuClosed();
+        root.menuClosed(root);
     }
 
     MouseArea {

@@ -20,6 +20,23 @@ ContentPage {
     property string vimiumTyped: ""
     property var vimiumHints: []
 
+    // Vimium dispatch contract — read by LauncherContent.qml.
+    //   0: windowSize = "current" (Fullscreen)
+    //   1: windowSize = "settings" (Windowed)
+    //   2..: CustomApps.removeFolderAt(localIdx - 2)
+    readonly property int vimiumActionCount: 2 + (CustomApps.folders ? CustomApps.folders.length : 0)
+    function dispatchVimiumAction(localIdx) {
+        if (localIdx === 0) {
+            if (Persistent.states.appLauncher) Persistent.states.appLauncher.windowSize = "current"
+            return
+        }
+        if (localIdx === 1) {
+            if (Persistent.states.appLauncher) Persistent.states.appLauncher.windowSize = "settings"
+            return
+        }
+        CustomApps.removeFolderAt(localIdx - 2)
+    }
+
     ContentSection {
         icon: "straighten"
         title: Translation.tr("Appearance")

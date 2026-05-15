@@ -24,6 +24,10 @@ Singleton {
     property alias dirs: customAppsAdapter.dirs
     property alias folders: customAppsAdapter.folders
     property bool ready: false
+    // Set to true while a multi-write transaction is in flight (e.g.
+    // removeAppAt, which has to update entries and folders together).
+    // Folder-derived readers should bail out quickly during the window.
+    property bool _suspendDerivedReads: false
 
     property bool winePresent: false
     property bool portprotonPresent: false
@@ -286,9 +290,14 @@ Singleton {
 
     function removeAppAt(index) {
         if (index < 0 || index >= root.entries.length) return false
-        const next = Array.from(root.entries)
-        next.splice(index, 1)
-        customAppsAdapter.entries = next
+
+        // Build both shrunken `entries` and re-indexed `folders` before
+        // touching the adapter so consumers (appsInFolder, gridModel) never
+        // observe an intermediate state where `entries` has been spliced
+        // but `folders.appIndices` still reference pre-splice positions —
+        // that briefly displays the wrong app under each folder slot.
+        const nextEntries = Array.from(root.entries)
+        nextEntries.splice(index, 1)
 
         const nextFolders = Array.from(root.folders)
         for (let i = 0; i < nextFolders.length; i++) {
@@ -303,7 +312,14 @@ Singleton {
             f.appIndices = patched
             nextFolders[i] = f
         }
+
+        // Suspend derived reads across both writes so any binding that
+        // re-evaluates between the two assignments returns an empty/safe
+        // value rather than mismatched (entries, folders).
+        root._suspendDerivedReads = true
+        customAppsAdapter.entries = nextEntries
         customAppsAdapter.folders = nextFolders
+        root._suspendDerivedReads = false
 
         root.changed()
         return true
@@ -591,6 +607,7 @@ Singleton {
     }
 
     function appsInFolder(folderId) {
+        if (root._suspendDerivedReads) return []
         const fi = root._folderIndexOfId(folderId)
         if (fi < 0) return []
         const appIndices = root.folders[fi].appIndices || []
@@ -650,6 +667,56 @@ Singleton {
         return `'${String(s).replace(/'/g, `'\\''`)}'`
     }
 
+    // Cached parse of Persistent.states.appLauncher.launchParams.perAppJson.
+    // Re-evaluates only when the JSON source string changes, so callers (this
+    // service's launch path and the settings UI) can index it as a plain object.
+    readonly property var perAppMap: {
+        const lp = Persistent.states.appLauncher?.launchParams
+        if (!lp) return ({})
+        try { return JSON.parse(lp.perAppJson || "{}") } catch (e) { return ({}) }
+    }
+
+    // Builds the wrapper-prefix that prepends `path` in the bash invocation
+    // assembled by launch().
+    //
+    // NOTE: defaultsExtra and per-app `params` are pasted verbatim into a
+    // `bash -c` command line. This is intentional — users routinely need
+    // shell features there (env-var expansions like `--data-dir "$HOME/x"`,
+    // multiple flags, glob patterns). The trade-off is that any `;`, `&&`,
+    // `` ` ``, `$(...)` in those fields *will* be interpreted by the shell.
+    // Treat both fields as user-trusted shell input; never feed external /
+    // untrusted text into them.
+    function _buildLaunchPrefix(path) {
+        const lp = Persistent.states.appLauncher?.launchParams
+        if (!lp) return ""
+        const entry = root.perAppMap[path] || null
+        // Defaults apply to every native binary unless the user has explicitly
+        // disabled them via a per-app entry with `useDefaults: false`.
+        const useDefaults = entry ? entry.useDefaults !== false : true
+        const local = entry ? String(entry.params || "").trim() : ""
+
+        let defaults = ""
+        if (useDefaults) {
+            const segs = []
+            // Wrapper order matches what works from a shell:
+            //   `mangohud gamemoderun /path/to/game`
+            // mangohud sets LD_PRELOAD then execs gamemoderun, which adds
+            // libgamemodeauto and execs the game.
+            if (lp.defaultsMangohud) {
+                const cfg = String(lp.defaultsMangohudConfig || "").trim()
+                if (lp.defaultsUseMangohudConfig && cfg.length > 0) {
+                    segs.push(`MANGOHUD_CONFIG='${cfg.replace(/'/g, `'\\''`)}'`)
+                }
+                segs.push("mangohud")
+            }
+            if (lp.defaultsGamemoderun) segs.push("gamemoderun")
+            const extra = String(lp.defaultsExtra || "").trim()
+            if (extra.length > 0) segs.push(extra)
+            defaults = segs.join(" ")
+        }
+        return [defaults, local].filter(s => s.length > 0).join(" ")
+    }
+
     function launch(entry) {
         if (!entry || !entry.path) return
         const useDGpu = entry.gpu === "dGPU" && GpuInfo.hybrid
@@ -672,9 +739,16 @@ Singleton {
             return
         }
 
-        // Native binary / .AppImage / script — ensure +x, then exec directly
+        // Native binary / .AppImage / script — ensure +x, cd to the binary's
+        // directory (Unity / .x86_64 games and .sh wrappers often expect
+        // resources relative to cwd), then run with optional launch prefix.
+        const prefix = root._buildLaunchPrefix(path)
+        const quoted = root.shellQuote(path)
+        const dir = root.shellQuote(path.substring(0, path.lastIndexOf('/')) || '/')
+        const cmdBody = prefix.length > 0 ? `${prefix} ${quoted}` : `exec ${quoted}`
         Quickshell.execDetached({
-            command: [...envPrefix, "bash", "-c", `chmod +x ${root.shellQuote(path)} 2>/dev/null; exec ${root.shellQuote(path)}`]
+            command: [...envPrefix, "bash", "-c",
+                `chmod +x ${quoted} 2>/dev/null; cd ${dir} 2>/dev/null; ${cmdBody}`]
         })
     }
 

@@ -55,7 +55,7 @@ SectionCard {
 
                         MaterialSymbol {
                             anchors.centerIn: parent
-                            text: Icons.getWeatherIcon(modelData.code)
+                            text: Icons.getWeatherIcon(modelData.code) || "cloud_off"
                             iconSize: Appearance.font.pixelSize.large
                             color: dayCard.textColor
                         }

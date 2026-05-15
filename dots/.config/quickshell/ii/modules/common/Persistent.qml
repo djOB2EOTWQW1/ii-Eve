@@ -61,6 +61,24 @@ Singleton {
             property JsonObject appLauncher: JsonObject {
                 property int iconSize: 64
                 property string windowSize: "settings"
+
+                property JsonObject launchParams: JsonObject {
+                    // Default parameters: fixed toggles + free-form extra prefix.
+                    property bool defaultsMangohud: false
+                    property bool defaultsGamemoderun: false
+                    property string defaultsExtra: ""
+
+                    // When enabled and MANGOHUD=1 is on, exports
+                    // MANGOHUD_CONFIG="…" so a custom in-app overlay config is
+                    // applied without touching ~/.config/MangoHud/MangoHud.conf.
+                    property bool defaultsUseMangohudConfig: false
+                    property string defaultsMangohudConfig: ""
+
+                    // Per-binary overrides keyed by absolute path, serialized as JSON.
+                    // Shape: { "/abs/path/to/bin": { params: "X=1 prefix", useDefaults: true } }
+                    // Stored as a string because JsonAdapter can't serialize a `var` JS object.
+                    property string perAppJson: "{}"
+                }
             }
 
             property JsonObject ai: JsonObject {

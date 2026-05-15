@@ -45,7 +45,11 @@ Scope {
                 const timingsMatch = p1.length > 0 && p2.length > 0
                     && Math.abs(p1.length - p2.length) <= 2
                     && Math.abs(p1.position - p2.position) <= 2;
-                if (titlesMatch || timingsMatch) {
+                // Require BOTH conditions: title-substring alone matches "Hi"
+                // against any title containing "Hi"; matching timings alone
+                // collapses two unrelated tracks of equal length playing in
+                // sync.
+                if (titlesMatch && timingsMatch) {
                     group.push(j);
                 }
             }
