@@ -148,7 +148,7 @@ Or just hit the update button in the shell:
 
 **[vaguesyntax](https://github.com/vaguesyntax)** For ii-vynx, which is the actual base of this fork. Thanks for the foundation.
 
-**[P3DROVFX](https://github.com/P3DROVFX)** For [ii-vynx-fork](https://github.com/P3DROVFX/ii-vynx-fork) — borrowed the Cheatsheet Commands tab, the Expressive bar theme (widgets/popups/cards), and the Bluetooth connection popup from there.
+**[P3DROVFX](https://github.com/P3DROVFX)** For ii-vynx-fork borrowed the Cheatsheet Commands tab, the Expressive bar theme (widgets/popups/cards), and the Bluetooth connection popup from there.
 
 **[Quickshell](https://quickshell.org/)** The Qt-Quick widget system that makes all of this possible.
 
