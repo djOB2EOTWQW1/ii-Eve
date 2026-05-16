@@ -39,6 +39,11 @@ Scope {
                 property bool hasActiveWindows: false
                 property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
+                BarThemes {
+                    id: barThemes
+                }
+                property var activeTheme: barThemes.getTheme(Config.options.bar.expressiveColorTheme)
+
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
                     target: HyprlandData
@@ -200,7 +205,7 @@ Scope {
                                 }
 
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: showBarBackground ? (Config.options.bar.expressiveColors ? activeTheme.barBackground : Appearance.colors.colLayer0) : "transparent"
 
                                 corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
@@ -219,7 +224,7 @@ Scope {
                                     bottom: Config.options.bar.bottom ? parent.bottom : undefined
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: showBarBackground ? (Config.options.bar.expressiveColors ? activeTheme.barBackground : Appearance.colors.colLayer0) : "transparent"
 
                                 corner: RoundCorner.CornerEnum.TopRight
                                 states: State {

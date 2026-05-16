@@ -187,6 +187,21 @@ Singleton {
                 property string terminal: "kitty -1" // This is only for shell actions
                 property string update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'"
                 property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
+
+                property list<var> bluetoothDeviceImages: [
+                    {
+                        "mac": "E8:EE:CC:96:31:3A",
+                        "image": "anker_q30_.png"
+                    },
+                    {
+                        "mac": "40:35:E6:31:8B:AC",
+                        "image": "galaxy_buds_3.png"
+                    },
+                    {
+                        "mac": "64:1B:2F:9B:95:CE",
+                        "image": "samsung_s23.png"
+                    }
+                ]
             }
 
             property JsonObject background: JsonObject {
@@ -314,8 +329,28 @@ Singleton {
                 property int barGroupStyle: 0 // 0: Pills | 1: Island (opaque) | 2: Transparent (or maybe line-separated in the future)
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
                 property int barBackgroundStyle: 1 // 0: Transparent | 1: Visible | 2: Adaptive
+                property bool expressiveColors: false
+                property string expressiveColorTheme: "content"
                 property bool verbose: true
                 property bool vertical: false
+
+                property JsonObject styles: JsonObject {
+                    property string clock: "default" // default, expressive
+                    property string media: "default"
+                    property string notification: "default"
+                    property string utilButtons: "default"
+                    property string workspaces: "default"
+                    property string weather: "default"
+                    property string dashboard: "default"
+                    property string resources: "default"
+                    property string policies: "default"
+                    property string power: "default"
+                    property string battery: "default"
+                    property string systray: "default"
+                    property string bluetooth: "default"
+                    property string keyboard: "default"
+                    property string sports: "default"
+                }
 
                 property JsonObject mediaPlayer: JsonObject {
                     property bool useFixedSize: false
@@ -419,6 +454,12 @@ Singleton {
                             id: "clock"
                         },
                         {
+                            id: "bluetooth_devices"
+                        },
+                        {
+                            id: "keyboard_layout"
+                        },
+                        {
                             id: "system_tray"
                         },
                         {
@@ -429,6 +470,7 @@ Singleton {
                 property JsonObject tooltips: JsonObject {
                     property bool clickToShow: false
                     property bool compactPopups: false
+                    property bool enableBluetoothConnectionPopup: true
                 }
                 property JsonObject sizes: JsonObject {
                     property int height: 40 // horizontal mode
@@ -564,7 +606,7 @@ Singleton {
 
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
-                property JsonObject monitor: JsonObject {
+                property JsonObject forceMonitor: JsonObject {
                     property bool enable: false
                     property string name: "" // Name of the monitor to show notifications on, like "eDP-1". Find out with 'hyprctl monitors' command
                 }

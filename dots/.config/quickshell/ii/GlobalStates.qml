@@ -16,6 +16,8 @@ Singleton {
     property bool appLauncherOpen: false
     property bool binarySelectorOpen: false
     property string binarySelectorTargetFolderId: ""
+    property bool bluetoothConnectionPopupOpen: false
+    property var bluetoothConnectionPopupDevice: null
     property bool barOpen: true
     property bool crosshairOpen: false
     property bool mediaControlsOpen: false

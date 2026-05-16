@@ -6,8 +6,13 @@ Item {
     id: root
     property bool vertical: false
     property real padding: 5
-    implicitWidth: vertical ? Appearance.sizes.baseVerticalBarWidth : (gridLayout.implicitWidth + padding * 2)
-    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : Appearance.sizes.baseBarHeight
+    property real leftPadding: padding
+    property real rightPadding: padding
+    property real topPadding: padding
+    property real bottomPadding: padding
+
+    implicitWidth: vertical ? Appearance.sizes.baseVerticalBarWidth : (gridLayout.implicitWidth + leftPadding + rightPadding)
+    implicitHeight: vertical ? (gridLayout.implicitHeight + topPadding + bottomPadding) : Appearance.sizes.baseBarHeight
     default property alias items: gridLayout.children
     property var startRadius // left - top
     property var endRadius // right - bottom
@@ -44,7 +49,10 @@ Item {
             right: root.vertical ? undefined : parent.right
             top: root.vertical ? parent.top : undefined
             bottom: root.vertical ? parent.bottom : undefined
-            margins: root.padding
+            topMargin: root.topPadding
+            bottomMargin: root.bottomPadding
+            leftMargin: root.leftPadding
+            rightMargin: root.rightPadding
         }
         columnSpacing: 4
         rowSpacing: 12

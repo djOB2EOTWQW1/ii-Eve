@@ -58,6 +58,11 @@ Item { // Bar content region
         rightList = fullModel.slice(idx + 1)
     }
 
+    BarThemes {
+        id: barThemes
+    }
+    property var activeTheme: barThemes.getTheme(Config.options.bar.expressiveColorTheme)
+
     // Background shadow
     Loader {
         active: root.showBarBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
@@ -75,7 +80,7 @@ Item { // Bar content region
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
         }
-        color: root.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+        color: root.showBarBackground ? (Config.options.bar.expressiveColors ? activeTheme.barBackground : Appearance.colors.colLayer0) : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: root.showBarBackground ? Appearance.colors.colLayer0Border : "transparent"
