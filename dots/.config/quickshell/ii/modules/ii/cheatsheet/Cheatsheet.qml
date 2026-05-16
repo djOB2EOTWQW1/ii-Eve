@@ -55,10 +55,23 @@ Scope { // Scope
             implicitWidth: cheatsheetBackground.width + Appearance.sizes.elevationMargin * 2
             implicitHeight: cheatsheetBackground.height + Appearance.sizes.elevationMargin * 2
             WlrLayershell.namespace: "quickshell:cheatsheet"
-            // OnDemand makes the panel slow to map; only request it for tabs that need text input
-            WlrLayershell.keyboardFocus: root.tabButtonList[swipeView.currentIndex]?.icon === "terminal"
+            // OnDemand at map time hangs the surface for ~5s on some compositors.
+            // Map with None first, then upgrade to OnDemand after the panel is visible,
+            // and only on tabs that actually need text input (Commands).
+            property bool _focusReady: false
+            WlrLayershell.keyboardFocus: (_focusReady && root.tabButtonList[swipeView.currentIndex]?.icon === "terminal")
                 ? WlrKeyboardFocus.OnDemand
                 : WlrKeyboardFocus.None
+            Timer {
+                id: focusUpgradeTimer
+                interval: 80
+                repeat: false
+                onTriggered: cheatsheetRoot._focusReady = true
+            }
+            onVisibleChanged: {
+                if (visible) focusUpgradeTimer.start();
+                else _focusReady = false;
+            }
             color: "transparent"
 
             mask: Region {
