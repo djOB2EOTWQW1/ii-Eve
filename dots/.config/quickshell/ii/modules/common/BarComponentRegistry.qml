@@ -20,7 +20,11 @@ Singleton {
         { id: "battery", icon: "battery_android_6", title: "Battery" },
         { id: "timer", icon: "timer", title: "Timer & Pomodoro" },
         { id: "weather", icon: "weather_mix", title: "Weather" },
-        { id: "utility_buttons", icon: "build", title: "Utility buttons" }
+        { id: "utility_buttons", icon: "build", title: "Utility buttons" },
+        { id: "bluetooth_devices", icon: "bluetooth", title: "Bluetooth devices" },
+        { id: "keyboard_layout", icon: "keyboard", title: "Keyboard layout" },
+        { id: "sports", icon: "sports_soccer", title: "Sports" },
+        { id: "power", icon: "power_settings_new", title: "Power" }
     ]
 
     function getComponent(id) {
