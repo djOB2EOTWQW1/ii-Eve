@@ -55,7 +55,10 @@ Scope { // Scope
             implicitWidth: cheatsheetBackground.width + Appearance.sizes.elevationMargin * 2
             implicitHeight: cheatsheetBackground.height + Appearance.sizes.elevationMargin * 2
             WlrLayershell.namespace: "quickshell:cheatsheet"
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            // OnDemand makes the panel slow to map; only request it for tabs that need text input
+            WlrLayershell.keyboardFocus: root.tabButtonList[swipeView.currentIndex]?.icon === "terminal"
+                ? WlrKeyboardFocus.OnDemand
+                : WlrKeyboardFocus.None
             color: "transparent"
 
             mask: Region {

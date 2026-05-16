@@ -188,7 +188,7 @@ Singleton {
                 property string update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'"
                 property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
 
-                property var bluetoothDeviceImages: [
+                property list<var> bluetoothDeviceImages: [
                     {
                         "mac": "E8:EE:CC:96:31:3A",
                         "image": "anker_q30_.png"
