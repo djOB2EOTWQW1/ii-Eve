@@ -17,178 +17,295 @@ WindowDialog {
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
     backgroundHeight: 700
 
-    WindowDialogTitle {
-        text: Translation.tr("Eye protection")
-    }
-    
-    WindowDialogSectionHeader {
-        text: Translation.tr("Night Light")
-    }
+    readonly property int activeFeatureCount: (Hyprsunset.temperatureActive ? 1 : 0)
+        + (HyprlandAntiFlashbangShader.enabled ? 1 : 0)
+        + (Config.options.light.antiFlashbang.enable ? 1 : 0)
 
-    WindowDialogSeparator {
-        Layout.topMargin: -22
-        Layout.leftMargin: 0
-        Layout.rightMargin: 0
-    }
+    component SectionCard: Rectangle {
+        property string sectionIcon: ""
+        property string sectionTitle: ""
+        property string sectionSubtitle: ""
+        property bool sectionActive: false
+        default property alias innerData: cardInner.data
 
-    Column {
-        id: nightLightColumn
-        Layout.topMargin: -16
         Layout.fillWidth: true
+        color: ColorUtils.transparentize(Appearance.colors.colLayer2, 0.35)
+        radius: Appearance.rounding.normal
+        border.width: 1
+        border.color: ColorUtils.transparentize(Appearance.colors.colOutlineVariant, 0.4)
+        implicitHeight: cardColumn.implicitHeight + 24
 
-        ConfigSwitch {
+        ColumnLayout {
+            id: cardColumn
             anchors {
-                left: parent.left
-                right: parent.right
+                fill: parent
+                topMargin: 12
+                bottomMargin: 12
+                leftMargin: 14
+                rightMargin: 14
             }
-            iconSize: Appearance.font.pixelSize.larger
-            buttonIcon: "check"
-            text: Translation.tr("Enable now")
-            checked: Hyprsunset.temperatureActive
-            onCheckedChanged: {
-                Hyprsunset.toggleTemperature(checked)
-            }
-        }
+            spacing: 6
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
-            buttonIcon: "night_sight_auto"
-            text: Translation.tr("Automatic")
-            checked: Config.options.light.night.automatic
-            onCheckedChanged: {
-                Config.options.light.night.automatic = checked;
-            }
-        }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
 
-        WindowDialogSlider {
-            anchors {
-                left: parent.left
-                right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    width: 26
+                    height: 26
+                    radius: Appearance.rounding.small
+                    color: sectionActive ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHighest
+
+                    Behavior on color {
+                        animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                    }
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: sectionIcon
+                        iconSize: 16
+                        color: sectionActive ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSurfaceVariant
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: -2
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: sectionTitle
+                        color: Appearance.colors.colOnSurface
+                        font {
+                            family: Appearance.font.family.title
+                            pixelSize: Appearance.font.pixelSize.normal
+                            variableAxes: Appearance.font.variableAxes.title
+                        }
+                        elide: Text.ElideRight
+                    }
+                    StyledText {
+                        visible: sectionSubtitle !== ""
+                        Layout.fillWidth: true
+                        text: sectionSubtitle
+                        color: Appearance.colors.colSubtext
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        elide: Text.ElideRight
+                    }
+                }
             }
-            text: Translation.tr("Intensity")
-            from: 6500
-            to: 1200
-            stopIndicatorValues: [5000, to]
-            value: Config.options.light.night.colorTemperature
-            onMoved: Config.options.light.night.colorTemperature = value
-            tooltipContent: `${Math.round(value)}K`
+
+            Column {
+                id: cardInner
+                Layout.fillWidth: true
+                spacing: 2
+            }
         }
     }
 
-    WindowDialogSectionHeader {
-        text: Translation.tr("Anti-flashbang (experimental)")
-    }
-
-    WindowDialogSeparator {
-        Layout.topMargin: -22
-        Layout.leftMargin: 0
-        Layout.rightMargin: 0
-    }
-
-    Column {
-        id: antiFlashbangColumn
-        Layout.topMargin: -16
+    // Header
+    RowLayout {
         Layout.fillWidth: true
+        spacing: 12
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
-            buttonIcon: "filter"
-            text: Translation.tr("Content adjustment")
-            checked: HyprlandAntiFlashbangShader.enabled
-            onCheckedChanged: {
-                if (checked) HyprlandAntiFlashbangShader.enable()
-                else HyprlandAntiFlashbangShader.disable()
-            }
-            StyledToolTip {
-                text: Translation.tr("<b>Dims screen content</b> as needed.<br><br>Pros: Immediately responsive<br>Cons: Expensive and can hurt color accuracy<br><br><i>Uses a Hyprland screen shader</i>")
-            }
+        MaterialShapeWrappedMaterialSymbol {
+            Layout.alignment: Qt.AlignVCenter
+            text: root.activeFeatureCount > 0 ? "visibility" : "visibility_off"
+            iconSize: 18
+            padding: 7
+            shape: MaterialShape.Shape.Cookie7Sided
+            color: root.activeFeatureCount > 0 ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHighest
+            colSymbol: root.activeFeatureCount > 0 ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSurfaceVariant
         }
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
-            buttonIcon: "light_mode"
-            text: Translation.tr("Brightness adjustment")
-            checked: Config.options.light.antiFlashbang.enable
-            onCheckedChanged: {
-                Config.options.light.antiFlashbang.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Adapts the <b>display (physical screen) brightness</b><br><br>Pros: Less expensive, retains colors<br>Cons: Not immediately responsive<br><br><i>Adjusts display brightness after each Hyprland IPC event</i>")
-            }
-        }
-    }
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 0
 
-    WindowDialogSectionHeader {
-        text: Translation.tr("Brightness")
-    }
-
-    WindowDialogSeparator {
-        Layout.topMargin: -22
-        Layout.leftMargin: 0
-        Layout.rightMargin: 0
-    }
-
-    Column {
-        id: brightnessColumn
-        Layout.topMargin: -16
-        Layout.fillWidth: true
-
-        WindowDialogSlider {
-            anchors {
-                left: parent.left
-                right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+            StyledText {
+                Layout.fillWidth: true
+                text: Translation.tr("Eye protection")
+                color: Appearance.colors.colOnSurface
+                elide: Text.ElideRight
+                font {
+                    family: Appearance.font.family.title
+                    pixelSize: Appearance.font.pixelSize.title
+                    variableAxes: Appearance.font.variableAxes.title
+                }
             }
-            value: root.brightnessMonitor.brightness
-            onMoved: root.brightnessMonitor.setBrightness(value)
+
+            StyledText {
+                Layout.fillWidth: true
+                text: root.activeFeatureCount === 0
+                    ? Translation.tr("Nothing active")
+                    : Translation.tr("%1 active").arg(root.activeFeatureCount)
+                color: Appearance.colors.colSubtext
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                elide: Text.ElideRight
+                animateChange: true
+            }
         }
     }
 
-    WindowDialogSectionHeader {
-        text: Translation.tr("Gamma")
-    }
+    WindowDialogSeparator {}
 
-    WindowDialogSeparator {
-        Layout.topMargin: -22
-        Layout.leftMargin: 0
-        Layout.rightMargin: 0
-    }
-
-    Column {
-        id: gammaColumn
-        Layout.topMargin: -16
-        Layout.fillWidth: true
+    // Scrollable body with cards
+    Item {
         Layout.fillHeight: true
+        Layout.fillWidth: true
+        Layout.topMargin: -8
+        Layout.bottomMargin: -8
 
-        WindowDialogSlider {
-            anchors {
-                left: parent.left
-                right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+        StyledFlickable {
+            id: bodyFlick
+            anchors.fill: parent
+            clip: true
+            contentHeight: bodyColumn.implicitHeight
+
+            ColumnLayout {
+                id: bodyColumn
+                width: bodyFlick.width
+                spacing: 10
+
+                // Night Light
+                SectionCard {
+                    sectionIcon: "nightlight"
+                    sectionTitle: Translation.tr("Night Light")
+                    sectionSubtitle: Hyprsunset.temperatureActive
+                        ? Translation.tr("%1K").arg(Math.round(Config.options.light.night.colorTemperature))
+                        : Translation.tr("Warms the screen at night")
+                    sectionActive: Hyprsunset.temperatureActive
+
+                    ConfigSwitch {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        buttonIcon: "check"
+                        text: Translation.tr("Enable now")
+                        checked: Hyprsunset.temperatureActive
+                        onCheckedChanged: Hyprsunset.toggleTemperature(checked)
+                    }
+
+                    ConfigSwitch {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        buttonIcon: "night_sight_auto"
+                        text: Translation.tr("Automatic")
+                        checked: Config.options.light.night.automatic
+                        onCheckedChanged: Config.options.light.night.automatic = checked
+                    }
+
+                    WindowDialogSlider {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            leftMargin: 4
+                            rightMargin: 4
+                        }
+                        text: Translation.tr("Intensity")
+                        from: 6500
+                        to: 1200
+                        stopIndicatorValues: [5000, to]
+                        value: Config.options.light.night.colorTemperature
+                        onMoved: Config.options.light.night.colorTemperature = value
+                        tooltipContent: `${Math.round(value)}K`
+                    }
+                }
+
+                // Anti-flashbang
+                SectionCard {
+                    sectionIcon: "flash_off"
+                    sectionTitle: Translation.tr("Anti-flashbang")
+                    sectionSubtitle: Translation.tr("Experimental")
+                    sectionActive: HyprlandAntiFlashbangShader.enabled || Config.options.light.antiFlashbang.enable
+
+                    ConfigSwitch {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        buttonIcon: "filter"
+                        text: Translation.tr("Content adjustment")
+                        checked: HyprlandAntiFlashbangShader.enabled
+                        onCheckedChanged: {
+                            if (checked) HyprlandAntiFlashbangShader.enable();
+                            else HyprlandAntiFlashbangShader.disable();
+                        }
+                        StyledToolTip {
+                            text: Translation.tr("<b>Dims screen content</b> as needed.<br><br>Pros: Immediately responsive<br>Cons: Expensive and can hurt color accuracy<br><br><i>Uses a Hyprland screen shader</i>")
+                        }
+                    }
+
+                    ConfigSwitch {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        buttonIcon: "light_mode"
+                        text: Translation.tr("Brightness adjustment")
+                        checked: Config.options.light.antiFlashbang.enable
+                        onCheckedChanged: Config.options.light.antiFlashbang.enable = checked
+                        StyledToolTip {
+                            text: Translation.tr("Adapts the <b>display (physical screen) brightness</b><br><br>Pros: Less expensive, retains colors<br>Cons: Not immediately responsive<br><br><i>Adjusts display brightness after each Hyprland IPC event</i>")
+                        }
+                    }
+                }
+
+                // Brightness
+                SectionCard {
+                    sectionIcon: "brightness_6"
+                    sectionTitle: Translation.tr("Brightness")
+                    sectionSubtitle: `${Math.round((root.brightnessMonitor?.brightness ?? 0) * 100)}%`
+                    sectionActive: (root.brightnessMonitor?.brightness ?? 1) < 0.99
+
+                    WindowDialogSlider {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            leftMargin: 4
+                            rightMargin: 4
+                        }
+                        value: root.brightnessMonitor?.brightness ?? 0
+                        onMoved: root.brightnessMonitor.setBrightness(value)
+                        tooltipContent: `${Math.round(value * 100)}%`
+                    }
+                }
+
+                // Gamma
+                SectionCard {
+                    sectionIcon: "gradient"
+                    sectionTitle: Translation.tr("Gamma")
+                    sectionSubtitle: `${Math.round(Hyprsunset.gamma)}%`
+                    sectionActive: Hyprsunset.gamma < 100
+
+                    WindowDialogSlider {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            leftMargin: 4
+                            rightMargin: 4
+                        }
+                        from: Hyprsunset.gammaLowerLimit / 100
+                        value: Hyprsunset.gamma / 100
+                        onMoved: Hyprsunset.setGamma(value * 100)
+                        tooltipContent: `${Math.round(value * 100)}%`
+                    }
+                }
             }
-            from: Hyprsunset.gammaLowerLimit / 100
-            value: Hyprsunset.gamma / 100
-            onMoved: Hyprsunset.setGamma(value * 100)
-            tooltipContent: `${Math.round(value * 100)}%`
         }
     }
-    
+
+    WindowDialogSeparator {}
+
     WindowDialogButtonRow {
         Layout.fillWidth: true
 
