@@ -146,9 +146,9 @@ Or just hit the update button in the shell:
 
 **[ii](https://github.com/end-4/dots-hyprland):** A perfect hyprland dots in material-3 style
 
-**[vaguesyntax](https://github.com/vaguesyntax)** For ii-vynx, which is the actual base of this fork. Thanks for the foundation.
+**[vaguesyntax](https://github.com/vaguesyntax)** For ii-vynx, which is the actual base of this fork. Thanks for the fork.
 
-**[P3DROVFX](https://github.com/P3DROVFX)** For ii-vynx-fork borrowed the Cheatsheet Commands tab, the Expressive bar theme (widgets/popups/cards), and the Bluetooth connection popup from there.
+**[P3DROVFX](https://github.com/P3DROVFX)** Borrowed the Cheatsheet Commands tab, the Expressive bar theme (widgets/popups/cards), and the Bluetooth connection popup from there.
 
 **[Quickshell](https://quickshell.org/)** The Qt-Quick widget system that makes all of this possible.
 
