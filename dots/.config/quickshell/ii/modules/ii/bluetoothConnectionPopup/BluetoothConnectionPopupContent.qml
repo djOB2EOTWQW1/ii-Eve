@@ -355,7 +355,7 @@ Item {
                         hoverEnabled: true
                         onClicked: {
                             root.dismissed();
-                            Quickshell.execDetached(["blueman-manager"]);
+                            Quickshell.execDetached(["bash", "-c", Config.options.apps.bluetooth || "blueman-manager"]);
                         }
                     }
                 }

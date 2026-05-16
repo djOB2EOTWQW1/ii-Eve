@@ -103,9 +103,9 @@ Scope {
                     GlobalStates.bluetoothConnectionPopupOpen = false;
                 }
                 onDisconnectRequested: {
-                    if (GlobalStates.bluetoothConnectionPopupDevice) {
-                        GlobalStates.bluetoothConnectionPopupDevice.connecting = false;
-                        GlobalStates.bluetoothConnectionPopupDevice.connected = false;
+                    const dev = GlobalStates.bluetoothConnectionPopupDevice;
+                    if (dev && typeof dev.disconnect === "function") {
+                        dev.disconnect();
                     }
                     GlobalStates.bluetoothConnectionPopupOpen = false;
                 }
