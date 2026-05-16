@@ -9,11 +9,15 @@ DialogListItem {
     id: root
     required property var device
     property bool expanded: false
+    readonly property bool connected: root.device?.connected ?? false
+    readonly property bool paired: root.device?.paired ?? false
+    readonly property bool hasBattery: root.device?.batteryAvailable ?? false
+    readonly property real batteryLevel: root.device?.battery ?? 0
     pointingHandCursor: !expanded
 
     onClicked: expanded = !expanded
     altAction: () => expanded = !expanded
-    
+
     component ActionButton: DialogButton {
         colBackground: Appearance.colors.colPrimary
         colBackgroundHover: Appearance.colors.colPrimaryHover
@@ -25,48 +29,86 @@ DialogListItem {
         anchors {
             fill: parent
             topMargin: root.verticalPadding
+            bottomMargin: root.verticalPadding
             leftMargin: root.horizontalPadding
             rightMargin: root.horizontalPadding
         }
         spacing: 0
 
         RowLayout {
-            // Name
-            spacing: 10
+            Layout.fillWidth: true
+            spacing: 12
 
-            MaterialSymbol {
-                iconSize: Appearance.font.pixelSize.larger
+            MaterialShapeWrappedMaterialSymbol {
+                Layout.alignment: Qt.AlignVCenter
                 text: Icons.getBluetoothDeviceMaterialSymbol(root.device?.icon || "")
-                color: Appearance.colors.colOnSurfaceVariant
+                iconSize: 18
+                padding: 7
+                shape: MaterialShape.Shape.Cookie7Sided
+                color: root.connected ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHighest
+                colSymbol: root.connected ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSurfaceVariant
             }
 
             ColumnLayout {
-                spacing: 2
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 0
+
                 StyledText {
                     Layout.fillWidth: true
-                    color: Appearance.colors.colOnSurfaceVariant
+                    color: Appearance.colors.colOnSurface
                     elide: Text.ElideRight
                     text: root.device?.name || Translation.tr("Unknown device")
                     textFormat: Text.PlainText
                 }
                 StyledText {
-                    visible: (root.device?.connected || root.device?.paired) ?? false
+                    visible: root.connected || root.paired
                     Layout.fillWidth: true
                     font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
+                    color: root.connected ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
                     elide: Text.ElideRight
-                    text: {
-                        if (!root.device?.paired) return "";
-                        let statusText = root.device?.connected ? Translation.tr("Connected") : Translation.tr("Paired");
-                        if (!root.device?.batteryAvailable) return statusText;
-                        statusText += ` • ${Math.round(root.device?.battery * 100)}%`;
-                        return statusText;
+                    text: root.connected ? Translation.tr("Connected") : Translation.tr("Paired")
+                }
+            }
+
+            // Battery chip
+            Rectangle {
+                visible: root.hasBattery && (root.connected || root.paired)
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredHeight: 22
+                implicitWidth: batteryRow.implicitWidth + 12
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colSecondaryContainer
+
+                RowLayout {
+                    id: batteryRow
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    MaterialSymbol {
+                        iconSize: 14
+                        color: Appearance.colors.colOnSecondaryContainer
+                        text: {
+                            const p = root.batteryLevel;
+                            if (p > 0.85) return "battery_full";
+                            if (p > 0.65) return "battery_5_bar";
+                            if (p > 0.45) return "battery_4_bar";
+                            if (p > 0.25) return "battery_2_bar";
+                            if (p > 0.10) return "battery_1_bar";
+                            return "battery_alert";
+                        }
+                    }
+                    StyledText {
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        font.variableAxes: ({ "wght": 600 })
+                        color: Appearance.colors.colOnSecondaryContainer
+                        text: Math.round(root.batteryLevel * 100) + "%"
                     }
                 }
             }
 
             MaterialSymbol {
+                Layout.alignment: Qt.AlignVCenter
                 text: "keyboard_arrow_down"
                 iconSize: Appearance.font.pixelSize.larger
                 color: Appearance.colors.colOnLayer3
@@ -79,20 +121,24 @@ DialogListItem {
 
         RowLayout {
             visible: root.expanded
-            Layout.topMargin: 8
+            Layout.topMargin: 10
+            Layout.fillWidth: true
+            spacing: 4
+
             Item {
                 Layout.fillWidth: true
             }
-            ActionButton {
-                readonly property bool p: root.device?.paired ?? false
-                colBackground: p ? Appearance.colors.colError : ColorUtils.transparentize(Appearance.colors.colLayer3, 1)
-                colBackgroundHover: p ? Appearance.colors.colErrorHover : ColorUtils.transparentize(Appearance.colors.colLayer3, 1)
-                colRipple: p ? Appearance.colors.colErrorActive : Appearance.colors.colLayer3Hover
-                colText: p ? Appearance.colors.colOnError : Appearance.colors.colPrimary
 
-                buttonText: p ? Translation.tr("Forget") : Translation.tr("Always connect")
+            ActionButton {
+                readonly property bool p: root.paired
+                colBackground: p ? Appearance.colors.colErrorContainer : ColorUtils.transparentize(Appearance.colors.colLayer3, 1)
+                colBackgroundHover: p ? Appearance.colors.colErrorContainerHover : Appearance.colors.colLayer3Hover
+                colRipple: p ? Appearance.colors.colErrorContainerActive : Appearance.colors.colLayer3Active
+                colText: p ? Appearance.colors.colOnErrorContainer : Appearance.colors.colPrimary
+
+                buttonText: p ? Translation.tr("Forget") : Translation.tr("Pair")
                 onClicked: {
-                    if (root.device?.paired) {
+                    if (root.paired) {
                         root.device?.forget();
                     } else {
                         root.device?.pair();
@@ -100,19 +146,15 @@ DialogListItem {
                 }
             }
             ActionButton {
-                buttonText: root.device?.connected ? Translation.tr("Disconnect") : Translation.tr("Connect")
-
+                buttonText: root.connected ? Translation.tr("Disconnect") : Translation.tr("Connect")
                 onClicked: {
-                    if (root.device?.connected) {
+                    if (root.connected) {
                         root.device.disconnect();
                     } else {
                         root.device.connect();
                     }
                 }
             }
-        }
-        Item {
-            Layout.fillHeight: true
         }
     }
 }
