@@ -37,21 +37,25 @@ DialogListItem {
             Layout.fillWidth: true
             spacing: 12
 
-            // Signal strength icon in subtle container
-            Rectangle {
+            // Signal strength icon — highlighted container only when active
+            Item {
                 Layout.alignment: Qt.AlignVCenter
                 width: 30
                 height: 30
-                radius: Appearance.rounding.small
-                color: root.isActive ? Appearance.colors.colPrimaryContainer : ColorUtils.transparentize(Appearance.colors.colSurfaceContainerHighest, 0.4)
 
-                Behavior on color {
-                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Appearance.rounding.small
+                    color: Appearance.colors.colPrimaryContainer
+                    opacity: root.isActive ? 1 : 0
+                    Behavior on opacity {
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
                 }
 
                 MaterialSymbol {
                     anchors.centerIn: parent
-                    iconSize: 18
+                    iconSize: 20
                     text: root.strengthIcon
                     color: root.isActive ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSurfaceVariant
                 }
