@@ -146,10 +146,10 @@ Item {
         z: 2
         anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
         anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
-        color: Appearance.colors.colPrimary
+        color: Qt.lighter(Appearance.m3colors.m3secondaryContainer, 1.2)
         opacity: Config.options.bar.workspaces.activeIndicatorOpacity / 100
         radius: Appearance.rounding.full
-        
+
         AnimatedTabIndexPair {
             id: idxPair
             index: root.visibleActiveIndex
@@ -564,7 +564,7 @@ Item {
         property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers || root.showNumbersByMs
         property int workspaceValue
         property bool activeWorkspace
-        property color indColor: (activeWorkspace) ? Appearance.m3colors.m3onPrimary : (root.workspaceOccupied[index] ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1Inactive)
+        property color indColor: (activeWorkspace || root.workspaceOccupied[index]) ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1Inactive
 
         anchors.centerIn: parent
         width: root.workspaceDotSize
