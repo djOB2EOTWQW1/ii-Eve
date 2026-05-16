@@ -17,6 +17,7 @@ Item {
     required property int index
     property var originalIndex: index
     property bool vertical: false
+    property bool highlighted: false
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
@@ -29,6 +30,10 @@ Item {
             Config.options.bar.layouts.center[originalIndex].visible = visibility;
         else if (barSection == 2)
             Config.options.bar.layouts.right[originalIndex].visible = visibility;
+    }
+
+    function toggleHighlight(highlight) {
+        rootItem.highlighted = highlight;
     }
 
     property var compMap: ({ // [horizontal, vertical, expressiveHorizontal, expressiveVertical]
@@ -165,7 +170,7 @@ Item {
         bottomPadding: rootItem.isExpressive ? 0 : padding
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
-        colBackground: (itemLoader.item?.activated || primaryBackgroundComps.includes(modelData.id)) ? rootItem.colBackgroundHighlight : rootItem.colBackground
+        colBackground: (rootItem.highlighted || itemLoader.item?.activated || primaryBackgroundComps.includes(modelData.id)) ? rootItem.colBackgroundHighlight : rootItem.colBackground
 
         Loader {
             id: itemLoader
@@ -293,25 +298,16 @@ Item {
 
     Component {
         id: policiesPanelButton
-        PoliciesPanelButton {
-            startRadius: rootItem.startRadius
-            endRadius: rootItem.endRadius
-        }
+        PoliciesPanelButton {}
     }
 
     Component {
         id: dashboardPanelButton
-        DashboardPanelButton {
-            startRadius: rootItem.startRadius
-            endRadius: rootItem.endRadius
-        }
+        DashboardPanelButton {}
     }
     Component {
         id: dashboardPanelButtonVert
-        VerticalDashboardPanelButton {
-            startRadius: rootItem.startRadius
-            endRadius: rootItem.endRadius
-        }
+        VerticalDashboardPanelButton {}
     }
 
     Component {
