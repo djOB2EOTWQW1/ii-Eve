@@ -145,6 +145,8 @@ Item {
             return activeTheme.highlight;
         if (modelData.id === "sports")
             return barGroupStyle == 2 ? "transparent" : Appearance.colors.colPrimaryContainer;
+        if (modelData.id === "bluetooth_devices")
+            return Qt.lighter(Appearance.m3colors.m3secondaryContainer, 1.2);
         return Appearance.colors.colPrimary;
     }
 
@@ -153,6 +155,8 @@ Item {
             return ColorUtils.getContrastingTextColor(colBackgroundHighlight);
         if (modelData.id === "sports")
             return barGroupStyle == 2 ? Appearance.colors.colOnSurface : Appearance.colors.colOnPrimaryContainer;
+        if (modelData.id === "bluetooth_devices")
+            return Appearance.m3colors.m3onSecondaryContainer;
         return Appearance.colors.colOnPrimary;
     }
 

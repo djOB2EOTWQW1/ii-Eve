@@ -66,7 +66,7 @@ MouseArea {
             MaterialSymbol {
                 iconSize: Appearance.font.pixelSize.larger
                 text: root.hasDevices ? Icons.getBluetoothDeviceMaterialSymbol(root.primaryDevice.icon) : "bluetooth_disabled"
-                color: root.hasDevices ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurfaceVariant
+                color: root.hasDevices ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnSurfaceVariant
             }
 
             // Device name (only visible when connected)
@@ -75,7 +75,7 @@ MouseArea {
                 text: root.primaryDevice ? root.primaryDevice.name : ""
                 font.pixelSize: Appearance.font.pixelSize.normal
                 font.family: Appearance.font.family.main
-                color: Appearance.colors.colOnPrimary
+                color: Appearance.m3colors.m3onSecondaryContainer
                 Layout.maximumWidth: 60
                 elide: Text.ElideRight
             }
@@ -94,12 +94,12 @@ MouseArea {
                 value: root.primaryDevice?.battery ?? 0
                 highlightColor: {
                     if (!root.primaryDevice)
-                        return Appearance.colors.colOnPrimary;
+                        return Appearance.m3colors.m3onSecondaryContainer;
                     if (root.primaryDevice.battery <= 0.15)
                         return Appearance.m3colors.m3error;
-                    return Appearance.colors.colOnPrimary;
+                    return Appearance.m3colors.m3onSecondaryContainer;
                 }
-                trackColor: ColorUtils.transparentize(Appearance.colors.colOnPrimary, 0.7)
+                trackColor: ColorUtils.transparentize(Appearance.m3colors.m3onSecondaryContainer, 0.7)
             }
         }
     }
