@@ -130,23 +130,19 @@ DialogListItem {
             }
 
             ActionButton {
-                readonly property bool p: root.paired
-                colBackground: p ? Appearance.colors.colErrorContainer : ColorUtils.transparentize(Appearance.colors.colLayer3, 1)
-                colBackgroundHover: p ? Appearance.colors.colErrorContainerHover : Appearance.colors.colLayer3Hover
-                colRipple: p ? Appearance.colors.colErrorContainerActive : Appearance.colors.colLayer3Active
-                colText: p ? Appearance.colors.colOnErrorContainer : Appearance.colors.colPrimary
+                visible: root.paired
+                colBackground: Appearance.colors.colErrorContainer
+                colBackgroundHover: Appearance.colors.colErrorContainerHover
+                colRipple: Appearance.colors.colErrorContainerActive
+                colText: Appearance.colors.colOnErrorContainer
 
-                buttonText: p ? Translation.tr("Forget") : Translation.tr("Pair")
-                onClicked: {
-                    if (root.paired) {
-                        root.device?.forget();
-                    } else {
-                        root.device?.pair();
-                    }
-                }
+                buttonText: Translation.tr("Forget")
+                onClicked: root.device?.forget()
             }
             ActionButton {
-                buttonText: root.connected ? Translation.tr("Disconnect") : Translation.tr("Connect")
+                buttonText: root.connected
+                    ? Translation.tr("Disconnect")
+                    : (root.paired ? Translation.tr("Connect") : Translation.tr("Pair & connect"))
                 onClicked: {
                     if (root.connected) {
                         root.device.disconnect();
