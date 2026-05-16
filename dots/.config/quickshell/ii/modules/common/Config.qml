@@ -439,6 +439,12 @@ Singleton {
                             id: "clock"
                         },
                         {
+                            id: "bluetooth_devices"
+                        },
+                        {
+                            id: "keyboard_layout"
+                        },
+                        {
                             id: "system_tray"
                         },
                         {
