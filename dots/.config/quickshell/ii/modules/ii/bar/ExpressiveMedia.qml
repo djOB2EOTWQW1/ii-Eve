@@ -1,0 +1,457 @@
+pragma ComponentBehavior: Bound
+import qs.modules.common
+import qs.modules.common.widgets
+import qs.modules.common.functions
+import qs.services
+import qs.modules.common.models
+import qs
+import Qt5Compat.GraphicalEffects
+import QtQuick
+import QtQuick.Effects
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import Quickshell.Services.Mpris
+
+Item {
+    id: root
+    property bool vertical: false
+    property bool borderless: Config.options.bar.borderless
+    property bool isMaterial: true
+    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
+    property int customSize: Config.options.bar.mediaPlayer.customSize
+    property bool useFixedSize: Config.options.bar.mediaPlayer.useFixedSize
+
+    // DockMedia-like properties
+    property var artUrl: activePlayer?.trackArtUrl ?? ""
+    property string trackTitle: activePlayer?.trackTitle ?? ""
+    property string trackArtist: activePlayer?.trackArtist ?? ""
+    property bool isPlaying: activePlayer?.isPlaying ?? false
+    property bool hasTrack: trackTitle.length > 0
+
+    property string artDownloadLocation: Directories.coverArt
+    property string artFileName: Qt.md5(artUrl)
+    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+    property bool artDownloaded: false
+
+    property string displayedArtFilePath: {
+        if (!root.artDownloaded)
+            return "";
+        if (root.artUrl.startsWith("file://"))
+            return root.artUrl;
+        return Qt.resolvedUrl(artFilePath);
+    }
+
+    onArtFilePathChanged: {
+        if (!root.artUrl || root.artUrl.length === 0) {
+            root.artDownloaded = false;
+            return;
+        }
+        if (root.artUrl.startsWith("file://")) {
+            root.artDownloaded = true;
+            return;
+        }
+        artDownloader.targetFile = root.artUrl;
+        artDownloader.artFilePath = root.artFilePath;
+        root.artDownloaded = false;
+        artDownloader.running = true;
+    }
+
+    Process {
+        id: artDownloader
+        property string targetFile: root.artUrl
+        property string artFilePath: root.artFilePath
+        command: ["bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
+        onExited: {
+            root.artDownloaded = true;
+        }
+    }
+
+    Layout.fillHeight: true
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (useFixedSize ? customSize : (isMaterial ? materialRow.implicitWidth : Math.min(rowLayout.implicitWidth + 8, 280)))
+    implicitHeight: vertical ? (isMaterial ? materialCol.implicitHeight : mediaCircProg.implicitHeight + 6) : Appearance.sizes.barHeight
+
+    Behavior on implicitWidth {
+        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(root)
+    }
+
+    Behavior on implicitHeight {
+        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(root)
+    }
+
+    width: implicitWidth
+    height: implicitHeight
+
+    Timer {
+        running: activePlayer?.playbackState == MprisPlaybackState.Playing
+        interval: Config.options.resources.updateInterval
+        repeat: true
+        onTriggered: activePlayer.positionChanged()
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
+        hoverEnabled: !Config.options.bar.tooltips.clickToShow
+        onPressed: event => {
+            if (event.button === Qt.MiddleButton)
+                activePlayer.togglePlaying();
+            else if (event.button === Qt.BackButton)
+                activePlayer.previous();
+            else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton)
+                activePlayer.next();
+            else if (event.button === Qt.LeftButton) {
+                var globalPos = root.mapToItem(null, 0, 0);
+                Persistent.states.media.popupRect = Qt.rect(globalPos.x, globalPos.y, root.width, root.height);
+                GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
+            }
+        }
+    }
+
+    // Vertical default
+    Loader {
+        id: mediaCircProg
+        active: root.vertical && !root.isMaterial
+        visible: active
+        anchors.centerIn: parent
+        sourceComponent: ClippedFilledCircularProgress {
+            implicitSize: 20
+            lineWidth: Appearance.rounding.unsharpen
+            value: root.activePlayer?.position / root.activePlayer?.length
+            colPrimary: Appearance.colors.colOnSecondaryContainer
+            enableAnimation: false
+            Item {
+                anchors.centerIn: parent
+                width: 20
+                height: 20
+                MaterialSymbol {
+                    anchors.centerIn: parent
+                    fill: 1
+                    text: root.activePlayer?.isPlaying ? "pause" : "music_note"
+                    iconSize: Appearance.font.pixelSize.normal
+                    color: Appearance.m3colors.m3onSecondaryContainer
+                }
+            }
+        }
+    }
+
+    // Vertical Material
+    Loader {
+        id: materialCol
+        active: root.vertical && root.isMaterial
+        visible: active
+        anchors.centerIn: parent
+        sourceComponent: Rectangle {
+            id: cardVert
+            color: Appearance.colors.colSecondaryContainer
+            radius: Appearance.rounding.full
+            implicitWidth: 34
+            implicitHeight: 120 // Increased to fit all elements properly
+            
+            ColumnLayout {
+                id: innerCol
+                anchors.fill: parent
+                anchors.topMargin: 8
+                anchors.bottomMargin: 8
+                spacing: 4
+
+                // Art
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colSecondaryContainer
+                    clip: true
+
+                    StyledImage {
+                        anchors.fill: parent
+                        source: root.displayedArtFilePath
+                        fillMode: Image.PreserveAspectCrop
+                        cache: false
+                        antialiasing: true
+                        sourceSize.width: 28
+                        sourceSize.height: 28
+                        visible: root.displayedArtFilePath !== ""
+                    }
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        fill: 1
+                        text: "music_note"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.colors.colOnSecondaryContainer
+                        visible: root.displayedArtFilePath === ""
+                    }
+                }
+
+                Item { Layout.fillHeight: true } // Spacer
+
+                // Play/Pause
+                RippleButton {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitWidth: 28
+                    implicitHeight: 32
+                    buttonRadius: root.isPlaying ? Appearance.rounding.normal : 14
+                    colBackground: root.isPlaying ? Appearance.colors.colPrimary : Appearance.colors.colTertiary
+                    colBackgroundHover: root.isPlaying ? Appearance.colors.colPrimaryHover : Appearance.colors.colTertiaryContainerHover
+                    colRipple: root.isPlaying ? Appearance.colors.colPrimaryActive : Appearance.colors.colTertiaryContainerActive
+                    downAction: () => root.activePlayer?.togglePlaying()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: root.isPlaying ? "pause" : "play_arrow"
+                        iconSize: 20
+                        fill: 1
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: root.isPlaying ? Appearance.colors.colOnPrimary : Appearance.colors.colOnTertiary
+                    }
+                }
+
+                Item { Layout.fillHeight: true } // Spacer
+
+                // Next
+                RippleButton {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    buttonRadius: 14
+                    colBackground: Appearance.colors.colTertiaryContainer
+                    colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                    colRipple: Appearance.colors.colPrimaryContainerActive
+                    downAction: () => root.activePlayer?.next()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "skip_next"
+                        iconSize: 18
+                        fill: 1
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: Appearance.colors.colOnTertiaryContainer
+                    }
+                }
+            }
+        }
+    }
+
+    // Horizontal default
+    Loader {
+        id: rowLayout
+        active: !root.vertical && !root.isMaterial
+        visible: active
+        anchors.fill: parent
+        sourceComponent: RowLayout {
+            spacing: 4
+            ClippedFilledCircularProgress {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 3
+                implicitSize: 20
+                lineWidth: Appearance.rounding.unsharpen
+                value: root.activePlayer?.position / root.activePlayer?.length
+                colPrimary: Appearance.colors.colOnSecondaryContainer
+                enableAnimation: false
+                Item {
+                    anchors.centerIn: parent
+                    width: 20
+                    height: 20
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        fill: 1
+                        text: root.activePlayer?.isPlaying ? "pause" : "music_note"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.m3colors.m3onSecondaryContainer
+                    }
+                }
+            }
+            StyledText {
+                visible: Config.options.bar.verbose
+                Layout.alignment: Qt.AlignVCenter
+                Layout.fillWidth: true
+                Layout.rightMargin: 0
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+                color: Appearance.colors.colOnLayer1
+                text: `${root.cleanedTitle}${root.activePlayer?.trackArtist ? ' • ' + root.activePlayer.trackArtist : ''}`
+            }
+        }
+    }
+
+    // Horizontal Material
+    Loader {
+        id: materialRow
+        active: !root.vertical && root.isMaterial
+        visible: active
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: Rectangle {
+            id: card
+            color: Appearance.colors.colSecondaryContainer
+            radius: Appearance.rounding.full
+            implicitHeight: 30
+            height: implicitHeight
+            implicitWidth: innerRow.implicitWidth + 8
+            width: parent.width
+
+            RowLayout {
+                id: innerRow
+                anchors.fill: parent
+                anchors.leftMargin: 4
+                anchors.rightMargin: 4
+                spacing: 6
+
+                // Art
+                Rectangle {
+                    id: artRect
+                    implicitWidth: 26
+                    implicitHeight: 26
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colSecondaryContainer
+                    Layout.alignment: Qt.AlignVCenter
+
+                    layer.enabled: true
+                    layer.effect: OpacityMask {
+                        maskSource: Rectangle {
+                            width: artRect.width
+                            height: artRect.height
+                            radius: artRect.radius
+                        }
+                    }
+
+                    StyledImage {
+                        anchors.fill: parent
+                        source: root.displayedArtFilePath
+                        fillMode: Image.PreserveAspectCrop
+                        cache: false
+                        antialiasing: true
+                        sourceSize.width: artRect.width
+                        sourceSize.height: artRect.height
+                        visible: root.displayedArtFilePath !== ""
+                    }
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        fill: 1
+                        text: "music_note"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.colors.colOnSecondaryContainer
+                        visible: root.displayedArtFilePath === ""
+                    }
+                }
+
+                // Title + Artist
+                ColumnLayout {
+                    spacing: -4
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.topMargin: 2
+                    Layout.fillWidth: true
+
+                    StyledText {
+                        id: artistText
+                        text: root.trackArtist
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: Appearance.colors.colOnSecondaryContainer
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation {
+                                    target: artistText
+                                    property: "x"
+                                    to: -artistText.width
+                                    duration: 150
+                                    easing.type: Easing.InQuad
+                                }
+                                PropertyAction {
+                                    target: artistText
+                                    property: "text"
+                                }
+                                NumberAnimation {
+                                    target: artistText
+                                    property: "x"
+                                    from: artistText.width
+                                    to: 0
+                                    duration: 150
+                                    easing.type: Easing.OutQuad
+                                }
+                            }
+                        }
+                    }
+                    StyledText {
+                        id: titleText
+                        Layout.topMargin: !root.activePlayer ? -13 : 0
+                        text: StringUtils.cleanMusicTitle(root.trackTitle) || Translation.tr("No media")
+                        font.pixelSize: Appearance.font.pixelSize.smallie
+                        color: Appearance.colors.colOnSecondaryContainer
+                        elide: Text.ElideRight
+                        opacity: 0.7
+                        Layout.fillWidth: true
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation {
+                                    target: titleText
+                                    property: "x"
+                                    to: -artistText.width
+                                    duration: 150
+                                    easing.type: Easing.InQuad
+                                }
+                                PropertyAction {
+                                    target: titleText
+                                    property: "text"
+                                }
+                                NumberAnimation {
+                                    target: titleText
+                                    property: "x"
+                                    from: artistText.width
+                                    to: 0
+                                    duration: 150
+                                    easing.type: Easing.OutQuad
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Play/Pause
+                RippleButton {
+                    implicitWidth: 40
+                    implicitHeight: 23
+                    buttonRadius: root.isPlaying ? Appearance.rounding.normal : 13
+                    colBackground: root.isPlaying ? Appearance.colors.colPrimary : Appearance.colors.colTertiary
+                    colBackgroundHover: root.isPlaying ? Appearance.colors.colPrimaryHover : Appearance.colors.colTertiaryContainerHover
+                    colRipple: root.isPlaying ? Appearance.colors.colPrimaryActive : Appearance.colors.colTertiaryContainerActive
+                    downAction: () => root.activePlayer?.togglePlaying()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: root.isPlaying ? "pause" : "play_arrow"
+                        iconSize: Appearance.font.pixelSize.large
+                        fill: 1
+                        color: root.isPlaying ? Appearance.colors.colOnPrimary : Appearance.colors.colOnTertiary
+                    }
+                }
+
+                // Next
+                RippleButton {
+                    implicitWidth: 26
+                    implicitHeight: 26
+                    Layout.leftMargin: -4
+                    buttonRadius: 13
+                    colBackground: Appearance.colors.colTertiaryContainer
+                    colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                    colRipple: Appearance.colors.colPrimaryContainerActive
+                    downAction: () => root.activePlayer?.next()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "skip_next"
+                        iconSize: Appearance.font.pixelSize.large
+                        fill: 1
+                        color: Appearance.colors.colOnTertiaryContainer
+                    }
+                }
+            }
+        }
+    }
+}

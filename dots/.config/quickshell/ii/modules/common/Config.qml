@@ -314,8 +314,28 @@ Singleton {
                 property int barGroupStyle: 0 // 0: Pills | 1: Island (opaque) | 2: Transparent (or maybe line-separated in the future)
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
                 property int barBackgroundStyle: 1 // 0: Transparent | 1: Visible | 2: Adaptive
+                property bool expressiveColors: false
+                property string expressiveColorTheme: "content"
                 property bool verbose: true
                 property bool vertical: false
+
+                property JsonObject styles: JsonObject {
+                    property string clock: "default" // default, expressive
+                    property string media: "default"
+                    property string notification: "default"
+                    property string utilButtons: "default"
+                    property string workspaces: "default"
+                    property string weather: "default"
+                    property string dashboard: "default"
+                    property string resources: "default"
+                    property string policies: "default"
+                    property string power: "default"
+                    property string battery: "default"
+                    property string systray: "default"
+                    property string bluetooth: "default"
+                    property string keyboard: "default"
+                    property string sports: "default"
+                }
 
                 property JsonObject mediaPlayer: JsonObject {
                     property bool useFixedSize: false
