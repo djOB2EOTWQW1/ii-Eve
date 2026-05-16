@@ -17,7 +17,7 @@ LazyLoader {
 
     property bool _popupHovered: false
     property bool _stickyActive: false
-    property bool _targetHovered: hoverTarget ? hoverTarget.containsMouse : false
+    property bool _targetHovered: !!(hoverTarget?.containsMouse)
 
     active: stickyHover ? _stickyActive : (hoverTarget && hoverTarget.containsMouse)
 
