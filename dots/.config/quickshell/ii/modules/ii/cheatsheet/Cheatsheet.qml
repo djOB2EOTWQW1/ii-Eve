@@ -10,6 +10,7 @@ import Quickshell.Io
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import "commands"
 
 Scope { // Scope
     id: root
@@ -25,8 +26,11 @@ Scope { // Scope
         {
             "icon": "experiment",
             "name": Translation.tr("Elements")
-          },
-        
+        },
+        {
+            "icon": "terminal",
+            "name": Translation.tr("Commands")
+        },
     ]
 
     Loader {
@@ -178,7 +182,7 @@ Scope { // Scope
                         CheatsheetTimetable {}
                         CheatsheetKeybinds {}
                         CheatsheetPeriodicTable {}
-                        
+                        CheatsheetCommands {}
                     }
                 }
             }
