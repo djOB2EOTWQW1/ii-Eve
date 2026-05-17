@@ -821,6 +821,15 @@ Singleton {
                 property string savePath: "" // only copy to clipboard when empty
             }
 
+            property JsonObject screenTranslator: JsonObject {
+                property string provider: "google" // "google" | "local"
+                property string targetLanguage: "" // empty = fallback to language.ui
+                property JsonObject local: JsonObject {
+                    property string tesseractDataDir: "" // empty = ~/.local/share/tessdata
+                    property string tesseractModel: "fast" // "fast" | "best"
+                }
+            }
+
             property JsonObject sounds: JsonObject {
                 property bool battery: false
                 property bool pomodoro: false
