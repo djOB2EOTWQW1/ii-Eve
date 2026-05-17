@@ -33,6 +33,7 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         BluetoothAgent.load()
+        LocalTranslator.initOnce()
     }
 
 
