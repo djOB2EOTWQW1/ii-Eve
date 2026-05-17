@@ -10,6 +10,7 @@ import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.models
 import qs.modules.common.models.gCloud
+import qs.modules.common.models.local
 import qs.modules.common.utils
 import qs.modules.common.widgets
 import qs.services
@@ -41,16 +42,17 @@ Item {
     }
 
     Component.onCompleted: {
-        if (GoogleCloud.tokenReady && GoogleCloud.tokenError) {
+        if (root.provider === "google" && GoogleCloud.tokenReady && GoogleCloud.tokenError) {
             root.showError();
         }
-        cloudVision.annotateImage(screenshotPath);
+        ocrLoader.ocrInstance.annotateImage(screenshotPath);
     }
 
     function reattemptAsNeeded() {
+        if (root.provider !== "google") return;
         if (root.visionParagraphs == [] && GoogleCloud.tokenReady && !GoogleCloud.tokenError) {
             root.error = false;
-            cloudVision.annotateImage(root.screenshotPath);
+            ocrLoader.ocrInstance.annotateImage(root.screenshotPath);
         }
     }
 
@@ -82,15 +84,19 @@ Item {
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: {
-                    if (cloudVision.state == TranslatorApi.State.Preparing)
-                        return Translation.tr("Uploading image");
-                    else if (cloudVision.state == TranslatorApi.State.Processing)
+                    const ocr = ocrLoader.ocrInstance;
+                    const trans = translateLoader.translateInstance;
+                    if (ocr.state == TranslatorApi.State.Preparing)
+                        return root.provider === "local"
+                            ? Translation.tr("Preparing OCR")
+                            : Translation.tr("Uploading image");
+                    else if (ocr.state == TranslatorApi.State.Processing)
                         return Translation.tr("Reading image");
-                    else if (cloudVision.state == TranslatorApi.State.Error)
+                    else if (ocr.state == TranslatorApi.State.Error)
                         return Translation.tr("Error");
-                    else if (cloudTrans.state == TranslatorApi.State.Preparing)
+                    else if (trans.state == TranslatorApi.State.Preparing)
                         return Translation.tr("Getting ready to translate");
-                    else if (cloudTrans.state == TranslatorApi.State.Processing)
+                    else if (trans.state == TranslatorApi.State.Processing)
                         return Translation.tr("Translating");
                     else
                         return " ";
@@ -144,37 +150,79 @@ Item {
         root.showError();
     }
 
-    GCloudVision {
-        id: cloudVision
-        onError: (msg) => {
-            root.handleError(msg);
+    readonly property string provider: Config.options.screenTranslator.provider
+
+    Loader {
+        id: ocrLoader
+        active: true
+        sourceComponent: root.provider === "local" ? localOcrComponent : googleOcrComponent
+
+        property var ocrInstance: item
+
+        Component {
+            id: googleOcrComponent
+            GCloudVision {
+                onError: (msg) => { root.handleError(msg); }
+                onFinished: {
+                    gcr.initializeWithData(outputData);
+                    root.visionParagraphs = gcr.coherentParagraphs;
+                    root.translationKeys = gcr.coherentParagraphs.map(p => p.text);
+                    translateLoader.translateInstance.translateStrings(root.translationKeys);
+                }
+            }
         }
-        onFinished: {
-            gcr.initializeWithData(outputData);
-            root.visionParagraphs = gcr.coherentParagraphs;
-            // print(gcr.coherentParagraphs)
-            root.translationKeys = gcr.coherentParagraphs.map(p => p.text);
-            // print("TRANSLATION KEYS:", JSON.stringify(root.translationKeys));
-            cloudTrans.translateStrings(root.translationKeys);
+
+        Component {
+            id: localOcrComponent
+            LocalOcr {
+                onError: (msg) => { root.handleError(msg); }
+                onFinished: {
+                    gcr.initializeWithData(outputData);
+                    root.visionParagraphs = gcr.coherentParagraphs;
+                    root.translationKeys = gcr.coherentParagraphs.map(p => p.text);
+                    translateLoader.translateInstance.translateStrings(root.translationKeys);
+                }
+            }
         }
     }
 
-    GCloudTranslate {
-        id: cloudTrans
-        onError: (msg) => {
-            root.handleError(msg);
-        }
-        onFinished: {
-            var values = outputData.translations.map(translation => translation.translatedText);
-            const keys = root.translationKeys;
-            root.translation = ({});
-            for (var i = 0; i < keys.length; i++) {
-                Object.assign(root.translation, {
-                    [keys[i]]: values[i]
-                });
+    Loader {
+        id: translateLoader
+        active: true
+        sourceComponent: root.provider === "local" ? localTransComponent : googleTransComponent
+
+        property var translateInstance: item
+
+        Component {
+            id: googleTransComponent
+            GCloudTranslate {
+                onError: (msg) => { root.handleError(msg); }
+                onFinished: {
+                    var values = outputData.translations.map(t => t.translatedText);
+                    const keys = root.translationKeys;
+                    root.translation = ({});
+                    for (var i = 0; i < keys.length; i++) {
+                        Object.assign(root.translation, { [keys[i]]: values[i] });
+                    }
+                    root.loading = false;
+                }
             }
-            // print("TRANSLATION:", JSON.stringify(root.translation));
-            root.loading = false;
+        }
+
+        Component {
+            id: localTransComponent
+            LocalTranslate {
+                onError: (msg) => { root.handleError(msg); }
+                onFinished: {
+                    var values = outputData.translations.map(t => t.translatedText);
+                    const keys = root.translationKeys;
+                    root.translation = ({});
+                    for (var i = 0; i < keys.length; i++) {
+                        Object.assign(root.translation, { [keys[i]]: values[i] });
+                    }
+                    root.loading = false;
+                }
+            }
         }
     }
 
