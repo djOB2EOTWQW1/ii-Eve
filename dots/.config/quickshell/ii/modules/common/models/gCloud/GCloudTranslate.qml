@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.utils
 import qs.services
@@ -24,7 +25,7 @@ TranslatorApi {
         if (!preparationReady) return;
         root.state = TranslatorApi.State.Processing;
 
-        const targetLang = Translation.languageCode;
+        const targetLang = Config.options.screenTranslator.targetLanguage || Translation.languageCode;
         const payload = {
             "targetLanguageCode": targetLang,
             "contents": root.pendingStrings,
