@@ -457,4 +457,161 @@ ContentPage {
             }
         }
     }
+
+    ContentSection {
+        icon: "translate"
+        title: Translation.tr("Screen Translator")
+
+        ContentSubsection {
+            title: Translation.tr("Translate to")
+            tooltip: Translation.tr("Defaults to UI language when empty")
+
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Language code (e.g. ru, en, ja) or empty for auto")
+                text: Config.options.screenTranslator.targetLanguage
+                wrapMode: TextEdit.NoWrap
+                onTextChanged: {
+                    Config.options.screenTranslator.targetLanguage = text;
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Provider")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.screenTranslator.provider
+                onSelected: newValue => {
+                    Config.options.screenTranslator.provider = newValue;
+                }
+                options: [
+                    { displayName: "Google", icon: "public", value: "google" },
+                    { displayName: "Local (offline)", icon: "wifi_off", value: "local" }
+                ]
+            }
+        }
+
+        // Local-only options
+        Loader {
+            Layout.fillWidth: true
+            active: Config.options.screenTranslator.provider === "local"
+            sourceComponent: ColumnLayout {
+                spacing: 8
+
+                ContentSubsection {
+                    title: Translation.tr("Tesseract model")
+                    tooltip: Translation.tr("Fast is smaller and faster; Best is more accurate")
+
+                    ConfigSelectionArray {
+                        currentValue: Config.options.screenTranslator.local.tesseractModel
+                        onSelected: newValue => {
+                            Config.options.screenTranslator.local.tesseractModel = newValue;
+                        }
+                        options: [
+                            { displayName: "Fast", icon: "bolt", value: "fast" },
+                            { displayName: "Best", icon: "diamond", value: "best" }
+                        ]
+                    }
+                }
+
+                ContentSubsection {
+                    title: Translation.tr("Language packs")
+
+                    MaterialTextArea {
+                        id: langSearch
+                        Layout.fillWidth: true
+                        placeholderText: Translation.tr("Search…")
+                        wrapMode: TextEdit.NoWrap
+                    }
+
+                    Repeater {
+                        model: LocalTranslator.languageRegistry.filter(entry => {
+                            const q = langSearch.text.toLowerCase();
+                            if (!q) return true;
+                            return entry.name.toLowerCase().includes(q)
+                                || entry.tess.includes(q)
+                                || entry.argos.includes(q);
+                        })
+
+                        delegate: RowLayout {
+                            id: row
+                            required property var modelData
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            readonly property string rowState: LocalTranslator.rowState(modelData.tess)
+
+                            StyledText {
+                                text: modelData.name
+                                Layout.fillWidth: true
+                            }
+
+                            Rectangle {
+                                id: chip
+                                implicitWidth: chipLabel.implicitWidth + 16
+                                implicitHeight: chipLabel.implicitHeight + 8
+                                radius: 6
+                                color: {
+                                    switch (row.rowState) {
+                                    case "system":      return Appearance.colors.colSecondaryContainer;
+                                    case "installed":   return Appearance.colors.colSecondaryContainer;
+                                    case "partial":     return Appearance.colors.colTertiaryContainer;
+                                    case "installing":  return Appearance.colors.colSecondaryContainer;
+                                    case "uninstalling":return Appearance.colors.colSecondaryContainer;
+                                    case "error":       return Appearance.colors.colError;
+                                    case "missing":     return Appearance.colors.colSurfaceContainer;
+                                    default:            return Appearance.colors.colSurfaceContainer;
+                                    }
+                                }
+                                StyledText {
+                                    id: chipLabel
+                                    anchors.centerIn: parent
+                                    text: {
+                                        switch (row.rowState) {
+                                        case "system":      return Translation.tr("System");
+                                        case "installed":   return Translation.tr("Installed");
+                                        case "partial":     return Translation.tr("Partial");
+                                        case "installing":  return Translation.tr("Installing…");
+                                        case "uninstalling":return Translation.tr("Removing…");
+                                        case "error":       return Translation.tr("Error");
+                                        case "missing":     return Translation.tr("Not installed");
+                                        default:            return "";
+                                        }
+                                    }
+                                    color: row.rowState === "error" ? Appearance.colors.colOnError : Appearance.m3colors.m3onSurface
+                                }
+                            }
+
+                            DialogButton {
+                                visible: row.rowState === "missing"
+                                    || row.rowState === "partial"
+                                    || row.rowState === "error"
+                                enabled: row.rowState !== "installing" && row.rowState !== "uninstalling"
+                                buttonText: row.rowState === "error" ? Translation.tr("Retry") : Translation.tr("Install")
+                                onClicked: LocalTranslator.installLanguage(row.modelData.tess)
+                            }
+                            DialogButton {
+                                visible: row.rowState === "installed"
+                                enabled: true
+                                buttonText: Translation.tr("Uninstall")
+                                onClicked: LocalTranslator.uninstallLanguage(row.modelData.tess)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Google-only hint
+        Loader {
+            Layout.fillWidth: true
+            active: Config.options.screenTranslator.provider === "google"
+            sourceComponent: StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                text: Translation.tr("Configure your Google Cloud service account key inside the Screen Translator panel (SUPER+SHIFT+T → key icon).")
+            }
+        }
+    }
 }
