@@ -10,5 +10,6 @@ OsdValueIndicator {
     icon: "wb_twilight"
     name: Translation.tr("Gamma")
     from: Hyprsunset.gammaLowerLimit / 100
+    to: Hyprsunset.gammaUpperLimit / 100
     value: Hyprsunset.gamma / 100 ?? 0.5
 }

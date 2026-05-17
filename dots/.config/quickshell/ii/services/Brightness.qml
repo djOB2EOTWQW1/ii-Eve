@@ -28,24 +28,28 @@ Singleton {
     }
 
     function increaseBrightness(): void {
-        // if gamma is not yet 100, first increase gamma
-        if (Hyprsunset.gamma !== 100) {
+        const focusedName = Hyprland.focusedMonitor.name;
+        const monitor = monitors.find(m => focusedName === m.screen.name);
+        if (monitor && monitor.brightness < 1)
+            monitor.setBrightness(monitor.brightness + 0.05);
+        // if brightness is at max, then increase gamma
+        else {
             Hyprsunset.setGamma(Hyprsunset.gamma + 5);
+        }
+    }
+
+    function decreaseBrightness(): void {
+        // first bring any gamma boost above 100 back down to 100
+        if (Hyprsunset.gamma > 100) {
+            Hyprsunset.setGamma(Hyprsunset.gamma - 5);
             return;
         }
 
         const focusedName = Hyprland.focusedMonitor.name;
         const monitor = monitors.find(m => focusedName === m.screen.name);
-        if (monitor)
-            monitor.setBrightness(monitor.brightness + 0.05);
-    }
-
-    function decreaseBrightness(): void {
-        const focusedName = Hyprland.focusedMonitor.name;
-        const monitor = monitors.find(m => focusedName === m.screen.name);
-        if (monitor && monitor.brightness > 0) 
+        if (monitor && monitor.brightness > 0)
             monitor.setBrightness(monitor.brightness - 0.05);
-        // if brightness is 0, then decrease gamma
+        // if brightness is 0, then decrease gamma below 100
         else {
             Hyprsunset.setGamma(Hyprsunset.gamma - 5);
         }

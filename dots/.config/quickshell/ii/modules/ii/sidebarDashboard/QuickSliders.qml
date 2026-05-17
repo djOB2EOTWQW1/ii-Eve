@@ -62,12 +62,12 @@ Rectangle {
                 getVal: () => Audio.source.audio.volume, 
                 setVal: (v) => { Audio.source.audio.volume = v } },
                 { show: showGamma, icon: "light_mode",  secondaryIcon: "wb_twilight",
-                getVal: () => Hyprsunset.gamma === 100 ? 0.3 + root.brightnessMonitor?.brightness * 0.7 : (Hyprsunset.gamma - Hyprsunset.gammaLowerLimit) / (100 - Hyprsunset.gammaLowerLimit) * 0.3,
+                getVal: () => Hyprsunset.gamma >= 100 ? 0.3 + root.brightnessMonitor?.brightness * 0.7 : (Hyprsunset.gamma - Hyprsunset.gammaLowerLimit) / (100 - Hyprsunset.gammaLowerLimit) * 0.3,
                 setVal: (v) => {
                     if (v >= 0.3) {
                         // 0.3 - 1.0 brightness
                         root.brightnessMonitor.setBrightness((v - 0.3) / 0.7);
-                        if (Hyprsunset.gamma !== 100) {
+                        if (Hyprsunset.gamma < 100) {
                             Hyprsunset.setGamma(100);
                         }
                     } else {

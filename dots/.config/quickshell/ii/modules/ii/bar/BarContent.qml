@@ -111,7 +111,7 @@ Item { // Bar content region
 
         ScrollHint {
             reveal: barLeftSideMouseArea.hovered
-            icon: Hyprsunset.gamma === 100 ? "light_mode" : "wb_twilight"
+            icon: Hyprsunset.gamma >= 100 ? "light_mode" : "wb_twilight"
             tooltipText: Translation.tr("Scroll to change brightness")
             side: "left"
             anchors.left: parent.left

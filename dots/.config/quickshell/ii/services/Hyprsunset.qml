@@ -16,6 +16,7 @@ Singleton {
     signal gammaChangeAttempt()
 
     readonly property real gammaLowerLimit: 25
+    readonly property real gammaUpperLimit: 150
 
     property string from: Config.options?.light?.night?.from ?? "19:00" 
     property string to: Config.options?.light?.night?.to ?? "06:30"
@@ -84,17 +85,32 @@ Singleton {
     }
 
     function startHyprsunset() {
-        Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset`]);
+        Quickshell.execDetached(["bash", "-c",
+            `pidof hyprsunset > /dev/null || hyprsunset --gamma_max ${root.gammaUpperLimit}`
+        ]);
+    }
+
+    // Ensure the running hyprsunset accepts gamma above 100%; restart it with --gamma_max if not.
+    function ensureHyprsunsetGammaMax() {
+        Quickshell.execDetached(["bash", "-c",
+            `pid=$(pidof hyprsunset 2>/dev/null); ` +
+            `if [ -n "$pid" ] && ! tr '\\0' ' ' < /proc/$pid/cmdline 2>/dev/null | grep -q -- '--gamma_max'; then ` +
+            `kill "$pid"; ` +
+            `for _ in 1 2 3 4 5 6 7 8 9 10; do pidof hyprsunset > /dev/null || break; sleep 0.1; done; ` +
+            `fi; ` +
+            `pidof hyprsunset > /dev/null || hyprsunset --gamma_max ${root.gammaUpperLimit}`
+        ]);
+        updateHyprsunset.restart();
     }
 
     function load() {
-        root.startHyprsunset();
+        root.ensureHyprsunsetGammaMax();
         root.ensureState();
     }
 
     Timer {
         id: updateHyprsunset
-        interval: 100
+        interval: 600
         repeat: false
         onTriggered: {
             root.ensureState();
@@ -117,7 +133,7 @@ Singleton {
     }
 
     function setGamma(gamma) {
-        root.gamma = Math.max(root.gammaLowerLimit, Math.min(100, gamma));
+        root.gamma = Math.max(root.gammaLowerLimit, Math.min(root.gammaUpperLimit, gamma));
 
         root.gammaChangeAttempt();
 
