@@ -146,6 +146,8 @@ Tips:
   - Not explicitly used.
 - `gobject-introspection`
   - Not explicitly used.
+- `argostranslate`
+  - Used by `quickshell/ii/scripts/local-translator/argos_translate.py` for offline translation in Screen Translator's Local provider.
 
 ## illogical-impulse-screencapture
 - `hyprshot`
