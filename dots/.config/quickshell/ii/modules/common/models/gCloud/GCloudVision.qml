@@ -7,7 +7,7 @@ import qs.services
 import qs.modules.common
 import ".."
 
-GCloudApi {
+TranslatorApi {
     id: root
 
     readonly property string imageBase64FilePath: `${Directories.screenshotTemp}/vision_base64.txt`
@@ -20,7 +20,7 @@ GCloudApi {
 
     function annotateImage(imageUri: string) {
         resetState();
-        root.state = GCloudApi.State.Preparing;
+        root.state = TranslatorApi.State.Preparing;
         root.onlineImageReady = false
         GoogleCloud.load();
 
@@ -41,11 +41,11 @@ GCloudApi {
     onPreparationReadyChanged: {
         if (!preparationReady) return;
         if (GoogleCloud.tokenError || GoogleCloud.keyError) {
-            root.state = GCloudApi.State.Error;
+            root.state = TranslatorApi.State.Error;
             root.error(Translation.tr("Set your Google Cloud service account key"));
             return;
         }
-        root.state = GCloudApi.State.Processing;
+        root.state = TranslatorApi.State.Processing;
         var seq = []; // command sequence
 
         // Construct the JSON payload using jq to read from the base64 file

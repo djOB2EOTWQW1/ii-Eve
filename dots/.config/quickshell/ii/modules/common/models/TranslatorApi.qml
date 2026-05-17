@@ -5,7 +5,7 @@ import qs.modules.common.functions
 import qs.modules.common.utils
 import qs.services
 import qs.modules.common
-import ".."
+import "."
 
 NestableObject {
     id: root
@@ -19,10 +19,10 @@ NestableObject {
     property int errorCode
     property string errorMessage: ""
     property var outputData
-    property var state: GCloudApi.State.Done
+    property var state: TranslatorApi.State.Done
 
     function resetState() {
-        root.state = GCloudApi.State.Done;
+        root.state = TranslatorApi.State.Done;
         root.errorMessage = "";
         root.outputData = undefined;
     }
@@ -32,18 +32,18 @@ NestableObject {
             root.outputData = JSON.parse(out);
             if (outputData.error) {
                 print("API error: " + JSON.stringify(outputData.error, null, 2))
-                root.state = GCloudApi.State.Error;
+                root.state = TranslatorApi.State.Error;
                 root.errorCode = outputData.error.code;
                 root.errorMessage = outputData.error.message;
                 root.error(outputData.error.message);
                 return false;
             }
             root.finished();
-            root.state = GCloudApi.State.Done;
+            root.state = TranslatorApi.State.Done;
             return true
         } catch (e) {
             print("Failed to parse API response: " + e + "\n" + out)
-            root.state = GCloudApi.State.Error;
+            root.state = TranslatorApi.State.Error;
             root.errorMessage = "Failed to parse API response";
             root.error(root.errorMessage);
             return false;

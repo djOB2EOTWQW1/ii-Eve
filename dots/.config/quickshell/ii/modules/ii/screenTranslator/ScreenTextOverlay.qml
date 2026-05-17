@@ -8,6 +8,7 @@ import Quickshell
 import qs
 import qs.modules.common
 import qs.modules.common.functions
+import qs.modules.common.models
 import qs.modules.common.models.gCloud
 import qs.modules.common.utils
 import qs.modules.common.widgets
@@ -81,15 +82,15 @@ Item {
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: {
-                    if (cloudVision.state == GCloudApi.State.Preparing)
+                    if (cloudVision.state == TranslatorApi.State.Preparing)
                         return Translation.tr("Uploading image");
-                    else if (cloudVision.state == GCloudApi.State.Processing)
+                    else if (cloudVision.state == TranslatorApi.State.Processing)
                         return Translation.tr("Reading image");
-                    else if (cloudVision.state == GCloudApi.State.Error)
+                    else if (cloudVision.state == TranslatorApi.State.Error)
                         return Translation.tr("Error");
-                    else if (cloudTrans.state == GCloudApi.State.Preparing)
+                    else if (cloudTrans.state == TranslatorApi.State.Preparing)
                         return Translation.tr("Getting ready to translate");
-                    else if (cloudTrans.state == GCloudApi.State.Processing)
+                    else if (cloudTrans.state == TranslatorApi.State.Processing)
                         return Translation.tr("Translating");
                     else
                         return " ";
