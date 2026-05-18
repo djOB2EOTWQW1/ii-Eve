@@ -226,6 +226,8 @@ Singleton {
 
     onStatusChanged: {}
 
+    Component.onCompleted: root.initOnce()
+
     MultiTurnProcess { id: initProc }
     MultiTurnProcess { id: tessProc }
     MultiTurnProcess { id: argosProc }
