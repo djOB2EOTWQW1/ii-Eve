@@ -459,20 +459,33 @@ ContentPage {
     }
 
     ContentSection {
+        id: translatorSection
         icon: "translate"
         title: Translation.tr("Screen Translator")
 
+        readonly property var targetLanguageOptions: [
+            { displayName: Translation.tr("Auto (UI language)"), value: "" }
+        ].concat(LocalTranslator.languageRegistry.map(entry => ({
+            displayName: entry.name,
+            value: entry.argos
+        })))
+
         ContentSubsection {
             title: Translation.tr("Translate to")
-            tooltip: Translation.tr("Defaults to UI language when empty")
+            tooltip: Translation.tr("Auto uses your interface language")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Language code (e.g. ru, en, ja) or empty for auto")
-                text: Config.options.screenTranslator.targetLanguage
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.screenTranslator.targetLanguage = text;
+            StyledComboBox {
+                buttonIcon: "language"
+                textRole: "displayName"
+                model: translatorSection.targetLanguageOptions
+
+                currentIndex: {
+                    const idx = model.findIndex(item => item.value === Config.options.screenTranslator.targetLanguage);
+                    return idx !== -1 ? idx : 0;
+                }
+
+                onActivated: index => {
+                    Config.options.screenTranslator.targetLanguage = model[index].value;
                 }
             }
         }
@@ -497,7 +510,51 @@ ContentPage {
             Layout.fillWidth: true
             active: Config.options.screenTranslator.provider === "local"
             sourceComponent: ColumnLayout {
+                id: localOptions
                 spacing: 8
+
+                // Helpers re-evaluate when LocalTranslator.status changes.
+                readonly property var statusMap: LocalTranslator.status
+                function rowStateFor(entry) {
+                    const s = statusMap[entry.tess];
+                    if (!s) return "missing";
+                    if (s.error) return "error";
+                    if (s.busy) return s.busy;
+                    const t = s.tesseract;
+                    const a = s.argos;
+                    const aOk = (a === "user" || a === "system" || a === "n/a");
+                    const tOk = (t === "user" || t === "system");
+                    if (tOk && aOk) {
+                        if (t === "system" && (a === "system" || a === "n/a")) return "system";
+                        return "installed";
+                    }
+                    if (tOk || aOk) return "partial";
+                    return "missing";
+                }
+                readonly property var installedEntries: {
+                    const map = statusMap;
+                    return LocalTranslator.languageRegistry.filter(entry => {
+                        const s = map[entry.tess];
+                        if (!s) return false;
+                        return s.busy
+                            || s.error
+                            || s.tesseract === "user" || s.tesseract === "system"
+                            || s.argos === "user" || s.argos === "system";
+                    });
+                }
+                readonly property var availableOptions: {
+                    const map = statusMap;
+                    const list = LocalTranslator.languageRegistry.filter(entry => {
+                        const s = map[entry.tess];
+                        if (!s) return true;
+                        if (s.busy || s.error) return false;
+                        const tInstalled = (s.tesseract === "user" || s.tesseract === "system");
+                        const aInstalled = (s.argos === "user" || s.argos === "system");
+                        return !tInstalled && !aInstalled;
+                    });
+                    return [{ displayName: Translation.tr("Select a language…"), value: "" }]
+                        .concat(list.map(entry => ({ displayName: entry.name, value: entry.tess })));
+                }
 
                 ContentSubsection {
                     title: Translation.tr("Tesseract model")
@@ -516,23 +573,30 @@ ContentPage {
                 }
 
                 ContentSubsection {
-                    title: Translation.tr("Language packs")
+                    title: Translation.tr("Add language")
 
-                    MaterialTextArea {
-                        id: langSearch
-                        Layout.fillWidth: true
-                        placeholderText: Translation.tr("Search…")
-                        wrapMode: TextEdit.NoWrap
+                    StyledComboBox {
+                        id: addLangSelector
+                        buttonIcon: "add"
+                        textRole: "displayName"
+                        model: localOptions.availableOptions
+
+                        currentIndex: 0
+
+                        onActivated: index => {
+                            if (index === 0) return;
+                            const tcode = model[index].value;
+                            LocalTranslator.installLanguage(tcode);
+                            currentIndex = 0;
+                        }
                     }
+                }
+
+                ContentSubsection {
+                    title: Translation.tr("Installed languages")
 
                     Repeater {
-                        model: LocalTranslator.languageRegistry.filter(entry => {
-                            const q = langSearch.text.toLowerCase();
-                            if (!q) return true;
-                            return entry.name.toLowerCase().includes(q)
-                                || entry.tess.includes(q)
-                                || entry.argos.includes(q);
-                        })
+                        model: localOptions.installedEntries
 
                         delegate: RowLayout {
                             id: row
@@ -540,7 +604,7 @@ ContentPage {
                             Layout.fillWidth: true
                             spacing: 8
 
-                            readonly property string rowState: LocalTranslator.rowState(modelData.tess)
+                            readonly property string rowState: localOptions.rowStateFor(modelData)
 
                             StyledText {
                                 text: modelData.name
@@ -560,7 +624,6 @@ ContentPage {
                                     case "installing":  return Appearance.colors.colSecondaryContainer;
                                     case "uninstalling":return Appearance.colors.colSecondaryContainer;
                                     case "error":       return Appearance.colors.colError;
-                                    case "missing":     return Appearance.colors.colSurfaceContainer;
                                     default:            return Appearance.colors.colSurfaceContainer;
                                     }
                                 }
@@ -575,7 +638,6 @@ ContentPage {
                                         case "installing":  return Translation.tr("Installing…");
                                         case "uninstalling":return Translation.tr("Removing…");
                                         case "error":       return Translation.tr("Error");
-                                        case "missing":     return Translation.tr("Not installed");
                                         default:            return "";
                                         }
                                     }
@@ -584,20 +646,25 @@ ContentPage {
                             }
 
                             DialogButton {
-                                visible: row.rowState === "missing"
-                                    || row.rowState === "partial"
-                                    || row.rowState === "error"
-                                enabled: row.rowState !== "installing" && row.rowState !== "uninstalling"
-                                buttonText: row.rowState === "error" ? Translation.tr("Retry") : Translation.tr("Install")
+                                visible: row.rowState === "partial" || row.rowState === "error"
+                                enabled: true
+                                buttonText: row.rowState === "error" ? Translation.tr("Retry") : Translation.tr("Complete")
                                 onClicked: LocalTranslator.installLanguage(row.modelData.tess)
                             }
                             DialogButton {
-                                visible: row.rowState === "installed"
-                                enabled: true
+                                visible: row.rowState === "installed" || row.rowState === "partial" || row.rowState === "system"
+                                enabled: row.rowState !== "installing" && row.rowState !== "uninstalling"
                                 buttonText: Translation.tr("Uninstall")
                                 onClicked: LocalTranslator.uninstallLanguage(row.modelData.tess)
                             }
                         }
+                    }
+
+                    StyledText {
+                        visible: localOptions.installedEntries.length === 0
+                        Layout.fillWidth: true
+                        text: Translation.tr("Nothing installed yet. Pick a language above to start.")
+                        color: Appearance.colors.colSubtext
                     }
                 }
             }
