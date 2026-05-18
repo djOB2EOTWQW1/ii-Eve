@@ -17,7 +17,7 @@ if ! command -v tesseract >/dev/null 2>&1; then
     exit 0
 fi
 
-TSV=$(tesseract "$IMG" stdout --tessdata-dir "$TESSDATA_DIR" -l "$LANG_ARG" --psm 3 tsv 2>/dev/null || true)
+TSV=$(tesseract "$IMG" stdout --tessdata-dir "$TESSDATA_DIR" -l "$LANG_ARG" --psm 3 -c tessedit_create_tsv=1 2>/dev/null || true)
 
 if [[ -z "$TSV" ]]; then
     jq -n '{error: {code: 1, message: "tesseract produced no output"}}'
