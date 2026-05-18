@@ -20,9 +20,16 @@ TranslatorApi {
         root.state = TranslatorApi.State.Preparing;
 
         const targetLang = Config.options.screenTranslator.targetLanguage || Translation.languageCode;
+        const tess2argos = {};
+        for (const e of LocalTranslator.languageRegistry) tess2argos[e.tess] = e.argos;
+        const sources = LocalTranslator.installedTesseractCodes
+            .map(t => tess2argos[t])
+            .filter(c => !!c);
+
         const payload = {
             target: targetLang,
-            strings: strings
+            strings: strings,
+            sources: sources
         };
 
         root.state = TranslatorApi.State.Processing;
