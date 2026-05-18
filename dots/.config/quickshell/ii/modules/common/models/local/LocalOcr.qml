@@ -38,9 +38,7 @@ TranslatorApi {
 '${StringUtils.shellSingleQuoteEscape(tessdataDir)}' \
 '${StringUtils.shellSingleQuoteEscape(langArg)}'`
             ],
-            (out) => {
-                root.handleApiOutput(out);
-            }
+            (out) => { root.handleApiOutput(out); }
         ]);
     }
 

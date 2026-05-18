@@ -38,9 +38,7 @@ TranslatorApi {
                 `printf '%s' '${StringUtils.shellSingleQuoteEscape(JSON.stringify(payload))}' \
 | '${StringUtils.shellSingleQuoteEscape(root.scriptPath)}'`
             ],
-            (out) => {
-                root.handleApiOutput(out);
-            }
+            (out) => { root.handleApiOutput(out); }
         ]);
     }
 
