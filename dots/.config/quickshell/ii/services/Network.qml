@@ -87,13 +87,17 @@ Singleton {
     function changePassword(network: WifiAccessPoint, password: string, username = ""): void {
         // TODO: enterprise wifi with username
         network.askingPassword = false;
-        changePasswordProc.exec({
+        root.wifiConnectTarget = network;
+        const opts = {
             "environment": {
+                "LANG": "C",
+                "LC_ALL": "C",
                 "PASSWORD": password,
                 "SSID": network.ssid
             },
-            "command": ["bash", "-c", 'nmcli connection modify "$SSID" wifi-sec.psk "$PASSWORD"']
-        })
+            "command": ["bash", "-c", 'nmcli dev wifi connect "$SSID" password "$PASSWORD"']
+        };
+        connectProc.exec(opts);
     }
 
     Process {
@@ -115,13 +119,15 @@ Singleton {
         stderr: SplitParser {
             onRead: line => {
                 // print("err:", line)
-                if (line.includes("Secrets were required")) {
+                if (line.includes("Secrets were required") && (root.wifiConnectTarget?.isSecure ?? false)) {
                     root.wifiConnectTarget.askingPassword = true
                 }
             }
         }
         onExited: (exitCode, exitStatus) => {
-            root.wifiConnectTarget.askingPassword = (exitCode !== 0)
+            if (root.wifiConnectTarget) {
+                root.wifiConnectTarget.askingPassword = (exitCode !== 0) && root.wifiConnectTarget.isSecure
+            }
             root.wifiConnectTarget = null
         }
     }
@@ -130,14 +136,6 @@ Singleton {
         id: disconnectProc
         stdout: SplitParser {
             onRead: getNetworks.running = true
-        }
-    }
-
-    Process {
-        id: changePasswordProc
-        onExited: { // Re-attempt connection after changing password
-            connectProc.running = false
-            connectProc.running = true
         }
     }
 

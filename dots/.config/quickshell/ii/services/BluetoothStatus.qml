@@ -19,43 +19,18 @@ Singleton {
     signal deviceConnected(BluetoothDevice device)
     signal deviceDisconnected(BluetoothDevice device)
 
-    property var _previousConnectedAddresses: []
-    property bool _initialized: false
+    Instantiator {
+        model: Bluetooth.devices
 
-    Timer {
-        interval: 500
-        running: root.enabled
-        repeat: true
-        onTriggered: root._checkConnectionChanges()
-    }
+        Connections {
+            required property BluetoothDevice modelData
+            target: modelData
 
-    function _checkConnectionChanges() {
-        const currentConnected = Bluetooth.devices.values.filter(d => d.connected);
-        const currentAddresses = currentConnected.map(d => d.address);
-
-        // Skip initial snapshot to avoid false positives on startup
-        if (!_initialized) {
-            _previousConnectedAddresses = currentAddresses;
-            _initialized = true;
-            return;
-        }
-
-        // Find newly connected devices
-        for (const device of currentConnected) {
-            if (!_previousConnectedAddresses.includes(device.address)) {
-                root.deviceConnected(device);
+            function onConnectedChanged() {
+                if (modelData.connected) root.deviceConnected(modelData)
+                else root.deviceDisconnected(modelData)
             }
         }
-
-        // Find disconnected devices
-        for (const addr of _previousConnectedAddresses) {
-            if (!currentAddresses.includes(addr)) {
-                const device = Bluetooth.devices.values.find(d => d.address === addr);
-                if (device) root.deviceDisconnected(device);
-            }
-        }
-
-        _previousConnectedAddresses = currentAddresses;
     }
 
     function sortFunction(a, b) {

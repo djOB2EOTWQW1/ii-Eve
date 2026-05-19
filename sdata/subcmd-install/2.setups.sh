@@ -19,6 +19,15 @@ function setup_user_group(){
     x sudo usermod -aG video,i2c,input "$(whoami)"
   fi
 }
+
+function setup_networkmanager_polkit(){
+  # Without this rule every Wi-Fi toggle / connect / disconnect from the
+  # right panel prompts for the root password through polkit.
+  local src="${REPO_ROOT:-.}/sdata/polkit-rules/50-illogical-impulse-networkmanager.rules"
+  local dst="/etc/polkit-1/rules.d/50-illogical-impulse-networkmanager.rules"
+  if [[ ! -f "$src" ]]; then return; fi
+  x sudo install -Dm0644 "$src" "$dst"
+}
 #####################################################################################
 # These python packages are installed using uv into the venv (virtual environment). Once the folder of the venv gets deleted, they are all gone cleanly. So it's considered as setups, not dependencies.
 showfun install-python-packages
@@ -26,6 +35,9 @@ v install-python-packages
 
 showfun setup_user_group
 v setup_user_group
+
+showfun setup_networkmanager_polkit
+v setup_networkmanager_polkit
 
 if [[ ! -z $(systemctl --version) ]]; then
   # For Fedora, uinput is required for the virtual keyboard to function, and udev rules enable input group users to utilize it.

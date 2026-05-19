@@ -33,6 +33,9 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         BluetoothAgent.load()
+        // Touch PolkitService so the agent registers immediately,
+        // not on first FullscreenPolkitWindow construction.
+        PolkitService.agent
         LocalTranslator.initOnce()
     }
 

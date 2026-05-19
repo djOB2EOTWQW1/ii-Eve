@@ -72,11 +72,13 @@ WindowDialog {
         }
 
         StyledSwitch {
+            id: btSwitch
             Layout.alignment: Qt.AlignVCenter
             enabled: BluetoothStatus.available
             checked: root.btEnabled
             onToggled: {
-                if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = checked;
+                btSwitch.checked = Qt.binding(() => root.btEnabled);
+                if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !root.btEnabled;
             }
         }
     }

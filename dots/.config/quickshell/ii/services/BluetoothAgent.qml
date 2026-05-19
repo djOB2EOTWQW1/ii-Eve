@@ -27,21 +27,21 @@ Singleton {
     Process {
         id: agentProc
         running: true
-        command: ["bluetoothctl", "--agent", "NoInputNoOutput"]
+        // Process substitution keeps stdin open so bluetoothctl doesn't EOF
+        // immediately and exit; that previously caused a 2s restart loop.
+        command: ["bash", "-c", "bluetoothctl --agent NoInputNoOutput < <(sleep infinity)"]
         environment: ({
             LANG: "C",
             LC_ALL: "C"
         })
         onExited: (exitCode, exitStatus) => {
-            // Re-launch after a short delay so we keep an agent alive even if
-            // bluetoothctl exits (e.g. adapter disappeared briefly).
             restartTimer.start();
         }
     }
 
     Timer {
         id: restartTimer
-        interval: 2000
+        interval: 5000
         repeat: false
         onTriggered: agentProc.running = true
     }
