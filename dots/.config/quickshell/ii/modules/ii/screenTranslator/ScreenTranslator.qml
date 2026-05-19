@@ -13,25 +13,37 @@ Scope {
     }
 
     readonly property var currentScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? null
-    
+
+    function screenByName(name) {
+        return Quickshell.screens.find(s => s.name === name) ?? null;
+    }
+
     Loader {
         id: translatorLoader
         property var lockedScreen
+        property var lockedRegionInfo: null
         active: false
         Connections {
             target: GlobalStates
             function onScreenTranslatorOpenChanged() {
                 if (!GlobalStates.screenTranslatorOpen) {
                     translatorLoader.active = false;
+                    translatorLoader.lockedRegionInfo = null;
+                    GlobalStates.screenTranslatorRegionInfo = null;
                 } else {
-                    translatorLoader.lockedScreen = root.currentScreen
-                    translatorLoader.active = true
+                    const regionInfo = GlobalStates.screenTranslatorRegionInfo;
+                    translatorLoader.lockedRegionInfo = regionInfo;
+                    translatorLoader.lockedScreen = regionInfo
+                        ? root.screenByName(regionInfo.screenName)
+                        : root.currentScreen;
+                    translatorLoader.active = true;
                 }
             }
         }
 
         sourceComponent: ScreenTranslatorPanel {
             screen: translatorLoader.lockedScreen
+            regionInfo: translatorLoader.lockedRegionInfo
             onDismiss: root.dismiss()
         }
     }

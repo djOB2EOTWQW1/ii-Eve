@@ -59,6 +59,12 @@ Scope {
         GlobalStates.regionSelectorOpen = true
     }
 
+    function translate() {
+        root.action = RegionSelection.SnipAction.Translate
+        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        GlobalStates.regionSelectorOpen = true
+    }
+
     function record() {
         root.action = RegionSelection.SnipAction.Record
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
@@ -87,6 +93,9 @@ Scope {
         function ocr() {
             root.ocr()
         }
+        function translate() {
+            root.translate()
+        }
         function record() {
             root.record()
         }
@@ -109,6 +118,11 @@ Scope {
         name: "regionOcr"
         description: "Recognizes text in the selected region"
         onPressed: root.ocr()
+    }
+    GlobalShortcut {
+        name: "regionTranslate"
+        description: "Translates text in the selected region"
+        onPressed: root.translate()
     }
     GlobalShortcut {
         name: "regionRecord"

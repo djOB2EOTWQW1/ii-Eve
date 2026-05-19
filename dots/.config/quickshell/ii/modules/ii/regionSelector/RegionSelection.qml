@@ -28,7 +28,7 @@ PanelWindow {
         bottom: true
     }
 
-    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound, AskAI } 
+    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound, AskAI, Translate }
     enum SelectionMode { RectCorners, Circle }
     enum Phase { Select, Post }
     property var action: RegionSelection.SnipAction.Copy
@@ -271,6 +271,22 @@ PanelWindow {
         root.regionY = Math.max(0, Math.min(root.regionY, root.screen.height - root.regionHeight));
         root.regionWidth = Math.max(0, Math.min(root.regionWidth, root.screen.width - root.regionX));
         root.regionHeight = Math.max(0, Math.min(root.regionHeight, root.screen.height - root.regionY));
+
+        // Region translate: hand off to ScreenTranslator with region info, skip detached crop command
+        if (root.action === RegionSelection.SnipAction.Translate) {
+            GlobalStates.screenTranslatorRegionInfo = {
+                screenName: root.screen.name,
+                x: root.regionX,
+                y: root.regionY,
+                width: root.regionWidth,
+                height: root.regionHeight,
+                monitorScale: root.monitorScale,
+                sourcePath: root.screenshotPath,
+            };
+            GlobalStates.screenTranslatorOpen = true;
+            root.dismiss();
+            return;
+        }
 
         // Adjust action
         if (root.action === RegionSelection.SnipAction.Copy || root.action === RegionSelection.SnipAction.Edit) { 

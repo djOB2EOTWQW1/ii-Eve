@@ -74,6 +74,8 @@ hl.bind("SUPER + SHIFT + X", hl.dsp.global("quickshell:regionOcr"),
     { description = "Utilities: Character recognition >> clipboard" })
 hl.bind("SUPER + SHIFT + T", hl.dsp.global("quickshell:screenTranslate"),
     { description = "Utilities: Translate screen content" })
+hl.bind("SUPER + SHIFT + CTRL + T", hl.dsp.global("quickshell:regionTranslate"),
+    { description = "Utilities: Translate selected region" })
 hl.bind("SUPER + SHIFT + X", hl.dsp.exec_cmd(
     qsIsAlive ..
     " || pidof slurp || (TESSDATA=\"$HOME/.local/share/tessdata\";" ..
