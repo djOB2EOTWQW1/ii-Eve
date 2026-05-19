@@ -272,9 +272,12 @@ PanelWindow {
         root.regionWidth = Math.max(0, Math.min(root.regionWidth, root.screen.width - root.regionX));
         root.regionHeight = Math.max(0, Math.min(root.regionHeight, root.screen.height - root.regionY));
 
-        // Region translate: hand off to ScreenTranslator with region info, skip detached crop command
+        // Region translate: close region selector first, then open the screen translator on
+        // the next tick so the two layer-shell surfaces never coexist (otherwise the
+        // compositor mis-routes pointer button events to the dismissed surface and pan stops
+        // working, even though wheel events still reach the new one).
         if (root.action === RegionSelection.SnipAction.Translate) {
-            GlobalStates.screenTranslatorRegionInfo = {
+            const regionInfo = {
                 screenName: root.screen.name,
                 x: root.regionX,
                 y: root.regionY,
@@ -283,8 +286,11 @@ PanelWindow {
                 monitorScale: root.monitorScale,
                 sourcePath: root.screenshotPath,
             };
-            GlobalStates.screenTranslatorOpen = true;
             root.dismiss();
+            Qt.callLater(() => {
+                GlobalStates.screenTranslatorRegionInfo = regionInfo;
+                GlobalStates.screenTranslatorOpen = true;
+            });
             return;
         }
 

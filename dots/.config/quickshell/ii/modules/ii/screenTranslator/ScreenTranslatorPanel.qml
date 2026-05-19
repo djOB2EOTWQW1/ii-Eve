@@ -22,7 +22,7 @@ PanelWindow {
     visible: false
     // color: Appearance.colors.colLayer0
     color: "black"
-    WlrLayershell.namespace: "quickshell:regionSelector"
+    WlrLayershell.namespace: "quickshell:screenTranslator"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
     exclusionMode: ExclusionMode.Ignore
@@ -164,8 +164,8 @@ PanelWindow {
             width: (root.regionMode ? root.regionWidth : parent.width) * root.scale
             height: (root.regionMode ? root.regionHeight : parent.height) * root.scale
 
-            x: (root.regionMode ? root.regionX : 0) + root.contentX
-            y: (root.regionMode ? root.regionY : 0) + root.contentY
+            x: root.contentX + (root.regionMode ? root.regionX * root.scale : 0)
+            y: root.contentY + (root.regionMode ? root.regionY * root.scale : 0)
 
             active: root.screenshotReady
             sourceComponent: ScreenTextOverlay {
